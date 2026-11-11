@@ -1,9 +1,9 @@
+
 name: Publicar Angola Life 3D
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
