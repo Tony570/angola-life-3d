@@ -84,10 +84,8 @@ export class Player {
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       pointer-events: none;
       transition: transform 0.05s ease-out;
-    `;
     joystickContainer.appendChild(joystickKnob);
     document.body.appendChild(joystickContainer);
-
     // Gestão de Eventos Táctil e Rato
     let isDragging = false;
     const maxRadius = 35;
@@ -96,12 +94,10 @@ export class Player {
       isDragging = true;
       updateJoystick(clientX, clientY);
     };
-
     const handleMove = (clientX, clientY) => {
       if (!isDragging) return;
       updateJoystick(clientX, clientY);
     };
-
     const handleEnd = () => {
       isDragging = false;
       this.inputVector = { x: 0, z: 0 };
