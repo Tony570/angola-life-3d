@@ -254,8 +254,164 @@ road(-48, 0, 11, 210);
 road(48, 0, 11, 210);
 road(0, -52, 11, 210, true);
 road(0, 52, 11, 210, true);
-
 function building(x, z, w, d, h, color, style = 0) {
+  const group = new THREE.Group();
+  const wall = mat(color);
+  const white = mat('#f1e5d0');
+  const border = mat('#9a8066');
+  const doorMat = mat('#51372a');
+  const glass = new THREE.MeshStandardMaterial({
+    color: '#83bdca',
+    roughness: 0.25,
+    metalness: 0.12
+  });
+  // Paredes principais
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    wall
+  );
+  body.position.y = h / 2;
+  group.add(body);
+
+  // Rodapé
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.2, 0.3, d + 0.2),
+    border
+  );
+  base.position.y = 0.18;
+  group.add(base);
+
+  // Moldura superior
+  const cornice = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.35, 0.22, d + 0.35),
+    white
+  );
+  cornice.position.y = h - 0.12;
+  group.add(cornice);
+
+  // Telhado das casas
+  if (h <= 10) {
+    const roof = new THREE.Mesh(
+      new THREE.ConeGeometry(Math.max(w, d) * 0.75, 2, 4),
+      mat('#984b38')
+    );
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.z = d / w;
+    roof.position.y = h + 0.9;
+    group.add(roof);
+  } else {
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(w + 0.5, 0.35, d + 0.5),
+      mat('#68635d')
+    );
+    roof.position.y = h + 0.18;
+    group.add(roof);
+  }
+  // Janelas com molduras
+  const cols = Math.max(1, Math.floor(w / 2.3));
+  const rows = Math.max(1, Math.floor((h - 1) / 2.4));
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = -w / 2 + (c + 1) * w / (cols + 1);
+      const y = 1.6 + r * 2.3;
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(1.25, 1.25, 0.15),
+        white
+      );
+      frame.position.set(x, y, d / 2 + 0.08);
+      group.add(frame);
+
+      const windowPane = new THREE.Mesh(
+        new THREE.BoxGeometry(1.02, 1.02, 0.08),
+        glass
+      );
+      windowPane.position.set(x, y, d / 2 + 0.17);
+      group.add(windowPane);
+
+      // Divisão central da janela
+      const divider = new THREE.Mesh(
+        new THREE.BoxGeometry(0.07, 1.02, 0.08),
+        border
+      );
+      divider.position.set(x, y, d / 2 + 0.22);
+      group.add(divider);
+
+      // Peitoril
+      const sill = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4, 0.13, 0.3),
+        white
+      );
+      sill.position.set(x, y - 0.68, d / 2 + 0.18);
+      group.add(sill);
+    }
+  }
+  // Porta principal
+  const doorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 2.2, 0.16),
+    white
+  );
+  doorFrame.position.set(0, 1.1, d / 2 + 0.1);
+  group.add(doorFrame);
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(1.12, 2, 0.1),
+    doorMat
+  );
+  door.position.set(0, 1, d / 2 + 0.2);
+  group.add(door);
+
+  const handle = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    mat('#d6ae55')
+  );
+  handle.position.set(0.38, 1, d / 2 + 0.28);
+  group.add(handle);
+
+  // Alpendre e pilares das casas
+  if (h <= 10) {
+    const porch = new THREE.Mesh(
+      new THREE.BoxGeometry(w * 0.65, 0.18, 1.2),
+      white
+    );
+    porch.position.set(0, 0.75, d / 2 + 0.65);
+    group.add(porch);
+
+    for (const side of [-1, 1]) {
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 2.2, 0.2),
+        white
+      );
+      pillar.position.set(side * w * 0.28, 1.8, d / 2 + 1);
+      group.add(pillar);
+    }
+
+    const step = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.18, 0.5),
+      border
+    );
+    step.position.set(0, 0.12, d / 2 + 1.3);
+    group.add(step);
+  }
+
+  // Varanda dos edifícios maiores
+  if (h > 10) {
+    const balcony = new THREE.Mesh(
+      new THREE.BoxGeometry(w * 0.75, 0.15, 0.9),
+      white
+    );
+    balcony.position.set(0, 2.2, d / 2 + 0.45);
+    group.add(balcony);
+
+    const railing = new THREE.Mesh(
+      new THREE.BoxGeometry(w * 0.75, 0.6, 0.1),
+      mat('#d5d0c5')
+    );
+    railing.position.set(0, 2.55, d / 2 + 0.85);
+    group.add(railing);
+  }
+
+  group.position.set(x, 0, z);
+  scene.add(group);
+}
   const group = new THREE.Group();
   const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
   body.position.y = h / 2;
@@ -278,7 +434,6 @@ function building(x, z, w, d, h, color, style = 0) {
       group.add(win);
     }
   }
-
   const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.8, 0.08), mat('#46372e'));
   door.position.set(0, 0.9, d / 2 + 0.06);
   group.add(door);
@@ -286,7 +441,6 @@ function building(x, z, w, d, h, color, style = 0) {
   group.position.set(x, 0, z);
   scene.add(group);
 }
-
 const buildingColors = ['#d9a36b', '#d77b58', '#e7d7b6', '#c9a47d', '#b9c2bf', '#d4bd91'];
 for (let z = -88; z <= 88; z += 22) {
   for (const side of [-1, 1]) {
@@ -344,15 +498,12 @@ function createCar(color, x, z, direction = 1) {
   const body = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.72, 4.2), bodyMat);
   body.position.y = 0.78;
   car.add(body);
-
   const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.78, 2.1), glassMat);
   cabin.position.set(0, 1.45, -0.15);
   car.add(cabin);
-
   const roof = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.12, 1.95), bodyMat);
   roof.position.set(0, 1.86, -0.15);
   car.add(roof);
-
   for (const side of [-1, 1]) {
     for (const frontBack of [-1, 1]) {
       const wheel = new THREE.Mesh(
@@ -364,14 +515,12 @@ function createCar(color, x, z, direction = 1) {
       car.add(wheel);
     }
   }
-
   const lampMat = new THREE.MeshBasicMaterial({ color: '#fff0bd' });
   for (const side of [-1, 1]) {
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.2, 0.08), lampMat);
     lamp.position.set(side * 0.68, 0.95, 2.13);
     car.add(lamp);
   }
-
   car.position.set(x, 0, z);
   if (direction < 0) car.rotation.y = Math.PI;
   scene.add(car);
@@ -381,7 +530,6 @@ createCar('#bd3030', -3.5, -90, 1);
 createCar('#e6e6df', 3.5, -35, 1);
 createCar('#263e65', -3.5, 35, 1);
 createCar('#d7a52c', 3.5, 90, 1);
-
 // Personagem com roupa, cabelo, rosto, braços e pernas articulados
 function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
   const group = new THREE.Group();
@@ -390,15 +538,12 @@ function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
   const pants = mat('#263c58');
   const shoes = mat('#201f20');
   const hair = mat('#211714');
-
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 0.65, 5, 10), shirt);
   torso.position.y = 1.45;
   group.add(torso);
-
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 14), skin);
   head.position.y = 2.25;
   group.add(head);
-
   const hairCap = new THREE.Mesh(
     new THREE.SphereGeometry(0.35, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.58),
     hair
@@ -412,23 +557,19 @@ function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
     eye.position.set(side * 0.12, 2.28, 0.31);
     group.add(eye);
   }
-
   const legs = [];
   const arms = [];
   for (const side of [-1, 1]) {
     const leg = new THREE.Group();
     leg.position.set(side * 0.2, 0.85, 0);
     group.add(leg);
-
     const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 8), pants);
     thigh.position.y = -0.28;
     leg.add(thigh);
-
     const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.15, 0.4), shoes);
     shoe.position.set(0, -0.7, 0.08);
     leg.add(shoe);
     legs.push(leg);
-
     const arm = new THREE.Group();
     arm.position.set(side * 0.48, 1.65, 0);
     group.add(arm);
@@ -440,15 +581,12 @@ function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
     arm.add(hand);
     arms.push(arm);
   }
-
   group.userData = { legs, arms };
   return group;
 }
-
 const avatar = createAvatar();
 avatar.position.set(0, 0, 5);
 scene.add(avatar);
-
 // Peões NPCs espalhados pela cidade
 const npcs = [];
 const npcShirts = ['#c63f35', '#315b9a', '#e0b13e', '#4d8054', '#8b4e9c'];
@@ -459,10 +597,8 @@ for (let i = 0; i < 12; i++) {
   scene.add(npc);
   npcs.push({ npc, phase: Math.random() * 6 });
 }
-
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-
 renderer.domElement.addEventListener('pointerdown', event => {
   if (!$('#phone-screen').classList.contains('hidden')) return;
   const rect = renderer.domElement.getBoundingClientRect();
@@ -476,7 +612,6 @@ renderer.domElement.addEventListener('pointerdown', event => {
     target.z = THREE.MathUtils.clamp(target.z, -100, 100);
   }
 });
-
 function resize() {
   const width = host.clientWidth;
   const height = host.clientHeight;
@@ -491,7 +626,6 @@ resize();
 function animate() {
   requestAnimationFrame(animate);
   let moving = false;
-
   if (target) {
     const dx = target.x - avatar.position.x;
     const dz = target.z - avatar.position.z;
@@ -503,7 +637,6 @@ function animate() {
       avatar.rotation.y = Math.atan2(dx, dz);
     } else target = null;
   }
-
   const parts = avatar.userData;
   if (moving) {
     walkTime += 0.18;
@@ -515,7 +648,6 @@ function animate() {
   } else {
     [...parts.legs, ...parts.arms].forEach(part => { part.rotation.x *= 0.8; });
   }
-
   trafficCars.forEach(item => {
     item.car.position.z += item.direction * 0.16;
     if (item.car.position.z > 110) item.car.position.z = -110;
@@ -526,7 +658,6 @@ function animate() {
     item.npc.position.x += Math.sin(item.phase) * 0.008;
     item.npc.position.z += Math.cos(item.phase) * 0.008;
   });
-
   camera.position.x += (avatar.position.x - camera.position.x) * 0.025;
   camera.position.z += (avatar.position.z + 20 - camera.position.z) * 0.025;
   camera.lookAt(avatar.position.x, 0, avatar.position.z);
@@ -540,23 +671,19 @@ async function auth(mode) {
     $('#authmsg').textContent = 'Servidor Supabase não configurado.';
     return;
   }
-
   const email = $('#email').value.trim();
   const password = $('#password').value;
   if (!email || password.length < 6) {
     $('#authmsg').textContent = 'Indica email e palavra-passe com pelo menos 6 caracteres.';
     return;
   }
-
   const result = mode === 'signup'
     ? await supabase.auth.signUp({ email, password })
     : await supabase.auth.signInWithPassword({ email, password });
-
   if (result.error) {
     $('#authmsg').textContent = result.error.message;
     return;
   }
-
   user = result.data.user;
   if (mode === 'signup' && !result.data.session) {
     $('#authmsg').textContent = 'Confirma o email enviado e depois inicia sessão.';
@@ -569,7 +696,6 @@ async function afterAuth() {
   if (!supabase || !user) return;
   const { data, error } = await supabase
     .from('profiles').select('*').eq('id', user.id).maybeSingle();
-
   if (error) {
     $('#authmsg').textContent = error.message;
     return;
@@ -578,7 +704,6 @@ async function afterAuth() {
   if (profile) enterGame();
   else show('profile');
 }
-
 function enterGame() {
   $('#playername').textContent = profile.nickname;
   $('#playerprovince').textContent = profile.province;
@@ -589,7 +714,6 @@ function enterGame() {
   updateStats();
   joinWorld();
 }
-
 $('#signup').onclick = () => auth('signup');
 $('#login').onclick = () => auth('login');
 
@@ -599,7 +723,6 @@ $('#saveprofile').onclick = async () => {
     $('#profilemsg').textContent = 'Escolhe um nome para o personagem.';
     return;
   }
-
   const row = { id: user.id, nickname, province: $('#province').value };
   const { error } = await supabase.from('profiles').upsert(row);
   if (error) {
@@ -609,7 +732,6 @@ $('#saveprofile').onclick = async () => {
   profile = row;
   enterGame();
 };
-
 // CHAT DA CIDADE
 function addCityMessage(nickname, message, createdAt = new Date().toISOString()) {
   const log = $('#chatlog');
@@ -621,7 +743,6 @@ function addCityMessage(nickname, message, createdAt = new Date().toISOString())
   while (log.children.length > 80) log.removeChild(log.firstChild);
   log.scrollTop = log.scrollHeight;
 }
-
 async function loadCityMessages() {
   const { data, error } = await supabase
     .from('world_chat')
@@ -636,7 +757,6 @@ async function loadCityMessages() {
   $('#chatlog').innerHTML = '';
   (data || []).forEach(row => addCityMessage(row.nickname, row.message, row.created_at));
 }
-
 async function sendCityMessage(message) {
   if (!supabase || !user || !profile) return;
   const clean = message.trim();
@@ -647,7 +767,6 @@ async function sendCityMessage(message) {
     nickname: profile.nickname,
     message: clean
   });
-
   if (error) {
     $('#chatlog').insertAdjacentHTML('beforeend',
       `<p class="chat-note">Não foi possível enviar: ${escapeHtml(error.message)}</p>`);
@@ -662,7 +781,6 @@ async function sendCityMessage(message) {
     });
   }
 }
-
 $('#chatform').onsubmit = async event => {
   event.preventDefault();
   const input = $('#chatinput');
@@ -671,7 +789,6 @@ $('#chatform').onsubmit = async event => {
   input.value = '';
   await sendCityMessage(message);
 };
-
 // JOGADORES ONLINE E CHAT PRIVADO
 function refreshPlayers() {
   const state = channel ? channel.presenceState() : {};
@@ -680,7 +797,6 @@ function refreshPlayers() {
   Object.values(state).flat().forEach(player => {
     if (player.user_id && player.user_id !== user?.id) map.set(player.user_id, player);
   });
-
   onlinePlayers = [...map.values()];
   $('#count').textContent = onlinePlayers.length + (user ? 1 : 0);
 
@@ -698,7 +814,6 @@ function refreshPlayers() {
       setChatTab('private');
     };
   });
-
   const select = $('#private-player');
   const current = select.value;
   select.innerHTML = '<option value="">Escolhe um jogador online</option>' +
@@ -707,12 +822,10 @@ function refreshPlayers() {
     ).join('');
   if (onlinePlayers.some(player => player.user_id === current)) select.value = current;
 }
-
 async function selectPrivatePlayer(playerId) {
   selectedPlayer = onlinePlayers.find(player => player.user_id === playerId) || null;
   const input = $('#privateinput');
   const sendButton = $('#privateform button');
-
   if (!selectedPlayer) {
     $('#private-status').textContent = 'Este jogador já não aparece online. Escolhe outro jogador.';
     input.disabled = true;
@@ -720,33 +833,27 @@ async function selectPrivatePlayer(playerId) {
     $('#privatelog').innerHTML = '';
     return;
   }
-
   $('#private-status').textContent = 'Conversa privada com ' + selectedPlayer.nickname;
   input.disabled = false;
   sendButton.disabled = false;
   await loadPrivateMessages();
 }
-
 async function loadPrivateMessages() {
   if (!selectedPlayer || !user) return;
   const otherId = selectedPlayer.user_id;
-
   const { data, error } = await supabase
     .from('private_messages')
     .select('id,sender_id,recipient_id,message,created_at')
     .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${user.id})`)
     .order('created_at', { ascending: true })
     .limit(100);
-
   if (error) {
     $('#privatelog').innerHTML = `<p class="chat-note">Erro ao carregar mensagens: ${escapeHtml(error.message)}</p>`;
     return;
   }
-
   $('#privatelog').innerHTML = '';
   (data || []).forEach(addPrivateMessage);
 }
-
 function addPrivateMessage(row) {
   const log = $('#privatelog');
   const mine = row.sender_id === user?.id;
@@ -757,7 +864,6 @@ function addPrivateMessage(row) {
   log.appendChild(item);
   log.scrollTop = log.scrollHeight;
 }
-
 $('#private-player').onchange = event => {
   if (event.target.value) selectPrivatePlayer(event.target.value);
   else {
@@ -768,33 +874,27 @@ $('#private-player').onchange = event => {
     $('#privateform button').disabled = true;
   }
 };
-
 $('#privateform').onsubmit = async event => {
   event.preventDefault();
   const message = $('#privateinput').value.trim();
   if (!message || !selectedPlayer || !user) return;
-
   const row = {
     sender_id: user.id,
     recipient_id: selectedPlayer.user_id,
     message
   };
-
   const { data, error } = await supabase
     .from('private_messages')
     .insert(row)
     .select('id,sender_id,recipient_id,message,created_at')
     .single();
-
   if (error) {
     $('#private-status').textContent = 'Não foi possível enviar: ' + error.message;
     return;
   }
-
   addPrivateMessage(data);
   $('#privateinput').value = '';
 };
-
 // Separadores do chat
 function setChatTab(tab) {
   const city = tab === 'city';
@@ -805,20 +905,16 @@ function setChatTab(tab) {
 }
 $('#city-tab').onclick = () => setChatTab('city');
 $('#private-tab').onclick = () => setChatTab('private');
-
 // LIGAÇÃO MULTIJOGADOR
 async function joinWorld() {
   if (!supabase || !user || channel) return;
-
   await loadCityMessages();
-
   channel = supabase.channel('city-luanda', {
     config: {
       presence: { key: user.id },
       broadcast: { self: false }
     }
   });
-
   channel
     .on('presence', { event: 'sync' }, refreshPlayers)
     .on('broadcast', { event: 'city-message' }, ({ payload }) => {
@@ -850,13 +946,11 @@ async function joinWorld() {
       }
     });
 }
-
 // SAIR DA CONTA
 $('#logout').onclick = async () => {
   if (channel) await supabase.removeChannel(channel);
   if (privateChannel) await supabase.removeChannel(privateChannel);
   if (supabase) await supabase.auth.signOut();
-
   user = null;
   profile = null;
   channel = null;
@@ -866,7 +960,6 @@ $('#logout').onclick = async () => {
   closePhone();
   show('auth');
 };
-
 // RECUPERAR SESSÃO
 if (supabase) {
   supabase.auth.getSession().then(async ({ data }) => {
@@ -876,10 +969,7 @@ if (supabase) {
     }
   });
 }
-
 updateStats();
-
-
 // ============================================
 // EXPANSAO VISUAL - CIDADE DE LUANDA
 // ============================================
@@ -892,7 +982,6 @@ updateStats();
     metalness: 0.25,
     roughness: 0.22
   });
-
   // PASSEIOS E LANCIS
   function pavement(x, z, width, depth) {
     const p = new THREE.Mesh(
@@ -902,7 +991,6 @@ updateStats();
     p.position.set(x, 0.08, z);
     scene.add(p);
   }
-
   function curbLine(x, z, width, depth) {
     const c = new THREE.Mesh(
       new THREE.BoxGeometry(width, 0.22, depth),
@@ -911,14 +999,12 @@ updateStats();
     c.position.set(x, 0.15, z);
     scene.add(c);
   }
-
   [-1, 1].forEach(side => {
     pavement(side * 8.3, 0, 3.2, 210);
     curbLine(side * 10, 0, 0.22, 210);
     pavement(side * 42, 0, 3, 210);
     curbLine(side * 43.7, 0, 0.22, 210);
   });
-
   // PASSADEIRAS
   function crossing(x, z) {
     for (let i = 0; i < 9; i++) {
@@ -930,10 +1016,8 @@ updateStats();
       scene.add(stripe);
     }
   }
-
   crossing(0, -10);
   crossing(0, 10);
-
   // POSTES DE ILUMINACAO
   function lampPost(x, z) {
     const post = new THREE.Mesh(
@@ -957,18 +1041,15 @@ updateStats();
     lamp.position.set(x + 1.1, 5.65, z);
     scene.add(lamp);
   }
-
   for (let z = -90; z <= 90; z += 30) {
     lampPost(-10, z);
     lampPost(10, z);
     lampPost(-44, z);
     lampPost(44, z);
   }
-
   // LOJAS E COMERCIO
   function createShop(x, z, name, wallColor, signColor) {
     const shop = new THREE.Group();
-
     const building = new THREE.Mesh(
       new THREE.BoxGeometry(9, 4.5, 7),
       mat(wallColor)
@@ -989,7 +1070,6 @@ updateStats();
     );
     door.position.set(-3.2, 1.1, 3.6);
     shop.add(door);
-
     const sign = new THREE.Mesh(
       new THREE.BoxGeometry(7, 0.75, 0.2),
       mat(signColor)
@@ -1000,14 +1080,12 @@ updateStats();
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 100;
-
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 48px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(name, 256, 50);
-
     const texture = new THREE.CanvasTexture(canvas);
     const letters = new THREE.Mesh(
       new THREE.PlaneGeometry(6.5, 0.6),
@@ -1019,16 +1097,13 @@ updateStats();
     shop.position.set(x, 0, z);
     scene.add(shop);
   }
-
   createShop(-18, -18, 'MERCADO', '#d8b78b', '#b94732');
   createShop(18, 18, 'RESTAURANTE', '#d6c29c', '#326b50');
   createShop(-34, 18, 'FARMACIA', '#e5e1d4', '#287b70');
   createShop(34, -18, 'CAFE LUANDA', '#d2a477', '#704b32');
-
   // TORRES RESIDENCIAIS
   function createTower(x, z, floors, color) {
     const height = floors * 2.4;
-
     const building = new THREE.Mesh(
       new THREE.BoxGeometry(10, height, 9),
       mat(color)
@@ -1048,7 +1123,6 @@ updateStats();
           z + 4.56
         );
         scene.add(windowMesh);
-
         const balcony = new THREE.Mesh(
           new THREE.BoxGeometry(2.2, 0.12, 0.65),
           mat('#aeb8b6')
@@ -1061,7 +1135,6 @@ updateStats();
         scene.add(balcony);
       }
     }
-
     const roof = new THREE.Mesh(
       new THREE.BoxGeometry(10.3, 0.3, 9.3),
       mat('#59666b')
@@ -1069,11 +1142,9 @@ updateStats();
     roof.position.set(x, height + 0.15, z);
     scene.add(roof);
   }
-
   createTower(-28, -42, 7, '#d4c3a7');
   createTower(29, 42, 8, '#c7d0cc');
   createTower(-29, 43, 6, '#d5a77d');
-
   // PRACA CENTRAL
   const plaza = new THREE.Mesh(
     new THREE.CylinderGeometry(10, 10, 0.25, 32),
@@ -1081,14 +1152,12 @@ updateStats();
   );
   plaza.position.set(27, 0.12, 0);
   scene.add(plaza);
-
   const fountain = new THREE.Mesh(
     new THREE.CylinderGeometry(3.2, 3.6, 0.7, 24),
     mat('#899b9d')
   );
   fountain.position.set(27, 0.55, 0);
   scene.add(fountain);
-
   const water = new THREE.Mesh(
     new THREE.CylinderGeometry(2.85, 2.85, 0.12, 24),
     new THREE.MeshStandardMaterial({
@@ -1116,7 +1185,6 @@ updateStats();
     back.position.set(x, 1.05, z - 0.25);
     scene.add(back);
   }
-
   createBench(20, -6);
   createBench(34, -6);
   createBench(20, 6);
@@ -1138,12 +1206,10 @@ updateStats();
     lid.position.set(x, 1.03, z);
     scene.add(lid);
   }
-
   createBin(-12, -5);
   createBin(12, 42);
   createBin(-12, 65);
   createBin(12, -65);
-
   // MAIS HABITANTES NA CIDADE
   const shirts = [
     '#e0b54c',
@@ -1153,17 +1219,14 @@ updateStats();
     '#416b9b',
     '#754b82'
   ];
-
   for (let i = 0; i < 14; i++) {
     const npc = createAvatar(
       shirts[i % shirts.length],
       ['#6d412f', '#8a563d', '#a66d4d'][i % 3]
     );
-
     const side = i % 2 ? 1 : -1;
     npc.position.set(side * (14 + (i % 4) * 5), 0, -62 + i * 9);
     npc.rotation.y = Math.random() * Math.PI * 2;
-
     scene.add(npc);
     npcs.push({
       npc,
