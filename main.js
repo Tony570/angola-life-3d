@@ -3,22 +3,44 @@ import * as THREE from 'three';
 import { createClient } from '@supabase/supabase-js';
 import './style.css';
 
-const $ = (s) => document.querySelector(s);
+// ==========================================
+// ANGOLA LIFE 3D - MOTOR PRINCIPAL
+// ==========================================
 
-const envReady = !!(
+const $ = (selector) => document.querySelector(selector);
+
+const supabaseReady = Boolean(
   import.meta.env.VITE_SUPABASE_URL &&
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
-const supabase = envReady
+const supabase = supabaseReady
   ? createClient(
       import.meta.env.VITE_SUPABASE_URL,
       import.meta.env.VITE_SUPABASE_ANON_KEY
     )
   : null;
 
-let user = null, profile = null, channel = null, myAvatar = null;
-const remote = new Map();
+let user = null;
+let profile = null;
+let channel = null;
+
+let money = 2500;
+let hunger = 100;
+let energy = 100;
+let inCar = false;
+let car = null;
+let target = null;
+let walkTime = 0;
+let joystickX = 0;
+let joystickY = 0;
+let lastNeedUpdate = 0;
+
+const keys = new Set();
+
+// ==========================================
+// INTERFACE
+// ==========================================
 
 $('#app').innerHTML = `
 <div class="topbar">
@@ -31,213 +53,336 @@ $('#app').innerHTML = `
   </div>
   <div class="status">
     <span class="dot"></span>
-    <span id="online">Modo demonstração</span>
+    <span id="online">Modo offline</span>
   </div>
 </div>
 
 <main>
-<section class="scene-wrap">
-  <div id="scene"></div>
-  <div class="scene-label">
-    <b>LUANDA · CIDADE CENTRAL</b>
-    <span>Explora o teu mundo</span>
-  </div>
-  <div class="hud">
-    <div><small>DINHEIRO</small><b id="money">Kz 2.500</b></div>
-    <div><small>ENERGIA</small><b>♥ 100%</b></div>
-    <div><small>FOME</small><b>● 100%</b></div>
-  </div>
-  <div class="hint">Toca no chão para caminhar</div>
-</section>
+  <section class="scene-wrap">
+    <div id="scene"></div>
 
-<aside class="panel">
-  <div id="auth">
-    <div class="eyebrow">BEM-VINDO AO MUNDO</div>
-    <h1>Entra na tua<br><em>vida virtual.</em></h1>
-    <p class="muted">Cria a tua conta para guardares o personagem e encontrares outros jogadores.</p>
-    <label>Email</label>
-    <input id="email" type="email" placeholder="teuemail@exemplo.com">
-    <label>Palavra-passe</label>
-    <input id="password" type="password" placeholder="Mínimo 6 caracteres">
-    <button id="signup" class="primary">Criar conta</button>
-    <button id="login" class="secondary">Iniciar sessão</button>
-    <p id="authmsg" class="message"></p>
-  </div>
-
-  <div id="profile" class="hidden">
-    <div class="eyebrow">A TUA IDENTIDADE</div>
-    <h2 id="welcome">Olá, jogador</h2>
-    <label>Nome no jogo</label>
-    <input id="nickname" maxlength="18" placeholder="Escolhe o teu nome">
-    <label>Província inicial</label>
-    <select id="province">
-      <option>Luanda</option>
-      <option>Benguela</option>
-      <option>Huíla</option>
-      <option>Huambo</option>
-      <option>Cabinda</option>
-      <option>Namibe</option>
-      <option>Malanje</option>
-      <option>Uíge</option>
-      <option>Zaire</option>
-      <option>Cuanza Norte</option>
-      <option>Cuanza Sul</option>
-      <option>Bié</option>
-      <option>Moxico</option>
-      <option>Cuando Cubango</option>
-      <option>Cunene</option>
-      <option>Lunda Norte</option>
-      <option>Lunda Sul</option>
-      <option>Bengo</option>
-    </select>
-    <button id="saveprofile" class="primary">Entrar na cidade</button>
-    <p id="profilemsg" class="message"></p>
-    <button id="logout" class="secondary">Terminar sessão</button>
-  </div>
-
-  <div id="gamepanel" class="hidden">
-    <div class="eyebrow">A TUA VIDA EM ANGOLA</div>
-    <h2 id="playername">Jogador</h2>
-    <p class="muted" id="playerprovince">Luanda</p>
-
-    <div class="quickgrid">
-      <button data-action="work">💼<span>Trabalhar</span></button>
-      <button data-action="eat">🍲<span>Comer</span></button>
-      <button data-action="home">🏠<span>Casa</span></button>
-      <button data-action="car">🚘<span>Veículos</span></button>
+    <div class="scene-label">
+      <b>LUANDA · ANGOLA</b>
+      <span>Explora a cidade</span>
     </div>
 
-    <div class="section-title">
-      JOGADORES NA CIDADE <span id="count">1</span>
-    </div>
-    <div id="players" class="players">
-      <p class="muted">A aguardar outros jogadores…</p>
-    </div>
-
-    <div class="section-title">CHAT DA CIDADE</div>
-    <div id="chatlog" class="chatlog">
-      <p class="muted">Entra no mundo para conversar.</p>
+    <div class="hud">
+      <div><small>DINHEIRO</small><b id="money">Kz 2.500</b></div>
+      <div><small>ENERGIA</small><b id="energy">100%</b></div>
+      <div><small>FOME</small><b id="hunger">100%</b></div>
     </div>
 
-    <form id="chatform">
-      <input id="chatinput" maxlength="180" placeholder="Escreve uma mensagem…">
-      <button>➤</button>
-    </form>
-    <button id="logout2" class="secondary">Sair da conta</button>
-  </div>
+    <div class="hint" id="hint">
+      Usa o joystick ou toca no chão para caminhar
+    </div>
 
-  <div class="footnote">
-    Projeto inicial online · As funções multiplayer ficam activas depois de ligares o teu servidor.
-  </div>
-</aside>
+    <div id="mobile-controls">
+      <div id="joystick-base">
+        <div id="joystick-knob"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel">
+
+    <div id="auth">
+      <div class="eyebrow">BEM-VINDO AO MUNDO</div>
+      <h1>Entra na tua<br><em>vida virtual.</em></h1>
+      <p class="muted">Cria a tua conta para entrares na cidade.</p>
+
+      <label>Email</label>
+      <input id="email" type="email" placeholder="teuemail@exemplo.com">
+
+      <label>Palavra-passe</label>
+      <input id="password" type="password" placeholder="Mínimo 6 caracteres">
+
+      <button id="signup" class="primary">Criar conta</button>
+      <button id="login" class="secondary">Iniciar sessão</button>
+      <p id="authmsg" class="message"></p>
+    </div>
+
+    <div id="profile" class="hidden">
+      <div class="eyebrow">A TUA IDENTIDADE</div>
+      <h2>Cria o teu jogador</h2>
+
+      <label>Nome no jogo</label>
+      <input id="nickname" maxlength="18" placeholder="O teu nome">
+
+      <label>Província</label>
+      <select id="province">
+        <option>Luanda</option>
+        <option>Benguela</option>
+        <option>Huíla</option>
+        <option>Huambo</option>
+        <option>Cabinda</option>
+        <option>Namibe</option>
+        <option>Malanje</option>
+        <option>Uíge</option>
+        <option>Zaire</option>
+        <option>Cuanza Norte</option>
+        <option>Cuanza Sul</option>
+        <option>Bié</option>
+        <option>Moxico</option>
+        <option>Cunene</option>
+        <option>Lunda Norte</option>
+        <option>Lunda Sul</option>
+        <option>Bengo</option>
+        <option>Cuando Cubango</option>
+      </select>
+
+      <button id="saveprofile" class="primary">Entrar na cidade</button>
+      <p id="profilemsg" class="message"></p>
+      <button id="logout" class="secondary">Sair</button>
+    </div>
+
+    <div id="gamepanel" class="hidden">
+      <div class="eyebrow">A TUA VIDA EM ANGOLA</div>
+      <h2 id="playername">Jogador</h2>
+      <p class="muted" id="playerprovince">Luanda</p>
+
+      <div class="quickgrid">
+        <button data-action="work">💼<span>Trabalhar</span></button>
+        <button data-action="eat">🍲<span>Comer</span></button>
+        <button data-action="home">🏠<span>Casa</span></button>
+        <button data-action="car">🚘<span>Veículo</span></button>
+      </div>
+
+      <div class="section-title">ESTADO DO JOGADOR</div>
+      <div id="player-state" class="muted">Pronto para explorar.</div>
+
+      <div class="section-title">
+        JOGADORES ONLINE <span id="count">1</span>
+      </div>
+      <div id="players" class="players">
+        <p class="muted">A aguardar jogadores…</p>
+      </div>
+
+      <div class="section-title">CHAT DA CIDADE</div>
+      <div id="chatlog" class="chatlog"></div>
+
+      <form id="chatform">
+        <input id="chatinput" maxlength="180" placeholder="Escreve uma mensagem…">
+        <button type="submit">➤</button>
+      </form>
+
+      <button id="logout2" class="secondary">Sair da conta</button>
+    </div>
+
+    <div class="footnote">
+      Angola Life 3D · Projeto em desenvolvimento
+    </div>
+  </aside>
 </main>
 `;
 
-// CIDADE 3D
+// ==========================================
+// CONTROLADORES PARA TELEMÓVEL
+// ==========================================
+
+const controlStyle = document.createElement('style');
+
+controlStyle.textContent = `
+#mobile-controls {
+ position:absolute;
+ left:15px;
+ bottom:20px;
+ width:130px;
+ height:130px;
+ z-index:10;
+ touch-action:none;
+}
+#joystick-base {
+ width:112px;
+ height:112px;
+ border-radius:50%;
+ background:#172d3477;
+ border:2px solid #ffffff99;
+ display:grid;
+ place-items:center;
+ touch-action:none;
+}
+#joystick-knob {
+ width:48px;
+ height:48px;
+ border-radius:50%;
+ background:#ffffffdd;
+ border:2px solid #345;
+ pointer-events:none;
+}
+#scene canvas {
+ display:block;
+ touch-action:none;
+}
+`;
+
+document.head.appendChild(controlStyle);
+
+const joystick = $('#joystick-base');
+const knob = $('#joystick-knob');
+
+let joystickPointer = null;
+
+function resetJoystick() {
+  joystickX = 0;
+  joystickY = 0;
+  joystickPointer = null;
+  knob.style.transform = 'translate(0px,0px)';
+}
+
+function moveJoystick(event) {
+  if (joystickPointer !== event.pointerId) return;
+
+  const rect = joystick.getBoundingClientRect();
+
+  let dx = event.clientX - (rect.left + rect.width / 2);
+  let dy = event.clientY - (rect.top + rect.height / 2);
+
+  const max = 30;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance > max) {
+    dx = dx / distance * max;
+    dy = dy / distance * max;
+  }
+
+  joystickX = dx / max;
+  joystickY = dy / max;
+
+  knob.style.transform = `translate(${dx}px,${dy}px)`;
+  target = null;
+}
+
+joystick.addEventListener('pointerdown', event => {
+  event.preventDefault();
+  joystickPointer = event.pointerId;
+  joystick.setPointerCapture(event.pointerId);
+  moveJoystick(event);
+});
+
+joystick.addEventListener('pointermove', moveJoystick);
+joystick.addEventListener('pointerup', resetJoystick);
+joystick.addEventListener('pointercancel', resetJoystick);
+
+// ==========================================
+// MUNDO 3D
+// ==========================================
+
 const host = $('#scene');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#b9d8e7');
-scene.fog = new THREE.Fog('#b9d8e7', 35, 110);
+scene.fog = new THREE.Fog('#b9d8e7', 40, 130);
 
-const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 180);
-camera.position.set(0, 15, 22);
-camera.lookAt(0, 0, 0);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
 
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
   powerPreference: 'low-power'
 });
 
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
 renderer.shadowMap.enabled = false;
 host.appendChild(renderer.domElement);
 
-scene.add(
-  new THREE.HemisphereLight(0xffffff, 0x6b7b68, 2)
-);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x68745e, 2));
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-sun.position.set(-10, 20, 8);
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.position.set(-15, 25, 12);
 scene.add(sun);
 
-const mat = (c) => new THREE.MeshStandardMaterial({
-  color: c,
-  roughness: 0.88
+const mat = color => new THREE.MeshStandardMaterial({
+  color,
+  roughness: 0.85
 });
 
 // CHÃO
+
 const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(120, 120),
-  mat('#c9b991')
+  new THREE.PlaneGeometry(180, 180),
+  mat('#c8b78f')
 );
+
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
 // ESTRADA
+
 const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(12, 100),
-  mat('#41474c')
+  new THREE.PlaneGeometry(12, 170),
+  mat('#42484d')
 );
+
 road.rotation.x = -Math.PI / 2;
-road.position.y = 0.02;
+road.position.y = 0.03;
 scene.add(road);
 
-for (let z = -45; z < 50; z += 7) {
-  const line = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.025, 3),
-    mat('#f3df9a')
+// LINHAS DA ESTRADA
+
+for (let z = -80; z < 85; z += 7) {
+  const stripe = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.03, 3),
+    mat('#f5e3a2')
   );
-  line.position.set(0, 0.05, z);
-  scene.add(line);
+
+  stripe.position.set(0, 0.06, z);
+  scene.add(stripe);
 }
 
 // EDIFÍCIOS
-function building(x, z, w, d, h, color) {
-  const b = new THREE.Mesh(
-    new THREE.BoxGeometry(w, h, d),
+
+function building(x, z, width, depth, height, color) {
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(width, height, depth),
     mat(color)
   );
 
-  b.position.set(x, h / 2, z);
-  scene.add(b);
+  body.position.set(x, height / 2, z);
+  scene.add(body);
 
   const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(w + 0.12, 0.25, d + 0.12),
-    mat('#6c5142')
+    new THREE.BoxGeometry(width + 0.2, 0.25, depth + 0.2),
+    mat('#70503d')
   );
 
-  roof.position.set(x, h + 0.12, z);
+  roof.position.set(x, height + 0.12, z);
   scene.add(roof);
 
-  for (let yy = 1.5; yy < h - 1; yy += 2.1) {
-    for (let xx = -w / 2 + 1; xx < w / 2 - 0.4; xx += 1.7) {
-      const win = new THREE.Mesh(
-        new THREE.BoxGeometry(0.75, 0.85, 0.06),
-        mat('#a8d9df')
+  for (let y = 1.5; y < height - 1; y += 2.2) {
+    for (let xx = -width / 2 + 1; xx < width / 2 - 0.4; xx += 1.7) {
+      const windowMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.85, 0.06),
+        mat('#a9dce7')
       );
 
-      win.position.set(x + xx, yy, z + d / 2 + 0.04);
-      scene.add(win);
+      windowMesh.position.set(
+        x + xx,
+        y,
+        z + depth / 2 + 0.04
+      );
+
+      scene.add(windowMesh);
     }
   }
 }
 
 [
-  [-11, -9, 7, 7, 10, '#e2a65e'],
-  [-11, 3, 7, 8, 13, '#d87c52'],
-  [-11, 17, 7, 7, 8, '#e7d6ad'],
-  [11, -10, 7, 8, 12, '#d5a56c'],
-  [11, 4, 7, 7, 9, '#c96e50'],
-  [11, 18, 7, 8, 14, '#e3c88f'],
-  [-20, 0, 7, 9, 8, '#dfc49b'],
-  [20, 0, 7, 9, 11, '#d9a56d']
-].forEach(a => building(...a));
+  [-12,-10,7,7,10,'#e2a65e'],
+  [-12,3,7,8,13,'#d87c52'],
+  [-12,17,7,7,8,'#e7d6ad'],
+  [12,-10,7,8,12,'#d5a56c'],
+  [12,4,7,7,9,'#c96e50'],
+  [12,18,7,8,14,'#e3c88f'],
+  [-22,0,7,9,8,'#dfc49b'],
+  [22,0,7,9,11,'#d9a56d'],
+  [-23,23,8,8,12,'#dfb37a'],
+  [23,24,8,8,9,'#cf8e61']
+].forEach(args => building(...args));
 
 // ÁRVORES
-for (let i = 0; i < 16; i++) {
-  const x = (i % 2 ? 1 : -1) * (17 + Math.random() * 8);
-  const z = -35 + i * 4.5;
+
+for (let i = 0; i < 35; i++) {
+  const x = (i % 2 ? 1 : -1) * (17 + Math.random() * 12);
+  const z = -65 + i * 4;
 
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.18, 0.25, 2),
@@ -248,7 +393,7 @@ for (let i = 0; i < 16; i++) {
   scene.add(trunk);
 
   const crown = new THREE.Mesh(
-    new THREE.SphereGeometry(1.35, 8, 7),
+    new THREE.SphereGeometry(1.4, 8, 7),
     mat('#4e8152')
   );
 
@@ -256,262 +401,469 @@ for (let i = 0; i < 16; i++) {
   scene.add(crown);
 }
 
-// PERSONAGEM HUMANO 3D
-function avatar(color = 0xd68b62) {
-  const g = new THREE.Group();
+// ==========================================
+// PERSONAGEM
+// ==========================================
 
-  const skin = mat(color);
-  const shirt = mat('#24734c');
+function createAvatar() {
+  const group = new THREE.Group();
+
+  const skin = mat('#a96d4c');
+  const shirt = mat('#26734d');
   const pants = mat('#263c58');
   const shoes = mat('#292522');
   const hair = mat('#211b19');
 
-  // Tronco
   const torso = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.42, 0.65, 5, 10),
     shirt
   );
+
   torso.position.y = 1.48;
-  g.add(torso);
+  group.add(torso);
 
-  // Cintura
-  const waist = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.25, 0.38),
-    pants
-  );
-  waist.position.y = 0.91;
-  g.add(waist);
-
-  // Cabeça
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(0.36, 20, 16),
     skin
   );
-  head.position.y = 2.25;
-  g.add(head);
 
-  // Cabelo
+  head.position.y = 2.25;
+  group.add(head);
+
   const hairCap = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      0.37, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55
-    ),
+    new THREE.SphereGeometry(0.37, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
     hair
   );
+
   hairCap.position.y = 2.39;
-  g.add(hairCap);
+  group.add(hairCap);
 
-  // Olhos
-  for (const x of [-0.13, 0.13]) {
-    const eye = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035, 8, 8),
-      mat('#ffffff')
-    );
-    eye.position.set(x, 2.28, 0.325);
-    g.add(eye);
-  }
+  const waist = new THREE.Mesh(
+    new THREE.BoxGeometry(0.68, 0.25, 0.38),
+    pants
+  );
 
-  // Braços
+  waist.position.y = 0.91;
+  group.add(waist);
+
   const arms = [];
+  const legs = [];
 
   for (const side of [-1, 1]) {
     const arm = new THREE.Group();
     arm.position.set(side * 0.52, 1.72, 0);
-    g.add(arm);
+    group.add(arm);
 
     const upper = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.13, 0.42, 4, 8),
       shirt
     );
+
     upper.position.y = -0.27;
     arm.add(upper);
+    arms.push(arm);
 
-    const forearm = new THREE.Group();
-    forearm.position.y = -0.49;
-    arm.add(forearm);
-
-    const lower = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.105, 0.38, 4, 8),
-      skin
-    );
-    lower.position.y = -0.22;
-    forearm.add(lower);
-
-    arms.push({ arm, forearm });
-  }
-
-  // Pernas e sapatos
-  const legs = [];
-
-  for (const side of [-1, 1]) {
     const leg = new THREE.Group();
     leg.position.set(side * 0.22, 0.85, 0);
-    g.add(leg);
+    group.add(leg);
 
     const thigh = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.17, 0.48, 4, 8),
       pants
     );
+
     thigh.position.y = -0.29;
     leg.add(thigh);
-
-    const shin = new THREE.Group();
-    shin.position.y = -0.57;
-    leg.add(shin);
-
-    const calf = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.13, 0.42, 4, 8),
-      pants
-    );
-    calf.position.y = -0.23;
-    shin.add(calf);
 
     const shoe = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.15, 0.42),
       shoes
     );
-    shoe.position.set(0, -0.49, 0.08);
-    shin.add(shoe);
 
-    legs.push({ leg, shin });
+    shoe.position.set(0, -0.7, 0.08);
+    leg.add(shoe);
+    legs.push(leg);
   }
 
-  g.userData = {
-    leftArm: arms[0].arm,
-    rightArm: arms[1].arm,
-    leftForearm: arms[0].forearm,
-    rightForearm: arms[1].forearm,
-    leftLeg: legs[0].leg,
-    rightLeg: legs[1].leg,
-    leftShin: legs[0].shin,
-    rightShin: legs[1].shin
+  group.userData = {
+    leftArm: arms[0],
+    rightArm: arms[1],
+    leftLeg: legs[0],
+    rightLeg: legs[1]
   };
 
-  return g;
+  return group;
 }
 
-myAvatar = avatar();
-myAvatar.position.set(0, 0, 5);
-scene.add(myAvatar);
+const player = createAvatar();
+player.position.set(0, 0, 5);
+scene.add(player);
 
-// MOVIMENTO POR TOQUE
-let target = null;
-let walkTime = 0;
+// ==========================================
+// VEÍCULO 3D
+// ==========================================
+
+function createCar() {
+  const group = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.65, 4),
+    mat('#c42e25')
+  );
+
+  body.position.y = 0.75;
+  group.add(body);
+
+  const cabin = new THREE.Mesh(
+    new THREE.BoxGeometry(1.7, 0.8, 2),
+    mat('#9acbd5')
+  );
+
+  cabin.position.set(0, 1.4, -0.2);
+  group.add(cabin);
+
+  for (const x of [-0.9, 0.9]) {
+    for (const z of [-1.3, 1.3]) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 0.25, 12),
+        mat('#171717')
+      );
+
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.4, z);
+      group.add(wheel);
+    }
+  }
+
+  return group;
+}
+
+car = createCar();
+car.position.set(4, 0, 8);
+scene.add(car);
+
+// ==========================================
+// MOVIMENTO
+// ==========================================
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
-renderer.domElement.addEventListener('pointerdown', e => {
-  const r = renderer.domElement.getBoundingClientRect();
+renderer.domElement.addEventListener('pointerdown', event => {
+  if (inCar) return;
 
-  pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-  pointer.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(pointer, camera);
 
   const hit = raycaster.intersectObject(ground)[0];
 
-  if (hit) {
-    target = hit.point.clone();
+  if (hit) target = hit.point.clone();
+});
+
+window.addEventListener('keydown', event => {
+  const key = event.key.toLowerCase();
+
+  if ([
+    'w','a','s','d',
+    'arrowup','arrowdown','arrowleft','arrowright'
+  ].includes(key)) {
+    keys.add(key);
+    target = null;
   }
 });
 
-// AJUSTAR ECRÃ
-function resize() {
-  const w = host.clientWidth;
-  const h = host.clientHeight;
+window.addEventListener('keyup', event => {
+  keys.delete(event.key.toLowerCase());
+});
 
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
+window.addEventListener('blur', () => {
+  keys.clear();
+  resetJoystick();
+});
+
+// ==========================================
+// INTERFACE DE ESTADO
+// ==========================================
+
+function updateHUD() {
+  $('#money').textContent = `Kz ${money.toLocaleString('pt-PT')}`;
+  $('#energy').textContent = `${Math.round(energy)}%`;
+  $('#hunger').textContent = `${Math.round(hunger)}%`;
+}
+
+function stateMessage(message) {
+  $('#player-state').textContent = message;
+  $('#hint').textContent = message;
+}
+
+function showPanel(id) {
+  ['auth', 'profile', 'gamepanel'].forEach(name => {
+    $('#' + name).classList.toggle('hidden', name !== id);
+  });
+}
+
+// ==========================================
+// SISTEMA DE TRABALHO
+// ==========================================
+
+function work() {
+  if (energy < 15) {
+    stateMessage('Estás cansado. Vai descansar primeiro.');
+    return;
+  }
+
+  if (hunger < 10) {
+    stateMessage('Estás com fome. Come antes de trabalhar.');
+    return;
+  }
+
+  const salary = 500;
+
+  money += salary;
+  energy = Math.max(0, energy - 15);
+  hunger = Math.max(0, hunger - 10);
+
+  updateHUD();
+
+  stateMessage(`Trabalho concluído! Recebeste Kz ${salary}.`);
+}
+
+// ==========================================
+// SISTEMA DE ALIMENTAÇÃO
+// ==========================================
+
+function eat() {
+  if (money < 100) {
+    stateMessage('Não tens dinheiro suficiente para comprar comida.');
+    return;
+  }
+
+  if (hunger >= 100) {
+    stateMessage('Não tens fome neste momento.');
+    return;
+  }
+
+  money -= 100;
+  hunger = Math.min(100, hunger + 35);
+
+  updateHUD();
+  stateMessage('Compraste comida e recuperaste energia.');
+}
+
+// ==========================================
+// SISTEMA DE CASA
+// ==========================================
+
+function goHome() {
+  if (inCar) {
+    exitCar();
+  }
+
+  const distance = player.position.distanceTo(
+    new THREE.Vector3(-12, 0, -10)
+  );
+
+  if (distance > 2) {
+    target = new THREE.Vector3(-12, 0, -10);
+    stateMessage('A caminhar para casa…');
+    return;
+  }
+
+  energy = Math.min(100, energy + 40);
+  hunger = Math.max(0, hunger - 5);
+
+  updateHUD();
+  stateMessage('Descansaste em casa. Recuperaste energia.');
+}
+
+// ==========================================
+// SISTEMA DE VEÍCULO
+// ==========================================
+
+function toggleCar() {
+  if (!inCar) {
+    const distance = player.position.distanceTo(car.position);
+
+    if (distance > 3) {
+      target = car.position.clone();
+      stateMessage('A caminhar até ao veículo…');
+      return;
+    }
+
+    inCar = true;
+    player.visible = false;
+    stateMessage('Entraste no veículo. Usa o joystick para conduzir.');
+  } else {
+    exitCar();
+  }
+}
+
+function exitCar() {
+  inCar = false;
+  player.visible = true;
+
+  player.position.set(
+    car.position.x + 2,
+    0,
+    car.position.z
+  );
+
+  stateMessage('Saíste do veículo.');
+}
+
+// ==========================================
+// BOTÕES DO JOGO
+// ==========================================
+
+document.querySelectorAll('[data-action]').forEach(button => {
+  button.addEventListener('click', () => {
+    const action = button.dataset.action;
+
+    if (action === 'work') work();
+    if (action === 'eat') eat();
+    if (action === 'home') goHome();
+    if (action === 'car') toggleCar();
+  });
+});
+
+// ==========================================
+// TAMANHO DO ECRÃ
+// ==========================================
+
+function resize() {
+  const width = Math.max(1, host.clientWidth);
+  const height = Math.max(1, host.clientHeight);
+
+  renderer.setSize(width, height, false);
+
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
 }
 
-new ResizeObserver(resize).observe(host);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(resize).observe(host);
+}
+
+window.addEventListener('resize', resize);
 resize();
 
-// ANIMAÇÃO DO JOGO
-function loop() {
-  requestAnimationFrame(loop);
+// ==========================================
+// ANIMAÇÃO E CÂMARA
+// ==========================================
 
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const delta = Math.min(clock.getDelta(), 0.05);
+
+  let moveX = joystickX;
+  let moveZ = joystickY;
+
+  if (keys.size) {
+    moveX +=
+      (keys.has('d') || keys.has('arrowright') ? 1 : 0) -
+      (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+
+    moveZ +=
+      (keys.has('s') || keys.has('arrowdown') ? 1 : 0) -
+      (keys.has('w') || keys.has('arrowup') ? 1 : 0);
+  }
+
+  const length = Math.hypot(moveX, moveZ);
   let moving = false;
 
-  if (target) {
-    const dx = target.x - myAvatar.position.x;
-    const dz = target.z - myAvatar.position.z;
-    const dist = Math.hypot(dx, dz);
+  const controlledObject = inCar ? car : player;
 
-    if (dist > 0.2) {
+  if (length > 0.12) {
+    moving = true;
+
+    moveX /= Math.max(1, length);
+    moveZ /= Math.max(1, length);
+
+    const speed = (inCar ? 12 : 6) * delta;
+
+    controlledObject.position.x += moveX * speed;
+    controlledObject.position.z += moveZ * speed;
+
+    controlledObject.rotation.y = Math.atan2(moveX, moveZ);
+    target = null;
+  } else if (target && !inCar) {
+    const dx = target.x - player.position.x;
+    const dz = target.z - player.position.z;
+    const distance = Math.hypot(dx, dz);
+
+    if (distance > 0.2) {
       moving = true;
 
-      myAvatar.position.x += dx / dist * 0.09;
-      myAvatar.position.z += dz / dist * 0.09;
+      const step = Math.min(distance, 5.5 * delta);
 
-      myAvatar.rotation.y = Math.atan2(dx, dz);
+      player.position.x += dx / distance * step;
+      player.position.z += dz / distance * step;
+
+      player.rotation.y = Math.atan2(dx, dz);
     } else {
       target = null;
     }
   }
 
-  const p = myAvatar.userData;
+  if (!inCar) {
+    const parts = player.userData;
 
-  if (moving) {
-    walkTime += 0.18;
+    if (moving) {
+      walkTime += delta * 8;
 
-    const swing = Math.sin(walkTime) * 0.65;
+      const swing = Math.sin(walkTime) * 0.65;
 
-    p.leftLeg.rotation.x = swing;
-    p.rightLeg.rotation.x = -swing;
-
-    p.leftArm.rotation.x = -swing * 0.8;
-    p.rightArm.rotation.x = swing * 0.8;
-
-    p.leftShin.rotation.x = Math.max(0, -swing) * 0.7;
-    p.rightShin.rotation.x = Math.max(0, swing) * 0.7;
-
-    p.leftForearm.rotation.x = 0.15;
-    p.rightForearm.rotation.x = 0.15;
-  } else {
-    for (const key of [
-      'leftLeg',
-      'rightLeg',
-      'leftArm',
-      'rightArm',
-      'leftShin',
-      'rightShin',
-      'leftForearm',
-      'rightForearm'
-    ]) {
-      p[key].rotation.x *= 0.8;
+      parts.leftLeg.rotation.x = swing;
+      parts.rightLeg.rotation.x = -swing;
+      parts.leftArm.rotation.x = -swing * 0.8;
+      parts.rightArm.rotation.x = swing * 0.8;
+    } else {
+      Object.values(parts).forEach(part => {
+        part.rotation.x *= 0.82;
+      });
     }
   }
 
-  camera.position.x +=
-    (myAvatar.position.x - camera.position.x) * 0.025;
+  const focus = inCar ? car.position : player.position;
 
-  camera.position.z +=
-    (myAvatar.position.z + 18 - camera.position.z) * 0.025;
+  camera.position.x += (focus.x - camera.position.x) * 0.08;
+  camera.position.y += (focus.y + 7.5 - camera.position.y) * 0.08;
+  camera.position.z += (focus.z + 11 - camera.position.z) * 0.08;
 
-  camera.lookAt(
-    myAvatar.position.x,
-    0,
-    myAvatar.position.z
-  );
+  camera.lookAt(focus.x, 1.2, focus.z);
+
+  // Necessidades diminuem com o tempo.
+  lastNeedUpdate += delta;
+
+  if (lastNeedUpdate >= 10) {
+    lastNeedUpdate = 0;
+
+    hunger = Math.max(0, hunger - 1);
+    energy = Math.max(0, energy - 0.5);
+
+    updateHUD();
+  }
 
   renderer.render(scene, camera);
 }
 
-loop();
+animate();
 
-// SISTEMA DE CONTAS
-function show(id) {
-  ['auth', 'profile', 'gamepanel'].forEach(x => {
-    $('#' + x).classList.toggle('hidden', x !== id);
-  });
-}
+// ==========================================
+// AUTENTICAÇÃO SUPABASE
+// ==========================================
 
-async function auth(mode) {
+async function authenticate(mode) {
   if (!supabase) {
     $('#authmsg').textContent =
-      'Servidor ainda não configurado. Consulta o guia de instalação.';
+      'Configura primeiro as variáveis do Supabase.';
     return;
   }
 
@@ -524,20 +876,18 @@ async function auth(mode) {
     return;
   }
 
-  const fn = mode === 'signup'
-    ? supabase.auth.signUp({ email, password })
-    : supabase.auth.signInWithPassword({ email, password });
+  const result = mode === 'signup'
+    ? await supabase.auth.signUp({ email, password })
+    : await supabase.auth.signInWithPassword({ email, password });
 
-  const { data, error } = await fn;
-
-  if (error) {
-    $('#authmsg').textContent = error.message;
+  if (result.error) {
+    $('#authmsg').textContent = result.error.message;
     return;
   }
 
-  user = data.user;
+  user = result.data.user;
 
-  if (mode === 'signup' && !data.session) {
+  if (mode === 'signup' && !result.data.session) {
     $('#authmsg').textContent =
       'Confirma o email enviado e depois inicia sessão.';
     return;
@@ -546,35 +896,56 @@ async function auth(mode) {
   await afterAuth();
 }
 
+$('#signup').addEventListener('click', () => authenticate('signup'));
+$('#login').addEventListener('click', () => authenticate('login'));
+
 async function afterAuth() {
-  const { data } = await supabase
+  if (!supabase || !user) return;
+
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .maybeSingle();
 
+  if (error) {
+    $('#authmsg').textContent = error.message;
+    return;
+  }
+
   profile = data;
 
-  if (profile) {
-    $('#playername').textContent = profile.nickname;
-    $('#playerprovince').textContent = profile.province;
-    show('gamepanel');
-    await joinWorld();
-  } else {
-    $('#welcome').textContent = 'Bem-vindo!';
-    show('profile');
+  if (!profile) {
+    showPanel('profile');
+    return;
   }
+
+  money = Number(profile.money ?? 2500);
+
+  $('#playername').textContent = profile.nickname;
+  $('#playerprovince').textContent = profile.province;
+
+  updateHUD();
+  showPanel('gamepanel');
+
+  await joinWorld();
 }
 
-$('#signup').onclick = () => auth('signup');
-$('#login').onclick = () => auth('login');
+// ==========================================
+// CRIAR PERFIL
+// ==========================================
 
-$('#saveprofile').onclick = async () => {
+$('#saveprofile').addEventListener('click', async () => {
+  if (!supabase || !user) {
+    $('#profilemsg').textContent = 'Inicia sessão primeiro.';
+    return;
+  }
+
   const nickname = $('#nickname').value.trim();
 
-  if (!nickname) {
+  if (nickname.length < 2 || nickname.length > 18) {
     $('#profilemsg').textContent =
-      'Escolhe um nome para o teu personagem.';
+      'O nome deve ter entre 2 e 18 caracteres.';
     return;
   }
 
@@ -584,27 +955,39 @@ $('#saveprofile').onclick = async () => {
     province: $('#province').value
   };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
-    .upsert(row);
+    .upsert(row)
+    .select()
+    .single();
 
   if (error) {
     $('#profilemsg').textContent = error.message;
     return;
   }
 
-  profile = row;
+  profile = data;
+  money = Number(profile.money ?? 2500);
 
-  $('#playername').textContent = nickname;
-  $('#playerprovince').textContent = row.province;
+  $('#playername').textContent = profile.nickname;
+  $('#playerprovince').textContent = profile.province;
 
-  show('gamepanel');
+  updateHUD();
+  showPanel('gamepanel');
+
   await joinWorld();
-};
+});
 
-// MULTIJOGADOR
+// ==========================================
+// MULTIJOGADOR E PRESENÇA
+// ==========================================
+
 async function joinWorld() {
-  if (!supabase || !user) return;
+  if (!supabase || !user || !profile) return;
+
+  if (channel) {
+    await supabase.removeChannel(channel);
+  }
 
   channel = supabase.channel('city-luanda', {
     config: {
@@ -617,18 +1000,18 @@ async function joinWorld() {
     .on('presence', { event: 'sync' }, () => {
       const state = channel.presenceState();
 
-      const names = Object.values(state)
-        .flat()
-        .map(p => p.nickname || 'Jogador');
+      const players = Object.values(state).flat();
 
-      $('#count').textContent = names.length;
+      $('#count').textContent = String(players.length);
 
-      $('#players').innerHTML = names
-        .map(n => `<div class="player">🟢 ${escapeHtml(n)}</div>`)
+      $('#players').innerHTML = players
+        .map(item => `<div class="player">🟢 ${escapeHTML(item.nickname)}</div>`)
         .join('');
     })
     .on('broadcast', { event: 'chat' }, ({ payload }) => {
-      addChat(payload.nickname, payload.message);
+      if (payload?.nickname && payload?.message) {
+        addChat(payload.nickname, payload.message);
+      }
     })
     .subscribe(async status => {
       if (status === 'SUBSCRIBED') {
@@ -640,43 +1023,51 @@ async function joinWorld() {
 
         $('#online').textContent = 'Ligado ao mundo online';
       }
+
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        $('#online').textContent = 'Ligação online indisponível';
+      }
     });
 }
 
-// SEGURANÇA DO CHAT
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
+// ==========================================
+// CHAT
+// ==========================================
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;'
-  }[c]));
+  }[char]));
 }
 
-function addChat(n, m) {
+function addChat(nickname, message) {
   const log = $('#chatlog');
 
   if (log.querySelector('.muted')) {
     log.innerHTML = '';
   }
 
-  const p = document.createElement('p');
-  p.innerHTML = `<b>${escapeHtml(n)}:</b> ${escapeHtml(m)}`;
+  const line = document.createElement('p');
 
-  log.appendChild(p);
+  line.innerHTML =
+    `<b>${escapeHTML(nickname)}:</b> ${escapeHTML(message)}`;
+
+  log.appendChild(line);
   log.scrollTop = log.scrollHeight;
 }
 
-// ENVIAR MENSAGENS
-$('#chatform').onsubmit = async e => {
-  e.preventDefault();
+$('#chatform').addEventListener('submit', async event => {
+  event.preventDefault();
 
   const message = $('#chatinput').value.trim();
 
-  if (!message || !channel) return;
+  if (!message || !channel || !profile) return;
 
-  await channel.send({
+  const { error } = await channel.send({
     type: 'broadcast',
     event: 'chat',
     payload: {
@@ -685,47 +1076,54 @@ $('#chatform').onsubmit = async e => {
     }
   });
 
+  if (error) {
+    addChat('Sistema', 'Não foi possível enviar a mensagem.');
+    return;
+  }
+
   addChat(profile.nickname, message);
   $('#chatinput').value = '';
-};
-
-// TERMINAR SESSÃO
-async function logout() {
-  if (channel) await supabase.removeChannel(channel);
-  if (supabase) await supabase.auth.signOut();
-
-  user = null;
-  profile = null;
-  channel = null;
-
-  show('auth');
-}
-
-$('#logout').onclick = logout;
-$('#logout2').onclick = logout;
-
-// ACÇÕES DO JOGO
-document.querySelectorAll('[data-action]').forEach(b => {
-  b.onclick = () => {
-    const a = b.dataset.action;
-
-    const msgs = {
-      work: 'Sistema de empregos: será ligado à economia do servidor.',
-      eat: 'Restaurantes e consumo serão guardados na tua conta.',
-      home: 'Sistema de casas e propriedades em desenvolvimento.',
-      car: 'Garagem e condução serão ligadas ao inventário.'
-    };
-
-    alert(msgs[a]);
-  };
 });
 
+// ==========================================
+// TERMINAR SESSÃO
+// ==========================================
+
+async function logout() {
+  if (channel && supabase) {
+    await supabase.removeChannel(channel);
+  }
+
+  channel = null;
+  user = null;
+  profile = null;
+
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+
+  showPanel('auth');
+}
+
+$('#logout').addEventListener('click', logout);
+$('#logout2').addEventListener('click', logout);
+
+// ==========================================
 // RECUPERAR SESSÃO
+// ==========================================
+
 if (supabase) {
-  supabase.auth.getSession().then(({ data }) => {
+  supabase.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      $('#authmsg').textContent = error.message;
+      return;
+    }
+
     if (data.session) {
       user = data.session.user;
       afterAuth();
     }
   });
 }
+
+updateHUD();
