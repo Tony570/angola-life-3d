@@ -412,35 +412,6 @@ function building(x, z, w, d, h, color, style = 0) {
   group.position.set(x, 0, z);
   scene.add(group);
 }
-  const group = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
-  body.position.y = h / 2;
-  group.add(body);
-
-  const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(w + 0.25, 0.35, d + 0.25),
-    mat(style === 1 ? '#4c5962' : '#74513e')
-  );
-  roof.position.y = h + 0.17;
-  group.add(roof);
-
-  const windowMat = mat(style === 1 ? '#7cb6c9' : '#9ac8d0', 0.3);
-  const cols = Math.max(1, Math.floor(w / 1.8));
-  const rows = Math.max(1, Math.floor(h / 2.1));
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.9, 0.07), windowMat);
-      win.position.set(-w / 2 + 0.9 + col * 1.7, 1.5 + row * 2, d / 2 + 0.05);
-      group.add(win);
-    }
-  }
-  const door = new THREE.Mesh(new THREE.BoxGeometry(1, 1.8, 0.08), mat('#46372e'));
-  door.position.set(0, 0.9, d / 2 + 0.06);
-  group.add(door);
-
-  group.position.set(x, 0, z);
-  scene.add(group);
-}
 const buildingColors = ['#d9a36b', '#d77b58', '#e7d7b6', '#c9a47d', '#b9c2bf', '#d4bd91'];
 for (let z = -88; z <= 88; z += 22) {
   for (const side of [-1, 1]) {
@@ -453,7 +424,6 @@ for (let z = -88; z <= 88; z += 22) {
       buildingColors[Math.floor(Math.random() * buildingColors.length)], 1);
   }
 }
-
 // Árvores e palmeiras
 function tree(x, z, palm = false) {
   const group = new THREE.Group();
@@ -488,7 +458,6 @@ for (let z = -90; z <= 90; z += 15) {
   tree(-9, z, z % 2 === 0);
   tree(9, z + 5, z % 3 === 0);
 }
-
 // Carros 3D detalhados, em circulação
 const trafficCars = [];
 function createCar(color, x, z, direction = 1) {
@@ -652,7 +621,6 @@ function animate() {
     item.car.position.z += item.direction * 0.16;
     if (item.car.position.z > 110) item.car.position.z = -110;
   });
-
   npcs.forEach(item => {
     item.phase += 0.015;
     item.npc.position.x += Math.sin(item.phase) * 0.008;
@@ -664,7 +632,6 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
-
 // AUTENTICAÇÃO E PERFIL
 async function auth(mode) {
   if (!supabase) {
@@ -691,7 +658,6 @@ async function auth(mode) {
   }
   await afterAuth();
 }
-
 async function afterAuth() {
   if (!supabase || !user) return;
   const { data, error } = await supabase
@@ -749,7 +715,6 @@ async function loadCityMessages() {
     .select('nickname,message,created_at')
     .order('created_at', { ascending: true })
     .limit(60);
-
   if (error) {
     $('#chatlog').innerHTML = '<p class="chat-note">O histórico ainda não está disponível.</p>';
     return;
@@ -793,20 +758,16 @@ $('#chatform').onsubmit = async event => {
 function refreshPlayers() {
   const state = channel ? channel.presenceState() : {};
   const map = new Map();
-
   Object.values(state).flat().forEach(player => {
     if (player.user_id && player.user_id !== user?.id) map.set(player.user_id, player);
   });
   onlinePlayers = [...map.values()];
   $('#count').textContent = onlinePlayers.length + (user ? 1 : 0);
-
   const own = profile ? `<div class="player">🟢 ${escapeHtml(profile.nickname)} <small>(Tu)</small></div>` : '';
   const others = onlinePlayers.map(player =>
     `<button class="player player-select" data-user="${escapeHtml(player.user_id)}">🟢 ${escapeHtml(player.nickname || 'Jogador')} <small>Conversar</small></button>`
   ).join('');
-
   $('#players').innerHTML = own + (others || '<div class="player">Ainda não há outros jogadores online.</div>');
-
   $('#players').querySelectorAll('[data-user]').forEach(button => {
     button.onclick = () => {
       $('#private-player').value = button.dataset.user;
