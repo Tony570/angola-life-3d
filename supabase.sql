@@ -1,11 +1,96 @@
 
+-- =====================================================
 -- ANGOLA LIFE 3D
--- PASSO 1: Base de dados persistente
--- Este script acrescenta tabelas. Não apaga perfis nem mensagens existentes.
+-- PASSO 1 - BASE DE DADOS PERSISTENTE
+-- Seguro para executar novamente: não apaga dados.
+-- =====================================================
 
 create extension if not exists pgcrypto;
 
--- 1. PERFIL E ESTADO DO JOGADOR
+-- =====================================================
+-- 1. PERFIS EXISTENTES
+-- =====================================================
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nickname text not null unique,
+  province text not null default 'Luanda',
+  money bigint not null default 2500,
+  created_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+-- =====================================================
+-- 2. CHAT GLOBAL EXISTENTE
+-- =====================================================
+
+create table if not exists public.world_chat (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  nickname text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.world_chat enable row level security;
+
+-- Criar políticas básicas apenas se ainda não existirem.
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'profiles'
+      and cmd = 'SELECT'
+  ) then
+    create policy profiles_read_authenticated
+      on public.profiles for select
+      to authenticated using (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'profiles'
+      and cmd = 'INSERT'
+  ) then
+    create policy profiles_insert_own
+      on public.profiles for insert
+      to authenticated with check (auth.uid() = id);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'world_chat'
+      and cmd = 'SELECT'
+  ) then
+    create policy world_chat_read_authenticated
+      on public.world_chat for select
+      to authenticated using (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'world_chat'
+      and cmd = 'INSERT'
+  ) then
+    create policy world_chat_insert_own
+      on public.world_chat for insert
+      to authenticated with check (auth.uid() = user_id);
+  end if;
+end $$;
+
+grant select on public.profiles, public.world_chat to authenticated;
+grant insert on public.world_chat to authenticated;
+grant usage, select on sequence public.world_chat_id_seq to authenticated;
+
+-- =====================================================
+-- 3. ESTADO DO JOGADOR
+-- =====================================================
+
 create table if not exists public.player_state (
   player_id uuid primary key references auth.users(id) on delete cascade,
   health integer not null default 100 check (health between 0 and 100),
@@ -17,12 +102,16 @@ create table if not exists public.player_state (
   updated_at timestamptz not null default now()
 );
 
--- 2. CONTAS BANCÁRIAS
+-- =====================================================
+-- 4. BANCO E MOVIMENTOS FINANCEIROS
+-- =====================================================
+
 create table if not exists public.bank_accounts (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
   bank_name text not null default 'Banco de Angola',
-  account_number text not null unique default upper(substr(encode(gen_random_bytes(8),'hex'),1,12)),
+  account_number text not null unique
+    default upper(substr(encode(gen_random_bytes(8), 'hex'), 1, 12)),
   balance bigint not null default 0 check (balance >= 0),
   created_at timestamptz not null default now()
 );
@@ -37,7 +126,10 @@ create table if not exists public.bank_transactions (
   created_at timestamptz not null default now()
 );
 
--- 3. VEÍCULOS
+-- =====================================================
+-- 5. VEÍCULOS DOS JOGADORES
+-- =====================================================
+
 create table if not exists public.owned_vehicles (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -45,13 +137,18 @@ create table if not exists public.owned_vehicles (
   vehicle_model text not null,
   color text not null default 'Branco',
   plate text unique,
-  fuel numeric(5,2) not null default 100 check (fuel between 0 and 100),
-  health integer not null default 100 check (health between 0 and 100),
+  fuel numeric(5,2) not null default 100
+    check (fuel between 0 and 100),
+  health integer not null default 100
+    check (health between 0 and 100),
   stored boolean not null default true,
   purchased_at timestamptz not null default now()
 );
 
--- 4. CASAS E PROPRIEDADES
+-- =====================================================
+-- 6. CASAS E PROPRIEDADES
+-- =====================================================
+
 create table if not exists public.properties (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
@@ -64,7 +161,10 @@ create table if not exists public.properties (
   purchased_at timestamptz not null default now()
 );
 
--- 5. MÓVEIS E DECORAÇÃO
+-- =====================================================
+-- 7. MÓVEIS E DECORAÇÃO
+-- =====================================================
+
 create table if not exists public.furniture_inventory (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -76,7 +176,10 @@ create table if not exists public.furniture_inventory (
   purchased_at timestamptz not null default now()
 );
 
--- 6. ROUPAS E ACESSÓRIOS
+-- =====================================================
+-- 8. ROUPAS E ACESSÓRIOS
+-- =====================================================
+
 create table if not exists public.clothing_inventory (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -87,7 +190,10 @@ create table if not exists public.clothing_inventory (
   purchased_at timestamptz not null default now()
 );
 
--- 7. NEGÓCIOS E FUNCIONÁRIOS
+-- =====================================================
+-- 9. NEGÓCIOS E EMPREGADOS
+-- =====================================================
+
 create table if not exists public.businesses (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
@@ -109,7 +215,10 @@ create table if not exists public.business_employees (
   unique (business_id, player_id)
 );
 
--- 8. IMPOSTOS E PAGAMENTOS
+-- =====================================================
+-- 10. IMPOSTOS
+-- =====================================================
+
 create table if not exists public.tax_records (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -121,7 +230,10 @@ create table if not exists public.tax_records (
   created_at timestamptz not null default now()
 );
 
--- 9. FAMÍLIA E RELAÇÕES
+-- =====================================================
+-- 11. FAMÍLIA E RELAÇÕES
+-- =====================================================
+
 create table if not exists public.family_members (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -131,7 +243,10 @@ create table if not exists public.family_members (
   created_at timestamptz not null default now()
 );
 
--- 10. GRAVIDEZ E NASCIMENTOS NO JOGO
+-- =====================================================
+-- 12. GRAVIDEZ E NASCIMENTOS NO JOGO
+-- =====================================================
+
 create table if not exists public.pregnancies (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -141,7 +256,10 @@ create table if not exists public.pregnancies (
   status text not null default 'em_andamento'
 );
 
--- 11. MISSÕES DIÁRIAS
+-- =====================================================
+-- 13. MISSÕES DIÁRIAS
+-- =====================================================
+
 create table if not exists public.daily_missions (
   id uuid primary key default gen_random_uuid(),
   mission_name text not null,
@@ -163,7 +281,10 @@ create table if not exists public.player_missions (
   unique (player_id, mission_id, mission_date)
 );
 
--- 12. PRESENTES E RECOMPENSAS
+-- =====================================================
+-- 14. PRESENTES E RECOMPENSAS
+-- =====================================================
+
 create table if not exists public.player_rewards (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -174,7 +295,10 @@ create table if not exists public.player_rewards (
   created_at timestamptz not null default now()
 );
 
--- 13. CRIMES E OCORRÊNCIAS POLICIAIS
+-- =====================================================
+-- 15. CRIMES E POLÍCIA
+-- =====================================================
+
 create table if not exists public.crime_records (
   id uuid primary key default gen_random_uuid(),
   player_id uuid not null references auth.users(id) on delete cascade,
@@ -195,7 +319,10 @@ create table if not exists public.police_records (
   created_at timestamptz not null default now()
 );
 
--- 14. EXPERIÊNCIA E NÍVEL
+-- =====================================================
+-- 16. EXPERIÊNCIA E NÍVEL
+-- =====================================================
+
 create table if not exists public.player_progress (
   player_id uuid primary key references auth.users(id) on delete cascade,
   experience integer not null default 0 check (experience >= 0),
@@ -203,17 +330,41 @@ create table if not exists public.player_progress (
   updated_at timestamptz not null default now()
 );
 
--- ÍNDICES PARA PESQUISAS MAIS RÁPIDAS
-create index if not exists idx_vehicles_player on public.owned_vehicles(player_id);
-create index if not exists idx_properties_owner on public.properties(owner_id);
-create index if not exists idx_business_owner on public.businesses(owner_id);
-create index if not exists idx_employees_player on public.business_employees(player_id);
-create index if not exists idx_missions_player_date on public.player_missions(player_id, mission_date);
-create index if not exists idx_rewards_player on public.player_rewards(player_id);
-create index if not exists idx_bank_player on public.bank_accounts(player_id);
-create index if not exists idx_crimes_player on public.crime_records(player_id);
+-- =====================================================
+-- 17. ÍNDICES
+-- =====================================================
 
--- SEGURANÇA: ativar RLS nas tabelas privadas
+create index if not exists idx_vehicles_player
+  on public.owned_vehicles(player_id);
+
+create index if not exists idx_properties_owner
+  on public.properties(owner_id);
+
+create index if not exists idx_business_owner
+  on public.businesses(owner_id);
+
+create index if not exists idx_employees_player
+  on public.business_employees(player_id);
+
+create index if not exists idx_missions_player_date
+  on public.player_missions(player_id, mission_date);
+
+create index if not exists idx_rewards_player
+  on public.player_rewards(player_id);
+
+create index if not exists idx_bank_player
+  on public.bank_accounts(player_id);
+
+create index if not exists idx_transactions_player
+  on public.bank_transactions(player_id);
+
+create index if not exists idx_crimes_player
+  on public.crime_records(player_id);
+
+-- =====================================================
+-- 18. SEGURANÇA RLS
+-- =====================================================
+
 alter table public.player_state enable row level security;
 alter table public.bank_accounts enable row level security;
 alter table public.bank_transactions enable row level security;
@@ -233,88 +384,143 @@ alter table public.crime_records enable row level security;
 alter table public.police_records enable row level security;
 alter table public.player_progress enable row level security;
 
--- Políticas de leitura: cada jogador só consulta os seus dados privados.
+-- Políticas para dados privados pertencentes ao jogador.
 do $$
 declare
-  t text;
+  item record;
 begin
-  foreach t in array array[
-    'player_state','bank_accounts','bank_transactions','owned_vehicles',
-    'properties','furniture_inventory','clothing_inventory',
-    'business_employees','tax_records','family_members','pregnancies',
-    'player_missions','player_rewards','crime_records','player_progress'
-  ]
+  for item in
+    select * from (values
+      ('player_state', 'player_id'),
+      ('bank_accounts', 'player_id'),
+      ('bank_transactions', 'player_id'),
+      ('owned_vehicles', 'player_id'),
+      ('properties', 'owner_id'),
+      ('furniture_inventory', 'player_id'),
+      ('clothing_inventory', 'player_id'),
+      ('business_employees', 'player_id'),
+      ('tax_records', 'player_id'),
+      ('family_members', 'player_id'),
+      ('pregnancies', 'player_id'),
+      ('player_missions', 'player_id'),
+      ('player_rewards', 'player_id'),
+      ('crime_records', 'player_id'),
+      ('player_progress', 'player_id')
+    ) as policies(table_name, owner_column)
   loop
     if not exists (
       select 1 from pg_policies
       where schemaname = 'public'
-        and tablename = t
-        and policyname = t || '_read_own'
+        and tablename = item.table_name
+        and policyname = item.table_name || '_read_own'
     ) then
       execute format(
-        'create policy %I on public.%I for select to authenticated using (player_id = auth.uid())',
-        t || '_read_own', t
+        'create policy %I on public.%I for select to authenticated using (%I = auth.uid())',
+        item.table_name || '_read_own',
+        item.table_name,
+        item.owner_column
       );
     end if;
   end loop;
 end $$;
 
--- Propriedades: o dono consulta as suas casas.
+-- Negócios visíveis na cidade.
 do $$
 begin
-  if not exists (select 1 from pg_policies where schemaname='public' and tablename='properties' and policyname='properties_read_own') then
-    create policy properties_read_own on public.properties
-      for select to authenticated using (owner_id = auth.uid());
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'businesses'
+      and policyname = 'businesses_read_city'
+  ) then
+    create policy businesses_read_city
+      on public.businesses for select
+      to authenticated using (true);
   end if;
 end $$;
 
--- Negócios: os jogadores autenticados podem consultar negócios da cidade.
+-- Missões ativas visíveis a todos os jogadores.
 do $$
 begin
-  if not exists (select 1 from pg_policies where schemaname='public' and tablename='businesses' and policyname='businesses_read_city') then
-    create policy businesses_read_city on public.businesses
-      for select to authenticated using (true);
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'daily_missions'
+      and policyname = 'daily_missions_read_active'
+  ) then
+    create policy daily_missions_read_active
+      on public.daily_missions for select
+      to authenticated using (active = true);
   end if;
 end $$;
 
--- Missões disponíveis para todos os jogadores autenticados.
+-- Registos policiais visíveis ao agente e ao suspeito envolvidos.
 do $$
 begin
-  if not exists (select 1 from pg_policies where schemaname='public' and tablename='daily_missions' and policyname='daily_missions_read_active') then
-    create policy daily_missions_read_active on public.daily_missions
-      for select to authenticated using (active = true);
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'police_records'
+      and policyname = 'police_records_read_involved'
+  ) then
+    create policy police_records_read_involved
+      on public.police_records for select
+      to authenticated
+      using (officer_id = auth.uid() or suspect_id = auth.uid());
   end if;
 end $$;
 
--- Funcionários podem consultar os próprios contratos.
-do $$
-begin
-  if not exists (select 1 from pg_policies where schemaname='public' and tablename='business_employees' and policyname='employees_read_own') then
-    create policy employees_read_own on public.business_employees
-      for select to authenticated using (player_id = auth.uid());
-  end if;
-end $$;
+-- =====================================================
+-- 19. PERMISSÕES
+-- =====================================================
 
--- Permissões de leitura para jogadores autenticados.
-grant select on public.player_state, public.bank_accounts,
-  public.bank_transactions, public.owned_vehicles, public.properties,
-  public.furniture_inventory, public.clothing_inventory, public.businesses,
-  public.business_employees, public.tax_records, public.family_members,
-  public.pregnancies, public.daily_missions, public.player_missions,
-  public.player_rewards, public.crime_records, public.police_records,
-  public.player_progress to authenticated;
+grant select on
+  public.player_state,
+  public.bank_accounts,
+  public.bank_transactions,
+  public.owned_vehicles,
+  public.properties,
+  public.furniture_inventory,
+  public.clothing_inventory,
+  public.businesses,
+  public.business_employees,
+  public.tax_records,
+  public.family_members,
+  public.pregnancies,
+  public.daily_missions,
+  public.player_missions,
+  public.player_rewards,
+  public.crime_records,
+  public.police_records,
+  public.player_progress
+to authenticated;
 
--- Não permitir alterações diretas aos saldos, veículos, casas ou recompensas.
--- As operações financeiras e compras serão feitas por funções seguras no próximo passo.
-revoke insert, update, delete on public.bank_accounts,
-  public.bank_transactions, public.owned_vehicles, public.properties,
-  public.furniture_inventory, public.clothing_inventory, public.businesses,
-  public.business_employees, public.tax_records, public.family_members,
-  public.pregnancies, public.daily_missions, public.player_missions,
-  public.player_rewards, public.crime_records, public.police_records
-  from anon, authenticated;
+-- Bloquear alterações diretas a dados importantes.
+-- As compras, pagamentos e recompensas serão ligados
+-- posteriormente através de operações seguras no servidor.
 
--- O estado e a experiência também serão atualizados por funções controladas.
-revoke insert, update, delete on public.player_state, public.player_progress
-  from anon, authenticated;
+revoke insert, update, delete on
+  public.bank_accounts,
+  public.bank_transactions,
+  public.owned_vehicles,
+  public.properties,
+  public.furniture_inventory,
+  public.clothing_inventory,
+  public.businesses,
+  public.business_employees,
+  public.tax_records,
+  public.family_members,
+  public.pregnancies,
+  public.daily_missions,
+  public.player_missions,
+  public.player_rewards,
+  public.crime_records,
+  public.police_records
+from anon, authenticated;
 
+revoke insert, update, delete on
+  public.player_state,
+  public.player_progress
+from anon, authenticated;
+
+-- FIM DO PASSO 1
