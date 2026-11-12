@@ -1,87 +1,62 @@
-import * as THREE from 'three';
-import { createWorld } from './world.js';
 
-// --- INICIALIZAÇÃO DA CENA, CÂMARA E RENDERIZADOR ---
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // Cor de céu diurno
-
-const camera = new THREE.PerspectiveCamera(
-  60, 
-  window.innerWidth / window.innerHeight, 
-  0.1, 
-  1000
-);
-
-// Posicionamento inicial da câmara (visão geral sobre o centro de Luanda)
-camera.position.set(0, 45, 50);
-camera.lookAt(0, 0, 0);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-document.body.appendChild(renderer.domElement);
-
-// --- CONSTRUIR O MUNDO ---
-createWorld(scene);
-
-// --- AJUSTE DE JANELA (Responsivo) ---
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// --- LOOP DE ANIMAÇÃO ---
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-}
-
-animate();
 import * as THREE from 'three';
 import { createWorld } from './world.js';
 import { Player } from './player.js';
+import './style.css';
 
-// --- INICIALIZAÇÃO DA CENA, CÂMARA E RENDERIZADOR ---
+// CENA PRINCIPAL
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 90, 260);
 
+// CÂMARA
 const camera = new THREE.PerspectiveCamera(
-  60, 
-  window.innerWidth / window.innerHeight, 
-  0.1, 
-  1000
+  65,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  600
 );
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// RENDERIZADOR
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  powerPreference: 'high-performance'
+});
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+renderer.domElement.id = 'game-canvas';
+renderer.domElement.style.cssText =
+  'position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;';
 
 document.body.appendChild(renderer.domElement);
 
-// --- CONSTRUIR O MUNDO E O JOGADOR ---
+// CONSTRUIR CIDADE E JOGADOR
 createWorld(scene);
 const player = new Player(scene, camera);
 
-// --- AJUSTE DE JANELA (Responsivo) ---
-window.addEventListener('resize', () => {
+// AJUSTAR ECRÃ
+function resize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-});
+}
 
-// --- LOOP DE ANIMAÇÃO ---
+window.addEventListener('resize', resize);
+
+// CICLO DO JOGO
+const clock = new THREE.Clock();
+
 function animate() {
   requestAnimationFrame(animate);
 
-  // Atualizar lógica do jogador e câmara
-  player.update();
+  const delta = Math.min(clock.getDelta(), 0.05);
 
+  player.update(delta);
   renderer.render(scene, camera);
 }
 
