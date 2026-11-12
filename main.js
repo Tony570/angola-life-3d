@@ -351,62 +351,134 @@ function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
   const shirt = material(shirtColor);
   const pants = material('#263c58');
 
-  const torso = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.4, 0.65, 5, 10),
-    shirt
-  );
-  torso.position.y = 1.45;
-  group.add(torso);
 
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.34, 16, 12),
-    skin
-  );
-  head.position.y = 2.25;
-  group.add(head);
+// PERSONAGENS 3D MELHORADOS
+function createAvatar(shirtColor = '#24734c', skinColor = '#8e573d') {
+  const group = new THREE.Group();
 
-  const hair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.35, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.58),
-    material('#211714')
-  );
-  hair.position.y = 2.38;
-  group.add(hair);
+  const material = (color, roughness = 0.8) =>
+    new THREE.MeshStandardMaterial({ color, roughness });
 
-  const eyes = new THREE.MeshBasicMaterial({ color: '#171313' });
-  for (const side of [-1, 1]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035), eyes);
-    eye.position.set(side * 0.12, 2.28, 0.31);
-    group.add(eye);
+  const skin = material(skinColor);
+  const darkSkin = material('#352019');
+  const shirt = material(shirtColor);
+  const pants = material('#202b3d');
+  const shoes = material('#171719');
+  const hair = material('#17100e');
+  const white = material('#fff8ed');
+  const black = material('#171313');
+  const lips = material('#713c38');
+
+  function part(geometry, mat, x, y, z, parent = group) {
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.position.set(x, y, z);
+    parent.add(mesh);
+    return mesh;
   }
 
+  // Corpo e pescoço
+  part(new THREE.CapsuleGeometry(0.37, 0.65, 6, 12),
+    shirt, 0, 1.43, 0);
+
+  part(new THREE.CylinderGeometry(0.13, 0.15, 0.25, 12),
+    skin, 0, 1.92, 0);
+
+  // Cabeça
+  part(new THREE.SphereGeometry(0.34, 24, 20),
+    skin, 0, 2.27, 0);
+
+  // Orelhas
+  for (const side of [-1, 1]) {
+    part(new THREE.SphereGeometry(0.085, 12, 10),
+      skin, side * 0.34, 2.27, 0);
+
+    part(new THREE.SphereGeometry(0.035, 10, 8),
+      darkSkin, side * 0.365, 2.27, 0.035);
+  }
+
+  // Cabelo e penteado
+  const hairCap = part(
+    new THREE.SphereGeometry(0.355, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
+    hair, 0, 2.39, 0
+  );
+
+  // Volume superior do cabelo
+  part(new THREE.SphereGeometry(0.29, 18, 12),
+    hair, 0, 2.52, -0.025);
+
+  // Sobrancelhas, olhos e pálpebras
+  for (const side of [-1, 1]) {
+    part(new THREE.BoxGeometry(0.13, 0.035, 0.045),
+      hair, side * 0.12, 2.37, 0.285);
+
+    part(new THREE.SphereGeometry(0.065, 14, 12),
+      white, side * 0.12, 2.29, 0.285);
+
+    part(new THREE.SphereGeometry(0.034, 12, 10),
+      black, side * 0.12, 2.29, 0.34);
+
+    part(new THREE.SphereGeometry(0.012, 8, 8),
+      white, side * 0.11, 2.305, 0.365);
+  }
+
+  // Nariz
+  part(new THREE.SphereGeometry(0.065, 12, 12),
+    skin, 0, 2.22, 0.325);
+
+  part(new THREE.SphereGeometry(0.035, 10, 8),
+    skin, 0, 2.19, 0.355);
+
+  // Boca e lábios
+  part(new THREE.BoxGeometry(0.13, 0.025, 0.025),
+    lips, 0, 2.12, 0.316);
+
+  // Barba discreta
+  const beard = part(
+    new THREE.SphereGeometry(0.25, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.25),
+    hair, 0, 2.08, 0.08
+  );
+  beard.scale.set(1, 0.7, 0.7);
+
+  // Roupa: gola
+  part(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 16),
+    material('#e8e2d8'), 0, 1.83, 0);
+
+  // Braços, mãos, pernas e sapatos
   const legs = [];
   const arms = [];
 
   for (const side of [-1, 1]) {
     const leg = new THREE.Group();
-    leg.position.set(side * 0.2, 0.85, 0);
+    leg.position.set(side * 0.19, 0.91, 0);
     group.add(leg);
 
-    const thigh = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.16, 0.48, 4, 8),
-      pants
-    );
-    thigh.position.y = -0.28;
-    leg.add(thigh);
+    part(new THREE.CapsuleGeometry(0.16, 0.52, 5, 10),
+      pants, 0, -0.28, 0, leg);
+
+    part(new THREE.BoxGeometry(0.27, 0.15, 0.4),
+      shoes, 0, -0.68, 0.09, leg);
+
     legs.push(leg);
 
     const arm = new THREE.Group();
-    arm.position.set(side * 0.48, 1.65, 0);
+    arm.position.set(side * 0.43, 1.66, 0);
     group.add(arm);
 
-    const upperArm = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.12, 0.52, 4, 8),
-      shirt
-    );
-    upperArm.position.y = -0.28;
-    arm.add(upperArm);
+    part(new THREE.CapsuleGeometry(0.115, 0.48, 5, 10),
+      shirt, 0, -0.28, 0, arm);
+
+    part(new THREE.SphereGeometry(0.115, 12, 10),
+      skin, 0, -0.58, 0, arm);
+
     arms.push(arm);
   }
+
+  // Detalhes da roupa
+  part(new THREE.BoxGeometry(0.12, 0.3, 0.025),
+    material('#e8d7a2'), 0, 1.49, 0.36);
+
+  // Altura e proporções
+  group.scale.set(1, 1, 1);
 
   group.userData = { legs, arms };
   return group;
@@ -416,12 +488,31 @@ const avatar = createAvatar();
 avatar.position.set(0, 0, 5);
 scene.add(avatar);
 
+// Peões espalhados pela cidade
 const npcs = [];
-const npcColors = ['#c63f35', '#315b9a', '#e0b13e', '#4d8054'];
+const npcShirts = [
+  '#c63f35', '#315b9a', '#e0b13e',
+  '#4d8054', '#8b4e9c', '#eeeeee',
+  '#252525', '#d17c45'
+];
+
 for (let i = 0; i < 12; i++) {
-  const npc = createAvatar(npcColors[i % npcColors.length], '#75452f');
-  npc.position.set((i % 2 ? 1 : -1) * (12 + Math.random() * 27), 0, -75 + i * 13);
+  const npc = createAvatar(
+    npcShirts[i % npcShirts.length],
+    ['#75452f', '#9b6748', '#593a2b', '#b47c58'][i % 4]
+  );
+
+  npc.position.set(
+    (i % 2 ? 1 : -1) * (12 + Math.random() * 27),
+    0,
+    -75 + i * 13
+  );
+
+  npc.rotation.y = Math.random() * Math.PI * 2;
   scene.add(npc);
+  npcs.push({ npc, phase: Math.random() * 6 });
+}
+
   npcs.push({ npc, phase: Math.random() * 6 });
 }
 
