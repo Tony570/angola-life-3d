@@ -878,3 +878,297 @@ if (supabase) {
 }
 
 updateStats();
+
+
+// ============================================
+// EXPANSAO VISUAL - CIDADE DE LUANDA
+// ============================================
+{
+  const sidewalk = mat('#c9c1b0');
+  const curb = mat('#e7dfcf');
+  const metal = mat('#424b50');
+  const glass = new THREE.MeshStandardMaterial({
+    color: '#75b8ca',
+    metalness: 0.25,
+    roughness: 0.22
+  });
+
+  // PASSEIOS E LANCIS
+  function pavement(x, z, width, depth) {
+    const p = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.16, depth),
+      sidewalk
+    );
+    p.position.set(x, 0.08, z);
+    scene.add(p);
+  }
+
+  function curbLine(x, z, width, depth) {
+    const c = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.22, depth),
+      curb
+    );
+    c.position.set(x, 0.15, z);
+    scene.add(c);
+  }
+
+  [-1, 1].forEach(side => {
+    pavement(side * 8.3, 0, 3.2, 210);
+    curbLine(side * 10, 0, 0.22, 210);
+    pavement(side * 42, 0, 3, 210);
+    curbLine(side * 43.7, 0, 0.22, 210);
+  });
+
+  // PASSADEIRAS
+  function crossing(x, z) {
+    for (let i = 0; i < 9; i++) {
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 0.035, 0.65),
+        new THREE.MeshBasicMaterial({ color: '#ffffff' })
+      );
+      stripe.position.set(x, 0.12, z + (i - 4) * 0.9);
+      scene.add(stripe);
+    }
+  }
+
+  crossing(0, -10);
+  crossing(0, 10);
+
+  // POSTES DE ILUMINACAO
+  function lampPost(x, z) {
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.13, 6, 10),
+      metal
+    );
+    post.position.set(x, 3, z);
+    scene.add(post);
+
+    const arm = new THREE.Mesh(
+      new THREE.BoxGeometry(1.3, 0.09, 0.09),
+      metal
+    );
+    arm.position.set(x + 0.55, 5.8, z);
+    scene.add(arm);
+
+    const lamp = new THREE.Mesh(
+      new THREE.BoxGeometry(0.65, 0.18, 0.35),
+      new THREE.MeshBasicMaterial({ color: '#ffe6a6' })
+    );
+    lamp.position.set(x + 1.1, 5.65, z);
+    scene.add(lamp);
+  }
+
+  for (let z = -90; z <= 90; z += 30) {
+    lampPost(-10, z);
+    lampPost(10, z);
+    lampPost(-44, z);
+    lampPost(44, z);
+  }
+
+  // LOJAS E COMERCIO
+  function createShop(x, z, name, wallColor, signColor) {
+    const shop = new THREE.Group();
+
+    const building = new THREE.Mesh(
+      new THREE.BoxGeometry(9, 4.5, 7),
+      mat(wallColor)
+    );
+    building.position.y = 2.25;
+    shop.add(building);
+
+    const windowShop = new THREE.Mesh(
+      new THREE.BoxGeometry(5.8, 1.8, 0.12),
+      glass
+    );
+    windowShop.position.set(0, 1.7, 3.56);
+    shop.add(windowShop);
+
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 2.2, 0.15),
+      mat('#49362a')
+    );
+    door.position.set(-3.2, 1.1, 3.6);
+    shop.add(door);
+
+    const sign = new THREE.Mesh(
+      new THREE.BoxGeometry(7, 0.75, 0.2),
+      mat(signColor)
+    );
+    sign.position.set(0, 3.85, 3.6);
+    shop.add(sign);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 100;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, 256, 50);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const letters = new THREE.Mesh(
+      new THREE.PlaneGeometry(6.5, 0.6),
+      new THREE.MeshBasicMaterial({ map: texture, transparent: true })
+    );
+    letters.position.set(0, 3.85, 3.72);
+    shop.add(letters);
+
+    shop.position.set(x, 0, z);
+    scene.add(shop);
+  }
+
+  createShop(-18, -18, 'MERCADO', '#d8b78b', '#b94732');
+  createShop(18, 18, 'RESTAURANTE', '#d6c29c', '#326b50');
+  createShop(-34, 18, 'FARMACIA', '#e5e1d4', '#287b70');
+  createShop(34, -18, 'CAFE LUANDA', '#d2a477', '#704b32');
+
+  // TORRES RESIDENCIAIS
+  function createTower(x, z, floors, color) {
+    const height = floors * 2.4;
+
+    const building = new THREE.Mesh(
+      new THREE.BoxGeometry(10, height, 9),
+      mat(color)
+    );
+    building.position.set(x, height / 2, z);
+    scene.add(building);
+
+    for (let floor = 0; floor < floors; floor++) {
+      for (let side = -1; side <= 1; side++) {
+        const windowMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(2, 1.35, 0.1),
+          glass
+        );
+        windowMesh.position.set(
+          x + side * 2.8,
+          1.4 + floor * 2.4,
+          z + 4.56
+        );
+        scene.add(windowMesh);
+
+        const balcony = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.12, 0.65),
+          mat('#aeb8b6')
+        );
+        balcony.position.set(
+          x + side * 2.8,
+          0.75 + floor * 2.4,
+          z + 4.9
+        );
+        scene.add(balcony);
+      }
+    }
+
+    const roof = new THREE.Mesh(
+      new THREE.BoxGeometry(10.3, 0.3, 9.3),
+      mat('#59666b')
+    );
+    roof.position.set(x, height + 0.15, z);
+    scene.add(roof);
+  }
+
+  createTower(-28, -42, 7, '#d4c3a7');
+  createTower(29, 42, 8, '#c7d0cc');
+  createTower(-29, 43, 6, '#d5a77d');
+
+  // PRACA CENTRAL
+  const plaza = new THREE.Mesh(
+    new THREE.CylinderGeometry(10, 10, 0.25, 32),
+    mat('#c9bda7')
+  );
+  plaza.position.set(27, 0.12, 0);
+  scene.add(plaza);
+
+  const fountain = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.2, 3.6, 0.7, 24),
+    mat('#899b9d')
+  );
+  fountain.position.set(27, 0.55, 0);
+  scene.add(fountain);
+
+  const water = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.85, 2.85, 0.12, 24),
+    new THREE.MeshStandardMaterial({
+      color: '#65b8c7',
+      metalness: 0.25,
+      roughness: 0.18
+    })
+  );
+  water.position.set(27, 0.95, 0);
+  scene.add(water);
+
+  // BANCOS DA PRACA
+  function createBench(x, z) {
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.16, 0.65),
+      mat('#79533a')
+    );
+    seat.position.set(x, 0.65, z);
+    scene.add(seat);
+
+    const back = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.75, 0.14),
+      mat('#79533a')
+    );
+    back.position.set(x, 1.05, z - 0.25);
+    scene.add(back);
+  }
+
+  createBench(20, -6);
+  createBench(34, -6);
+  createBench(20, 6);
+  createBench(34, 6);
+
+  // CONTENTORES DE LIXO
+  function createBin(x, z) {
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.38, 0.32, 0.9, 12),
+      mat('#397258')
+    );
+    body.position.set(x, 0.52, z);
+    scene.add(body);
+
+    const lid = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.4, 0.4, 0.12, 12),
+      mat('#263b34')
+    );
+    lid.position.set(x, 1.03, z);
+    scene.add(lid);
+  }
+
+  createBin(-12, -5);
+  createBin(12, 42);
+  createBin(-12, 65);
+  createBin(12, -65);
+
+  // MAIS HABITANTES NA CIDADE
+  const shirts = [
+    '#e0b54c',
+    '#f0e8d8',
+    '#27745b',
+    '#b84d3b',
+    '#416b9b',
+    '#754b82'
+  ];
+
+  for (let i = 0; i < 14; i++) {
+    const npc = createAvatar(
+      shirts[i % shirts.length],
+      ['#6d412f', '#8a563d', '#a66d4d'][i % 3]
+    );
+
+    const side = i % 2 ? 1 : -1;
+    npc.position.set(side * (14 + (i % 4) * 5), 0, -62 + i * 9);
+    npc.rotation.y = Math.random() * Math.PI * 2;
+
+    scene.add(npc);
+    npcs.push({
+      npc,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+}
+
