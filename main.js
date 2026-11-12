@@ -41,3 +41,48 @@ function animate() {
 }
 
 animate();
+import * as THREE from 'three';
+import { createWorld } from './world.js';
+import { Player } from './player.js';
+
+// --- INICIALIZAÇÃO DA CENA, CÂMARA E RENDERIZADOR ---
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(
+  60, 
+  window.innerWidth / window.innerHeight, 
+  0.1, 
+  1000
+);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+document.body.appendChild(renderer.domElement);
+
+// --- CONSTRUIR O MUNDO E O JOGADOR ---
+createWorld(scene);
+const player = new Player(scene, camera);
+
+// --- AJUSTE DE JANELA (Responsivo) ---
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// --- LOOP DE ANIMAÇÃO ---
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Atualizar lógica do jogador e câmara
+  player.update();
+
+  renderer.render(scene, camera);
+}
+
+animate();
