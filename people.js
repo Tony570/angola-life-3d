@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 
-// ANGOLA LIFE 3D — PERSONAGENS COM ANIMAÇÃO
+// ANGOLA LIFE 3D — PERSONAGENS 3D ANIMADOS
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
@@ -18,6 +18,7 @@ const URLS = {
 };
 
 let assetsPromise = null;
+let activeWorld = null;
 
 const JOBS = [
   { role: 'Polícia', gender: 'male', x: 4, z: 10, patrol: true },
@@ -56,7 +57,7 @@ function makeNPC(scene, job, assets, index) {
   const root = new THREE.Group();
   const model = clone(assets[job.gender]);
 
-  // Ajustar escala e colocar os pés exatamente no chão.
+  // Ajustar a altura e colocar os pés no chão.
   const bounds = new THREE.Box3().setFromObject(model);
   const height = Math.max(bounds.max.y - bounds.min.y, 0.01);
   const scale = 1.75 / height;
@@ -78,11 +79,8 @@ function makeNPC(scene, job, assets, index) {
   scene.add(root);
 
   const mixer = new THREE.AnimationMixer(model);
-  const idleClip = assets[job.gender + 'Idle'];
-  const walkClip = assets[job.gender + 'Walk'];
-
-  const idle = mixer.clipAction(idleClip);
-  const walk = mixer.clipAction(walkClip);
+  const idle = mixer.clipAction(assets[job.gender + 'Idle']);
+  const walk = mixer.clipAction(assets[job.gender + 'Walk']);
 
   idle.play();
 
@@ -119,6 +117,7 @@ function setAnimation(npc, name) {
 
 export function createPeople(scene, world) {
   world.npcs = [];
+  activeWorld = world;
 
   loadAssets()
     .then(assets => {
@@ -126,15 +125,23 @@ export function createPeople(scene, world) {
         world.npcs.push(makeNPC(scene, job, assets, index));
       });
 
-      console.log('ANGOLA LIFE 3D: equipas e agentes carregados:', world.npcs.length);
+      console.log(
+        'ANGOLA LIFE 3D: personagens carregados:',
+        world.npcs.length
+      );
     })
     .catch(error => {
-      console.error('Não foi possível carregar personagens e animações:', error);
+      console.error(
+        'Erro ao carregar personagens e animações:',
+        error
+      );
     });
 }
 
 export function updatePeople(delta) {
-  for (const npc of window.angolaWorld?.npcs || []) {
+  if (!activeWorld) return;
+
+  for (const npc of activeWorld.npcs) {
     npc.mixer.update(delta);
 
     if (!npc.patrol) continue;
@@ -154,7 +161,9 @@ export function updatePeople(delta) {
 
     if (npc.current === 'walk') {
       npc.root.position.x += npc.direction * npc.speed * delta;
-      npc.root.rotation.y = npc.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+      npc.root.rotation.y = npc.direction > 0
+        ? Math.PI / 2
+        : -Math.PI / 2;
 
       if (Math.abs(npc.root.position.x - npc.originX) > 2.5) {
         npc.direction *= -1;
