@@ -577,49 +577,190 @@ export function createWorld(scene) {
   // ============================================
   // PESSOAS / NPCs
   // ============================================
-  function makePerson(x, z, shirtColor, phase = 0) {
-    const group = new THREE.Group();
-    const skin = new THREE.MeshStandardMaterial({ color: 0x8b5738 });
-    const shirt = new THREE.MeshStandardMaterial({ color: shirtColor });
-    const trousers = new THREE.MeshStandardMaterial({ color: 0x292d38 });
-    // Corpo
-    addCylinder(group, 0, 0.85, 0, 0.3, 0.38, 0.9, shirt, 8);
-    // Cabeça
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.25, 10, 8),
-      skin
-    );
-    head.position.y = 1.55;
-    group.add(head);
-    // Pernas
-    for (const side of [-1, 1]) {
-      const leg = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.65, 0.2),
-        trousers
-      );
-      leg.position.set(side * 0.13, 0.35, 0);
-      group.add(leg);
-    }
-    // Braços
-    for (const side of [-1, 1]) {
-      const arm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.09, 0.1, 0.65, 7),
-        shirt
-      );
-      arm.position.set(side * 0.38, 0.9, 0);
-      arm.rotation.z = side * -0.15;
-      group.add(arm);
-    }
-    group.position.set(x, 0, z);
-    scene.add(group);
-    world.npcs.push({
-      group,
-      originX: x,
-      originZ: z,
-      phase
-    });
+  
+function makePerson(x, z, shirtColor, phase = 0) {
+  const group = new THREE.Group();
+
+  const skin = new THREE.MeshStandardMaterial({
+    color: 0x8b5738,
+    roughness: 0.85
+  });
+  const skinLight = new THREE.MeshStandardMaterial({
+    color: 0xa96f50
+  });
+  const shirt = new THREE.MeshStandardMaterial({
+    color: shirtColor,
+    roughness: 0.8
+  });
+  const trousers = new THREE.MeshStandardMaterial({
+    color: 0x292d38
+  });
+  const shoes = new THREE.MeshStandardMaterial({
+    color: 0x171717
+  });
+  const hair = new THREE.MeshStandardMaterial({
+    color: 0x17120f
+  });
+  const white = new THREE.MeshStandardMaterial({
+    color: 0xffffff
+  });
+  const dark = new THREE.MeshStandardMaterial({
+    color: 0x160f0b
+  });
+  const mouthMaterial = new THREE.MeshStandardMaterial({
+    color: 0x48251e
+  });
+
+  function sphere(geometry, material, px, py, pz) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(px, py, pz);
+    mesh.castShadow = true;
+    group.add(mesh);
+    return mesh;
   }
 
+  // Tronco e roupa
+  const torso = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.29, 0.55, 5, 12),
+    shirt
+  );
+  torso.position.y = 1.13;
+  torso.scale.set(1, 1, 0.78);
+  group.add(torso);
+
+  // Pescoço
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.11, 0.18, 12),
+    skin
+  );
+  neck.position.y = 1.58;
+  group.add(neck);
+
+  // Cabeça
+  sphere(
+    new THREE.SphereGeometry(0.235, 24, 20),
+    skin,
+    0, 1.88, 0
+  );
+
+  // Orelhas
+  for (const side of [-1, 1]) {
+    sphere(
+      new THREE.SphereGeometry(0.055, 12, 10),
+      skinLight,
+      side * 0.23, 1.88, 0
+    );
+  }
+
+  // Cabelo
+  const hairCap = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      0.24, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2
+    ),
+    hair
+  );
+  hairCap.position.y = 1.97;
+  group.add(hairCap);
+  // Olhos, pupilas e sobrancelhas
+  for (const side of [-1, 1]) {
+    sphere(
+      new THREE.SphereGeometry(0.035, 12, 10),
+      white,
+      side * 0.085, 1.91, 0.205
+    );
+    sphere(
+      new THREE.SphereGeometry(0.019, 10, 8),
+      dark,
+      side * 0.085, 1.91, 0.235
+    );
+    const brow = new THREE.Mesh(
+      new THREE.BoxGeometry(0.075, 0.018, 0.018),
+      hair
+    );
+    brow.position.set(side * 0.085, 1.965, 0.205);
+    group.add(brow);
+  }
+
+  // Nariz
+  sphere(
+    new THREE.SphereGeometry(0.038, 12, 10),
+    skinLight,
+    0, 1.84, 0.23
+  );
+
+  // Boca
+  const mouth = new THREE.Mesh(
+    new THREE.BoxGeometry(0.09, 0.014, 0.012),
+    mouthMaterial
+  );
+  mouth.position.set(0, 1.775, 0.218);
+  group.add(mouth);
+
+  // Pernas, braços e mãos
+  const legs = [];
+  const arms = [];
+
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Group();
+    leg.position.set(side * 0.13, 0.72, 0);
+
+    const legMesh = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.105, 0.48, 4, 10),
+      trousers
+    );
+    legMesh.position.y = -0.23;
+    leg.add(legMesh);
+
+    const shoe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.19, 0.11, 0.29),
+      shoes
+    );
+    shoe.position.set(0, -0.52, 0.055);
+    leg.add(shoe);
+
+    group.add(leg);
+    legs.push(leg);
+
+    const arm = new THREE.Group();
+    arm.position.set(side * 0.34, 1.37, 0);
+
+    const upperArm = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.085, 0.34, 4, 9),
+      shirt
+    );
+    upperArm.position.y = -0.18;
+    arm.add(upperArm);
+
+    const forearm = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.07, 0.23, 4, 9),
+      skin
+    );
+    forearm.position.y = -0.48;
+    arm.add(forearm);
+
+    const hand = new THREE.Mesh(
+      new THREE.SphereGeometry(0.065, 12, 10),
+      skin
+    );
+    hand.position.y = -0.64;
+    arm.add(hand);
+
+    group.add(arm);
+    arms.push(arm);
+  }
+
+  group.position.set(x, 0, z);
+  scene.add(group);
+
+  world.npcs.push({
+    group,
+    originX: x,
+    originZ: z,
+    phase,
+    legs,
+    arms
+  });
+}
   function buildPeople() {
     const colors = [
       0xb52f2f, 0x2363a4, 0x27724a,
@@ -696,7 +837,6 @@ export function createWorld(scene) {
       makeTree(-106, z, true);
     }
   }
-
   // ============================================
   // CONSTRUÇÃO DO MUNDO
   // ============================================
