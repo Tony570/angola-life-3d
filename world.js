@@ -393,11 +393,12 @@ export function createWorld(scene) {
     makeBuilding(-55, -20, 18, 15, 3, 'shop');
     makeBuilding(-55, -43, 18, 15, 2, 'shop');
     makeBuilding(-55, -66, 18, 15, 3, 'shop');
-    // Bairro residencial
-  // ============================================
-  // PRAÇA CENTRAL
-  // ============================================
-  function makePark() {
+// Bairro residencial
+  }
+// ============================================
+// PRAÇA CENTRAL
+// ============================================
+function makePark() {
     const park = new THREE.Mesh(
       new THREE.BoxGeometry(25, 0.25, 25),
       materials.grass2
