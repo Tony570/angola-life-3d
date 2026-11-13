@@ -4,8 +4,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 
-// ANGOLA LIFE 3D — PERSONAGENS 3D ANIMADOS
-
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 const URLS = {
@@ -21,14 +19,14 @@ let assetsPromise = null;
 let activeWorld = null;
 
 const JOBS = [
-  { role: 'Polícia', gender: 'male', x: 4, z: 10, patrol: true },
-  { role: 'Agente de trânsito', gender: 'male', x: 0, z: 12, patrol: true },
-  { role: 'Funcionária de restaurante', gender: 'female', x: -55, z: -20 },
-  { role: 'Funcionário de restaurante', gender: 'male', x: -55, z: -43 },
-  { role: 'Rececionista de hotel', gender: 'female', x: 25, z: -25 },
-  { role: 'Funcionário de hotel', gender: 'male', x: 25, z: -25 },
-  { role: 'Trabalhador de escritório', gender: 'male', x: -25, z: -25 },
-  { role: 'Trabalhadora de escritório', gender: 'female', x: 25, z: 25 }
+  { role: 'Polícia', gender: 'male', x: 5, z: 9, patrol: true, outfit: 0x263b65 },
+  { role: 'Agente de trânsito', gender: 'male', x: 8, z: -9, patrol: true, outfit: 0xd99b24 },
+  { role: 'Funcionária de restaurante', gender: 'female', x: -55, z: -10, outfit: 0x9b2940 },
+  { role: 'Funcionário de restaurante', gender: 'male', x: -49, z: -35, outfit: 0xeeeeee },
+  { role: 'Rececionista de hotel', gender: 'female', x: 30, z: -17, outfit: 0x283e55 },
+  { role: 'Funcionário de hotel', gender: 'male', x: 20, z: -17, outfit: 0x70452e },
+  { role: 'Trabalhador de escritório', gender: 'male', x: -30, z: -17, outfit: 0x526b45 },
+  { role: 'Trabalhadora de escritório', gender: 'female', x: 30, z: 17, outfit: 0x743f83 }
 ];
 
 function loadAssets() {
@@ -53,24 +51,56 @@ function loadAssets() {
   return assetsPromise;
 }
 
+function customizeClothes(model, color) {
+  model.traverse(object => {
+    if (!object.isMesh || !object.material) return;
+
+    object.castShadow = true;
+    object.receiveShadow = true;
+
+    const materials = Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+    const changed = materials.map(original => {
+      const material = original.clone();
+      const name = (material.name || '').toLowerCase();
+
+      const isSkinOrHair =
+        /skin|face|head|hair|eye|teeth|mouth|body_skin/.test(name);
+
+      const isClothing =
+        /cloth|shirt|jacket|pants|trouser|uniform|dress|coat|suit|top/.test(name);
+
+      if (isClothing && material.color) {
+        material.color.setHex(color);
+      } else if (!isSkinOrHair && material.color) {
+        material.color.multiply(new THREE.Color(color));
+      }
+
+      return material;
+    });
+
+    object.material = Array.isArray(object.material)
+      ? changed
+      : changed[0];
+  });
+}
+
 function makeNPC(scene, job, assets, index) {
   const root = new THREE.Group();
   const model = clone(assets[job.gender]);
 
-  // Ajustar a altura e colocar os pés no chão.
   const bounds = new THREE.Box3().setFromObject(model);
-  const height = Math.max(bounds.max.y - bounds.min.y, 0.01);
-  const scale = 1.75 / height;
+  const originalHeight = Math.max(bounds.max.y - bounds.min.y, 0.01);
+
+  // Altura controlada para evitar personagens gigantes.
+  const scale = 1.55 / originalHeight;
 
   model.scale.setScalar(scale);
   model.position.y = -bounds.min.y * scale;
 
-  model.traverse(object => {
-    if (object.isMesh) {
-      object.castShadow = true;
-      object.receiveShadow = true;
-    }
-  });
+  customizeClothes(model, job.outfit);
 
   root.add(model);
   root.position.set(job.x, 0, job.z);
@@ -97,8 +127,8 @@ function makeNPC(scene, job, assets, index) {
     originZ: job.z,
     phase: index * 1.7,
     timer: 2 + (index % 4),
-    direction: 1,
-    speed: 0.75
+    direction: index % 2 === 0 ? 1 : -1,
+    speed: 0.65 + (index % 3) * 0.12
   };
 }
 
@@ -125,16 +155,10 @@ export function createPeople(scene, world) {
         world.npcs.push(makeNPC(scene, job, assets, index));
       });
 
-      console.log(
-        'ANGOLA LIFE 3D: personagens carregados:',
-        world.npcs.length
-      );
+      console.log('ANGOLA LIFE 3D: figurantes carregados:', world.npcs.length);
     })
     .catch(error => {
-      console.error(
-        'Erro ao carregar personagens e animações:',
-        error
-      );
+      console.error('Erro ao carregar figurantes:', error);
     });
 }
 
@@ -161,6 +185,7 @@ export function updatePeople(delta) {
 
     if (npc.current === 'walk') {
       npc.root.position.x += npc.direction * npc.speed * delta;
+
       npc.root.rotation.y = npc.direction > 0
         ? Math.PI / 2
         : -Math.PI / 2;
