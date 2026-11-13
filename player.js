@@ -1,276 +1,309 @@
-
 import * as THREE from 'three';
 
 export class Player {
-  constructor(scene, camera, vehicles) {
+  constructor(scene, camera, vehicles = []) {
     this.scene = scene;
     this.camera = camera;
     this.vehicles = vehicles;
-
     this.group = new THREE.Group();
-    this.input = { x: 0, z: 0 };
-    this.speed = 8;
-    this.vehicle = null;
+    this.speed = 10;
+    this.rotationSpeed = 2.8;
     this.keys = {};
+    this.currentVehicle = null;
+    this.nearVehicle = null;
+    this.joystick = { x: 0, y: 0 };
+    this.walkTime = 0;
 
-    const mat = color =>
-      new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
-
-    const skin = mat(0x8b5236);
-    const shirt = mat(0x1976d2);
-    const pants = mat(0x242c3a);
-    const shoes = mat(0x171717);
-
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.32, 0.55, 5, 10),
-      shirt
-    );
-    body.position.y = 1.1;
-    body.castShadow = true;
-    this.group.add(body);
-
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.27, 16, 16),
-      skin
-    );
-    head.position.y = 1.85;
-    this.group.add(head);
-
-    const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.275, 16, 8, 0, Math.PI * 2, 0, 1.3),
-      mat(0x17120f)
-    );
-    hair.position.y = 1.95;
-    this.group.add(hair);
-
-    this.limbs = [];
-
-    for (const side of [-1, 1]) {
-      const arm = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.09, 0.48, 5, 8),
-        skin
-      );
-      arm.position.set(side * 0.4, 1.12, 0);
-      arm.rotation.z = -side * 0.12;
-      this.group.add(arm);
-
-      const leg = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.13, 0.5, 5, 8),
-        pants
-      );
-      leg.position.set(side * 0.16, 0.42, 0);
-      this.group.add(leg);
-
-      this.limbs.push({ arm, leg, side });
-    }
-
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.28, 0.14, 0.4),
-      shoes
-    );
-
-    for (const side of [-1, 1]) {
-      const f = foot.clone();
-      f.position.set(side * 0.16, 0.12, 0.08);
-      this.group.add(f);
-    }
-
-    this.group.position.set(0, 0, 0);
-    this.scene.add(this.group);
+    this.createCharacter();
+    this.group.position.set(0, 0, 18);
+    scene.add(this.group);
 
     this.setupControls();
     this.setupJoystick();
+  }
 
-    this.camera.position.set(0, 6, 12);
+  material(color) {
+    return new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+  }
+
+  createCharacter() {
+    const skin = this.material('#925d40');
+    const shirt = this.material('#e7e0d2');
+    const trousers = this.material('#26364c');
+    const shoes = this.material('#202020');
+
+    const torso = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.38, 0.65, 4, 8),
+      shirt
+    );
+    torso.position.y = 1.35;
+    this.group.add(torso);
+
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.29, 14, 12),
+      skin
+    );
+    head.position.y = 2.15;
+    this.group.add(head);
+
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      this.material('#171513')
+    );
+    hair.position.y = 2.28;
+    this.group.add(hair);
+
+    this.legs = [];
+    this.arms = [];
+
+    for (const side of [-1, 1]) {
+      const leg = new THREE.Group();
+      leg.position.set(side * 0.19, 0.75, 0);
+      const legMesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.14, 0.58, 4, 7),
+        trousers
+      );
+      legMesh.position.y = -0.28;
+      leg.add(legMesh);
+
+      const shoe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 0.13, 0.38),
+        shoes
+      );
+      shoe.position.set(0, -0.65, 0.08);
+      leg.add(shoe);
+      this.group.add(leg);
+      this.legs.push(leg);
+
+      const arm = new THREE.Group();
+      arm.position.set(side * 0.43, 1.65, 0);
+      const armMesh = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.11, 0.52, 4, 7),
+        shirt
+      );
+      armMesh.position.y = -0.28;
+      arm.add(armMesh);
+      this.group.add(arm);
+      this.arms.push(arm);
+    }
+
+    this.group.traverse(obj => {
+      if (obj.isMesh) obj.castShadow = true;
+    });
   }
 
   setupControls() {
     window.addEventListener('keydown', e => {
-      this.keys[e.code] = true;
+      this.keys[e.key.toLowerCase()] = true;
 
-      if (e.code === 'KeyE' && !e.repeat) {
+      if (e.key.toLowerCase() === 'e') {
         this.toggleVehicle();
       }
     });
 
     window.addEventListener('keyup', e => {
-      this.keys[e.code] = false;
+      this.keys[e.key.toLowerCase()] = false;
     });
   }
 
   setupJoystick() {
-    const base = document.createElement('div');
-    base.id = 'joystick';
-    base.innerHTML = '<div id="joystick-knob"></div>';
-    document.body.appendChild(base);
+    const joystick = document.getElementById('joystick');
+    const knob = document.getElementById('joystick-knob');
 
-    const knob = base.firstElementChild;
+    if (!joystick || !knob) return;
+
     let active = false;
-    const radius = 42;
 
-    const move = (x, y) => {
-      const rect = base.getBoundingClientRect();
-      let dx = x - (rect.left + rect.width / 2);
-      let dy = y - (rect.top + rect.height / 2);
+    const move = e => {
+      if (!active) return;
 
+      const rect = joystick.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      let dx = e.clientX - cx;
+      let dy = e.clientY - cy;
+
+      const max = rect.width * 0.32;
       const length = Math.hypot(dx, dy);
 
-      if (length > radius) {
-        dx = dx / length * radius;
-        dy = dy / length * radius;
+      if (length > max) {
+        dx = dx / length * max;
+        dy = dy / length * max;
       }
 
-      this.input.x = dx / radius;
-      this.input.z = dy / radius;
+      this.joystick.x = dx / max;
+      this.joystick.y = dy / max;
       knob.style.transform = `translate(${dx}px, ${dy}px)`;
     };
 
-    base.addEventListener('pointerdown', e => {
-      active = true;
-      base.setPointerCapture(e.pointerId);
-      move(e.clientX, e.clientY);
-    });
-
-    base.addEventListener('pointermove', e => {
-      if (active) move(e.clientX, e.clientY);
-    });
-
     const stop = () => {
       active = false;
-      this.input.x = 0;
-      this.input.z = 0;
+      this.joystick.x = 0;
+      this.joystick.y = 0;
       knob.style.transform = 'translate(0, 0)';
     };
 
-    base.addEventListener('pointerup', stop);
-    base.addEventListener('pointercancel', stop);
+    joystick.addEventListener('pointerdown', e => {
+      active = true;
+      joystick.setPointerCapture(e.pointerId);
+      move(e);
+    });
+
+    joystick.addEventListener('pointermove', move);
+    joystick.addEventListener('pointerup', stop);
+    joystick.addEventListener('pointercancel', stop);
   }
 
   toggleVehicle() {
-    if (this.vehicle) {
-      this.vehicle.occupied = false;
-      this.group.visible = true;
-      this.group.position.copy(this.vehicle.group.position);
-      this.group.position.x += 3;
-      this.vehicle = null;
+    if (this.currentVehicle) {
+      this.exitVehicle();
       return;
     }
 
+    this.findNearestVehicle();
+
+    if (this.nearVehicle) {
+      this.enterVehicle(this.nearVehicle);
+    }
+  }
+
+  findNearestVehicle() {
     let nearest = null;
-    let distance = 5;
+    let distance = Infinity;
 
-    for (const v of this.vehicles) {
-      const d = this.group.position.distanceTo(v.group.position);
+    for (const vehicle of this.vehicles) {
+      if (vehicle.occupied) continue;
 
+      const d = this.group.position.distanceTo(vehicle.group.position);
       if (d < distance) {
-        nearest = v;
         distance = d;
+        nearest = vehicle;
       }
     }
 
-    if (nearest) {
-      this.vehicle = nearest;
-      nearest.occupied = true;
-      this.group.visible = false;
-    }
+    this.nearVehicle = distance < 5 ? nearest : null;
+    return this.nearVehicle;
   }
 
-  setPosition(x, z) {
-    if (this.vehicle) return;
+  enterVehicle(vehicle) {
+    if (!vehicle || vehicle.occupied) return;
 
-    this.group.position.set(x, 0, z);
+    this.currentVehicle = vehicle;
+    vehicle.occupied = true;
+    this.group.visible = false;
+    this.group.position.copy(vehicle.group.position);
   }
 
-  update(delta = 0.016) {
-    let x = this.input.x;
-    let z = this.input.z;
+  exitVehicle() {
+    if (!this.currentVehicle) return;
 
-    if (this.keys.ArrowLeft || this.keys.KeyA) x -= 1;
-    if (this.keys.ArrowRight || this.keys.KeyD) x += 1;
-    if (this.keys.ArrowUp || this.keys.KeyW) z -= 1;
-    if (this.keys.ArrowDown || this.keys.KeyS) z += 1;
+    const vehicle = this.currentVehicle;
+    const offset = new THREE.Vector3(2.8, 0, 0);
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), vehicle.group.rotation.y);
 
-    const length = Math.hypot(x, z);
+    this.group.position.copy(vehicle.group.position).add(offset);
+    this.group.visible = true;
+    vehicle.occupied = false;
+    vehicle.speed = 0;
+    this.currentVehicle = null;
+  }
 
-    if (length > 1) {
-      x /= length;
-      z /= length;
-    }
+  update(delta) {
+    const forward =
+      (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
+      (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
+      this.joystick.y;
 
-    const moving = length > 0.05;
+    const turn =
+      (this.keys['d'] || this.keys['arrowright'] ? 1 : 0) -
+      (this.keys['a'] || this.keys['arrowleft'] ? 1 : 0) +
+      this.joystick.x;
 
-    if (this.vehicle) {
-      const v = this.vehicle;
+    if (this.currentVehicle) {
+      const vehicle = this.currentVehicle;
+      vehicle.speed += forward * 18 * delta;
+      vehicle.speed *= Math.pow(0.94, delta * 60);
+      vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
 
-      if (this.keys.ArrowUp || this.keys.KeyW || z < -0.1) {
-        v.speed = Math.min(v.speed + delta * 12, 24);
-      } else if (this.keys.ArrowDown || this.keys.KeyS || z > 0.1) {
-        v.speed = Math.max(v.speed - delta * 18, -8);
-      } else {
-        v.speed *= 0.97;
-      }
-
-      if (Math.abs(x) > 0.05) {
-        v.group.rotation.y -= x * delta * 1.5 * Math.sign(v.speed || 1);
-      }
+      vehicle.group.rotation.y -= turn * delta * 1.8 *
+        (Math.abs(vehicle.speed) > 0.5 ? 1 : 0);
 
       const direction = new THREE.Vector3(
-        Math.sin(v.group.rotation.y),
+        Math.sin(vehicle.group.rotation.y),
         0,
-        Math.cos(v.group.rotation.y)
+        Math.cos(vehicle.group.rotation.y)
       );
 
-      v.group.position.addScaledVector(direction, -v.speed * delta);
-
-      for (const wheel of v.wheels) {
-        wheel.rotation.x += v.speed * delta;
-      }
-
-      this.group.position.copy(v.group.position);
-      this.camera.position.lerp(
-        new THREE.Vector3(
-          v.group.position.x,
-          7,
-          v.group.position.z + 12
-        ),
-        0.08
-      );
-    } else {
-      this.group.position.x += x * this.speed * delta;
-      this.group.position.z += z * this.speed * delta;
-
-      if (moving) {
-        this.group.rotation.y = Math.atan2(x, z);
-        const t = performance.now() * 0.012;
-
-        for (const limb of this.limbs) {
-          limb.leg.rotation.x = Math.sin(t) * 0.5 * limb.side;
-          limb.arm.rotation.x = -Math.sin(t) * 0.4 * limb.side;
-        }
-      } else {
-        for (const limb of this.limbs) {
-          limb.leg.rotation.x = 0;
-          limb.arm.rotation.x = 0;
-        }
-      }
-
-      const desired = new THREE.Vector3(
-        this.group.position.x,
-        5,
-        this.group.position.z + 9
+      vehicle.group.position.addScaledVector(
+        direction,
+        vehicle.speed * delta
       );
 
-      this.camera.position.lerp(desired, 0.09);
+      this.group.position.copy(vehicle.group.position);
+      this.updateCamera();
+      return;
     }
 
-    const target = this.vehicle
-      ? this.vehicle.group.position
+    const moving = Math.abs(forward) > 0.05 || Math.abs(turn) > 0.05;
+
+    if (moving) {
+      this.group.rotation.y -= turn * this.rotationSpeed * delta;
+
+      const direction = new THREE.Vector3(
+        Math.sin(this.group.rotation.y),
+        0,
+        Math.cos(this.group.rotation.y)
+      );
+
+      this.group.position.addScaledVector(
+        direction,
+        forward * this.speed * delta
+      );
+
+      this.walkTime += delta * 10;
+      this.legs[0].rotation.x = Math.sin(this.walkTime) * 0.55;
+      this.legs[1].rotation.x = -Math.sin(this.walkTime) * 0.55;
+      this.arms[0].rotation.x = -Math.sin(this.walkTime) * 0.35;
+      this.arms[1].rotation.x = Math.sin(this.walkTime) * 0.35;
+    } else {
+      this.legs.forEach(leg => leg.rotation.x *= 0.8);
+      this.arms.forEach(arm => arm.rotation.x *= 0.8);
+    }
+
+    this.findNearestVehicle();
+    this.updateCamera();
+  }
+
+  updateCamera() {
+    const target = this.currentVehicle
+      ? this.currentVehicle.group.position
       : this.group.position;
 
+    const rotation = this.currentVehicle
+      ? this.currentVehicle.group.rotation.y
+      : this.group.rotation.y;
+
+    const distance = this.currentVehicle ? 10 : 7;
+    const height = this.currentVehicle ? 5 : 4;
+
+    const desired = new THREE.Vector3(
+      target.x - Math.sin(rotation) * distance,
+      target.y + height,
+      target.z - Math.cos(rotation) * distance
+    );
+
+    this.camera.position.lerp(desired, 0.12);
     this.camera.lookAt(
       target.x,
-      this.vehicle ? 1.3 : 1.2,
+      target.y + (this.currentVehicle ? 1.5 : 1.4),
       target.z
     );
+  }
+
+  teleport(x, z) {
+    if (this.currentVehicle) this.exitVehicle();
+    this.group.position.set(x, 0, z);
+    this.updateCamera();
   }
 }
