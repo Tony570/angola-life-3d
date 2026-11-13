@@ -553,12 +553,10 @@ export class Player {
 
         const directionX = dx / distance;
         const directionZ = dz / distance;
-
         const targetRotation = Math.atan2(
-          -directionX,
-          -directionZ
-        );
-
+  directionX,
+  directionZ
+);
         let angleDifference = targetRotation - this.group.rotation.y;
 
         angleDifference = Math.atan2(
