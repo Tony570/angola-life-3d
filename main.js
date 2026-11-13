@@ -7,7 +7,7 @@ import './style.css';
 
 // ============================================
 // ANGOLA LIFE 3D — MAIN.JS
-// Cidade, jogador, casas, carros e mapa
+// Cidade, casas, interiores, carros e mapa
 // ============================================
 
 const app = document.querySelector('#app');
@@ -61,7 +61,7 @@ app.innerHTML = `
 const game = document.querySelector('#game');
 
 // ============================================
-// CENA E CÂMARA
+// CENA
 // ============================================
 
 const scene = new THREE.Scene();
@@ -134,7 +134,7 @@ let started = false;
 let currentHouse = null;
 
 // ============================================
-// INÍCIO DO JOGO
+// INÍCIO
 // ============================================
 
 startButton.addEventListener('click', () => {
@@ -156,14 +156,17 @@ function snapCameraToPlayer() {
     ? player.currentVehicle.group.rotation.y
     : player.group.rotation.y;
 
-  // Câmara mais próxima dentro das casas.
   const distance = player.currentVehicle
     ? 10
-    : currentHouse
-      ? 5
+    : player.indoor
+      ? 3.2
       : 7;
 
-  const height = player.currentVehicle ? 5 : 3.5;
+  const height = player.currentVehicle
+    ? 5
+    : player.indoor
+      ? 2.8
+      : 4;
 
   camera.position.set(
     target.x - Math.sin(rotation) * distance,
@@ -179,13 +182,12 @@ function snapCameraToPlayer() {
 }
 
 // ============================================
-// VISIBILIDADE DO TETO
+// TETO DO INTERIOR
 // ============================================
 
 function setInteriorView(house, inside) {
   if (!house || !house.interiorRoof) return;
 
-  // O teto desaparece quando o jogador entra.
   house.interiorRoof.visible = !inside;
 }
 
@@ -222,7 +224,7 @@ world.destinations.forEach(destination => {
 });
 
 // ============================================
-// ENCONTRAR CASA PELA ENTRADA
+// ENCONTRAR CASA
 // ============================================
 
 function findNearestHouse() {
@@ -232,7 +234,6 @@ function findNearestHouse() {
   let nearestDistance = Infinity;
 
   for (const house of houses) {
-    // A entrada fica na parte da frente da casa.
     const entranceX = house.x;
     const entranceZ = house.z + 7;
 
@@ -257,35 +258,40 @@ function findNearestHouse() {
 function enterHouse(house) {
   if (!house || currentHouse) return;
 
-  // Se estiver num carro, sair primeiro.
+  // Sair do carro antes de entrar
   if (player.currentVehicle) {
     player.exitVehicle();
   }
 
   currentHouse = house;
 
-  // Mostrar o interior.
+  // Mostrar o interior
   house.interior.visible = true;
 
-  // Esconder o teto para permitir ver a casa.
+  // Esconder o teto
   setInteriorView(house, true);
 
-  // Remover a névoa exterior.
+  // Retirar nevoeiro exterior
   scene.fog = null;
 
-  // Garantir que o jogador está visível.
+  // Ativar colisões das paredes e móveis
+  player.setColliders(house.colliders || []);
+
+  // Ativar modo interior
+  player.setIndoor(true);
+
+  // Garantir que o personagem está visível
   player.group.visible = true;
 
-  // Colocar o personagem virado para a saída.
+  // Virar para a entrada
   player.group.rotation.y = 0;
 
-  // Teletransportar para dentro da casa.
+  // Posicionar dentro da casa
   player.teleport(
     house.interiorX,
     house.interiorZ
   );
 
-  // Ajustar a câmara.
   snapCameraToPlayer();
 
   actionButton.textContent = '🚪 SAIR DE CASA';
@@ -300,44 +306,50 @@ function exitHouse() {
 
   const house = currentHouse;
 
-  // Esconder o interior.
+  // Desativar colisões interiores
+  player.setColliders([]);
+
+  // Desativar modo interior
+  player.setIndoor(false);
+
+  // Esconder interior
   house.interior.visible = false;
 
-  // Restaurar o teto.
+  // Restaurar teto
   setInteriorView(house, false);
 
+  // Limpar casa atual
   currentHouse = null;
 
-  // Restaurar a névoa da cidade.
+  // Restaurar nevoeiro da cidade
   scene.fog = outsideFog;
 
-  // Colocar o jogador à frente da entrada.
+  // Garantir personagem visível
   player.group.visible = true;
+
+  // Colocar o jogador diante da entrada
   player.teleport(
     house.x,
     house.z + 8
   );
 
-  // Atualizar a câmara.
   snapCameraToPlayer();
 
   actionButton.textContent = '🏠 ENTRAR EM CASA';
 }
 
 // ============================================
-// INTERAÇÃO PRINCIPAL
+// INTERAÇÃO
 // ============================================
 
 function interact() {
   if (!started) return;
 
-  // Se estiver dentro, sair.
   if (currentHouse) {
     exitHouse();
     return;
   }
 
-  // Verificar se está junto à entrada de uma casa.
   const house = findNearestHouse();
 
   if (house) {
@@ -345,11 +357,11 @@ function interact() {
     return;
   }
 
-  // Caso contrário, interagir com os carros.
   player.toggleVehicle();
 }
 
 player.onInteract = interact;
+
 actionButton.addEventListener('click', interact);
 
 // ============================================
@@ -377,7 +389,7 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 // ============================================
-// MOVIMENTO DOS HABITANTES
+// HABITANTES
 // ============================================
 
 function animateNPCs(time) {
@@ -423,7 +435,7 @@ function updateActionButton() {
 }
 
 // ============================================
-// CICLO PRINCIPAL DO JOGO
+// CICLO DO JOGO
 // ============================================
 
 function animate() {
