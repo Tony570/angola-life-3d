@@ -21,14 +21,72 @@ let assetsPromise = null;
 let activeWorld = null;
 
 const JOBS = [
-  { role: 'Polícia', gender: 'male', x: 41.1, z: -45, patrol: true, axis: 'z', outfit: 0x263b65 },
-  { role: 'Agente de trânsito', gender: 'male', x: -41.1, z: 45, patrol: true, axis: 'z', outfit: 0xd99b24 },
-  { role: 'Funcionária de restaurante', gender: 'female', x: -76.1, z: -20, patrol: false, outfit: 0x9b2940 },
-  { role: 'Funcionário de restaurante', gender: 'male', x: -76.1, z: -55, patrol: false, outfit: 0xeeeeee },
-  { role: 'Rececionista de hotel', gender: 'female', x: 76.1, z: 15, patrol: false, outfit: 0x283e55 },
-  { role: 'Funcionário de hotel', gender: 'male', x: 76.1, z: 55, patrol: false, outfit: 0x70452e },
-  { role: 'Trabalhador de escritório', gender: 'male', x: 41.1, z: 75, patrol: false, outfit: 0x526b45 },
-  { role: 'Trabalhadora de escritório', gender: 'female', x: -41.1, z: -75, patrol: false, outfit: 0x743f83 }
+  {
+    role: 'Polícia',
+    gender: 'male',
+    x: 41.1,
+    z: -45,
+    patrol: true,
+    axis: 'z',
+    outfit: 0x263b65
+  },
+  {
+    role: 'Agente de trânsito',
+    gender: 'male',
+    x: -41.1,
+    z: 45,
+    patrol: true,
+    axis: 'z',
+    outfit: 0xd99b24
+  },
+  {
+    role: 'Funcionária de restaurante',
+    gender: 'female',
+    x: -76.1,
+    z: -20,
+    patrol: false,
+    outfit: 0x9b2940
+  },
+  {
+    role: 'Funcionário de restaurante',
+    gender: 'male',
+    x: -76.1,
+    z: -55,
+    patrol: false,
+    outfit: 0xeeeeee
+  },
+  {
+    role: 'Rececionista de hotel',
+    gender: 'female',
+    x: 76.1,
+    z: 15,
+    patrol: false,
+    outfit: 0x283e55
+  },
+  {
+    role: 'Funcionário de hotel',
+    gender: 'male',
+    x: 76.1,
+    z: 55,
+    patrol: false,
+    outfit: 0x70452e
+  },
+  {
+    role: 'Trabalhador de escritório',
+    gender: 'male',
+    x: 41.1,
+    z: 75,
+    patrol: false,
+    outfit: 0x526b45
+  },
+  {
+    role: 'Trabalhadora de escritório',
+    gender: 'female',
+    x: -41.1,
+    z: -75,
+    patrol: false,
+    outfit: 0x743f83
+  }
 ];
 
 function loadAssets() {
@@ -69,7 +127,7 @@ function customizeClothes(model, color) {
       const name = (material.name || '').toLowerCase();
 
       const isClothing =
-        /cloth|shirt|jacket|pants|trouser|uniform|dress|coat|suit|top/.test(name);
+        /cloth|shirt|jacket|pants|trouser|uniform|dress|coat|suit|top|skirt|blazer/.test(name);
 
       if (isClothing && material.color) {
         material.color.setHex(color);
@@ -85,7 +143,6 @@ function customizeClothes(model, color) {
 }
 
 function normalizeCharacter(model) {
-  // Mede o modelo completo antes de alterar a escala.
   model.updateMatrixWorld(true);
 
   const bounds = new THREE.Box3().setFromObject(model);
@@ -98,7 +155,6 @@ function normalizeCharacter(model) {
     throw new Error('Não foi possível medir a altura do personagem.');
   }
 
-  // Grupo independente para preservar a escala original do modelo.
   const normalized = new THREE.Group();
   normalized.add(model);
 
@@ -115,7 +171,6 @@ function normalizeCharacter(model) {
 function makeNPC(scene, job, assets, index) {
   const root = new THREE.Group();
   const model = clone(assets[job.gender]);
-
   const normalizedModel = normalizeCharacter(model);
 
   customizeClothes(normalizedModel, job.outfit);
@@ -123,6 +178,9 @@ function makeNPC(scene, job, assets, index) {
   root.add(normalizedModel);
   root.position.set(job.x, 0, job.z);
   root.rotation.y = Math.PI;
+
+  root.userData.role = job.role;
+  root.userData.job = job.role;
 
   scene.add(root);
 
@@ -140,10 +198,6 @@ function makeNPC(scene, job, assets, index) {
     walk.play();
     walk.paused = true;
   }
-
-  console.log(
-    job.role + ': altura configurada para ' + HUMAN_HEIGHT + ' metros.'
-  );
 
   return {
     root,
@@ -201,6 +255,56 @@ export function createPeople(scene, world) {
     .catch(error => {
       console.error('Erro ao carregar habitantes:', error);
     });
+}
+
+/*
+ * Cria garçonetes humanas para os restaurantes.
+ * A função será ligada ao sistema dos restaurantes no main.js.
+ */
+export async function createRestaurantStaff(scene, restaurants = []) {
+  const assets = await loadAssets();
+  const staff = [];
+
+  restaurants.forEach((restaurant, index) => {
+    const job = {
+      role: 'Garçonete',
+      gender: 'female',
+      x: restaurant.x,
+      z: restaurant.z - 4.5,
+      patrol: false,
+      outfit: index % 2 === 0 ? 0x762d3c : 0x263b35
+    };
+
+    const npc = makeNPC(scene, job, assets, index + 20);
+
+    npc.root.rotation.y = 0;
+    npc.root.userData.restaurant = restaurant;
+    npc.root.userData.clickableWaiter = true;
+    npc.root.userData.role = 'Garçonete';
+
+    npc.root.traverse(object => {
+      if (object.isMesh) {
+        object.userData.restaurantWaiter = npc.root;
+      }
+    });
+
+    staff.push(npc);
+  });
+
+  console.log(
+    'ANGOLA LIFE 3D: garçonetes humanas carregadas:',
+    staff.length
+  );
+
+  return staff;
+}
+
+export function updateRestaurantStaff(staff = [], delta) {
+  for (const npc of staff) {
+    if (npc.mixer) {
+      npc.mixer.update(delta);
+    }
+  }
 }
 
 export function updatePeople(delta) {
