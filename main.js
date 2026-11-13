@@ -84,7 +84,7 @@ app.innerHTML = `
   </div>
 
   <div id="help">
-    JOYSTICK: MOVER · E: INTERAGIR · CLIQUE NA GARÇONETE: RESTAURANTE
+    JOYSTICK: MOVER · E: INTERAGIR / LEVANTAR · CLIQUE NA CADEIRA: SENTAR
   </div>
 </div>
 `;
@@ -325,6 +325,7 @@ const order = new Map();
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 const restaurantStaff = [];
+const clickableChairs = [];
 
 // Restaurantes de Luanda.
 const RESTAURANTS = [
@@ -404,7 +405,7 @@ function addBox(parent, size, position, material, cast = true) {
   return mesh;
 }
 
-function createTable(parent, x, z) {
+function createTable(parent, x, z, restaurant) {
   const wood = new THREE.MeshStandardMaterial({
     color:'#81512f',
     roughness:0.82
@@ -440,12 +441,20 @@ function createTable(parent, x, z) {
   });
 
   for (const dz of [-1.05,1.05]) {
-    addBox(
+    const seat = addBox(
       parent,
       [0.75,0.12,0.72],
       [x,0.48,z+dz],
       chairMat
     );
+
+    seat.userData.restaurantChair = {
+      x: restaurant.x + x,
+      z: restaurant.z + z + dz,
+      rotationY: dz > 0 ? Math.PI : 0
+    };
+
+    clickableChairs.push(seat);
 
     addBox(
       parent,
@@ -518,11 +527,6 @@ function createRestaurantCounter(parent) {
 }
 
 function createRestaurantDecor(parent) {
-  const cream = new THREE.MeshStandardMaterial({
-    color:'#e6d8c0',
-    roughness:0.85
-  });
-
   const green = new THREE.MeshStandardMaterial({
     color:'#315b43',
     roughness:0.85
@@ -562,8 +566,8 @@ function buildRestaurants() {
     createRestaurantCounter(interior);
     createRestaurantDecor(interior);
 
-    createTable(interior,-3.2,-1.1);
-    createTable(interior,3.2,-1.1);
+    createTable(interior,-3.2,-1.1,restaurant);
+    createTable(interior,3.2,-1.1,restaurant);
 
     const lamp = new THREE.PointLight('#ffdda6',1.4,18);
     lamp.position.set(0,3.5,0);
@@ -744,12 +748,13 @@ restaurantConfirm.addEventListener('click',() => {
   renderOrder();
 });
 
-// Clique na garçonete para abrir o restaurante.
+// Clique nas cadeiras para sentar e nas garçonetes para abrir o menu.
 renderer.domElement.addEventListener('pointerdown',event => {
   if (
     !started ||
     restaurantPanel.classList.contains('visible') ||
-    currentHouse
+    currentHouse ||
+    player.currentVehicle
   ) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
@@ -758,6 +763,19 @@ renderer.domElement.addEventListener('pointerdown',event => {
   pointer.y = -((event.clientY-rect.top)/rect.height)*2+1;
 
   raycaster.setFromCamera(pointer,camera);
+
+  if (player.sitting) return;
+
+  const chairHit = raycaster.intersectObjects(clickableChairs,false)[0];
+
+  if (chairHit) {
+    const chair = chairHit.object.userData.restaurantChair;
+
+    if (chair) {
+      player.sitAt(chair.x,chair.z,chair.rotationY);
+      return;
+    }
+  }
 
   const hit = raycaster.intersectObjects(restaurantStaff,true)[0];
 
@@ -896,6 +914,7 @@ function tryAutoEnterHouse() {
     !started ||
     currentHouse ||
     player.currentVehicle ||
+    player.sitting ||
     restaurantPanel.classList.contains('visible')
   ) return;
 
@@ -919,6 +938,11 @@ function tryAutoEnterHouse() {
 
 function interact() {
   if (!started) return;
+
+  if (player.sitting) {
+    player.standUp();
+    return;
+  }
 
   if (restaurantPanel.classList.contains('visible')) {
     closeRestaurant();
@@ -968,6 +992,9 @@ document.querySelectorAll('[data-key]').forEach(button => {
 
   button.addEventListener('pointerdown',event => {
     event.preventDefault();
+
+    if (player.sitting) return;
+
     player.keys[key] = true;
     button.classList.add('pressed');
   });
@@ -983,6 +1010,11 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 function updateActionButton() {
+  if (player.sitting) {
+    actionButton.textContent = '🧍 LEVANTAR';
+    return;
+  }
+
   if (restaurantPanel.classList.contains('visible')) {
     actionButton.textContent = '🍽️ FECHAR MENU';
     return;
