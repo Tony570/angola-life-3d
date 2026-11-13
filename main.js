@@ -220,6 +220,29 @@ sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 
 const world = createWorld(scene);
+
+// Retira também os edifícios genéricos da grelha que ainda coincidam
+// com os terrenos reservados aos três restaurantes.
+const restaurantSites = [
+  { x:-55, z:-20 },
+  { x:-55, z:-43 },
+  { x:-55, z:-66 }
+];
+
+world.buildings = (world.buildings || []).filter(building => {
+  const overlapsRestaurant = restaurantSites.some(site =>
+    Math.abs(building.x-site.x) < (building.width+17.2)/2 &&
+    Math.abs(building.z-site.z) < (building.depth+14.2)/2
+  );
+
+  if (overlapsRestaurant) {
+    scene.remove(building.group);
+    return false;
+  }
+
+  return true;
+});
+
 const houses = createHouseSystem(scene);
 const player = new Player(scene, camera, world.vehicles);
 
@@ -318,6 +341,7 @@ const restaurantConfirm = document.querySelector('#restaurant-confirm');
 
 let started = false;
 let currentHouse = null;
+let currentRestaurant = null;
 let activeRestaurant = null;
 let activeMenuTab = 'food';
 
@@ -557,17 +581,135 @@ function createRestaurantDecor(parent) {
   addBox(parent,[5.5,0.12,0.12],[0,3.1,-7],gold);
 }
 
+function createRestaurantStructure(interior, restaurant) {
+  const wallMaterial = new THREE.MeshStandardMaterial({
+    color: restaurant.id === 'cantinho-ilha' ? '#e7d8bd' : '#e8dfcc',
+    roughness: 0.88
+  });
+
+  const trim = new THREE.MeshStandardMaterial({
+    color: '#5b3828',
+    roughness: 0.72
+  });
+
+  const glass = new THREE.MeshPhysicalMaterial({
+    color: '#9ec9d2',
+    roughness: 0.18,
+    metalness: 0.05,
+    transmission: 0.18,
+    transparent: true,
+    opacity: 0.72
+  });
+
+  const roofMaterial = new THREE.MeshStandardMaterial({
+    color: '#57483b',
+    roughness: 0.92
+  });
+
+  const gold = new THREE.MeshStandardMaterial({
+    color: '#d4a13b',
+    metalness: 0.35,
+    roughness: 0.48
+  });
+
+  // Paredes laterais e parede do fundo.
+  addBox(interior,[0.34,4.25,13.8],[-8.25,2.48,0],wallMaterial);
+  addBox(interior,[0.34,4.25,13.8],[8.25,2.48,0],wallMaterial);
+  addBox(interior,[16.8,4.25,0.34],[0,2.48,-6.75],wallMaterial);
+
+  // Fachada com montras e entrada central.
+  addBox(interior,[5.7,0.72,0.34],[-5.55,0.78,6.75],wallMaterial);
+  addBox(interior,[5.7,0.72,0.34],[5.55,0.78,6.75],wallMaterial);
+  addBox(interior,[5.7,0.48,0.34],[-5.55,4.35,6.75],wallMaterial);
+  addBox(interior,[5.7,0.48,0.34],[5.55,4.35,6.75],wallMaterial);
+  addBox(interior,[0.34,3.2,0.34],[-8.25,2.25,6.75],wallMaterial);
+  addBox(interior,[0.34,3.2,0.34],[8.25,2.25,6.75],wallMaterial);
+
+  // Montras de vidro e moldura da entrada.
+  addBox(interior,[4.85,2.65,0.09],[-5.55,2.35,6.94],glass);
+  addBox(interior,[4.85,2.65,0.09],[5.55,2.35,6.94],glass);
+  addBox(interior,[0.16,3.15,0.2],[-2.72,1.95,6.9],trim);
+  addBox(interior,[0.16,3.15,0.2],[2.72,1.95,6.9],trim);
+  addBox(interior,[0.22,3.35,0.3],[-2.55,2.02,6.98],gold);
+  addBox(interior,[0.22,3.35,0.3],[2.55,2.02,6.98],gold);
+  addBox(interior,[5.3,0.18,0.65],[0,0.43,7.05],trim);
+
+  // Cobertura.
+  const roof = addBox(
+    interior,
+    [17.3,0.38,14.3],
+    [0,4.72,0],
+    roofMaterial
+  );
+
+  roof.name = 'restaurant-roof';
+
+  addBox(interior,[17.5,0.18,0.35],[0,4.48,7.05],trim);
+  addBox(interior,[17.5,0.18,0.35],[0,4.48,-7.05],trim);
+  addBox(interior,[0.22,0.18,14.1],[-8.48,4.48,0],trim);
+  addBox(interior,[0.22,0.18,14.1],[8.48,4.48,0],trim);
+
+  // Letreiro exterior.
+  const sign = new THREE.MeshStandardMaterial({
+    color: restaurant.id === 'cantinho-ilha' ? '#286c79' :
+      restaurant.id === 'paladar-angolano' ? '#8a352c' : '#2f6747',
+    roughness: 0.65
+  });
+
+  addBox(interior,[6.2,0.85,0.24],[0,3.75,7.04],sign);
+  addBox(interior,[5.7,0.08,0.28],[0,3.27,7.04],gold);
+
+  // Candeeiros e iluminação quente.
+  for (const x of [-5,0,5]) {
+    const fixture = new THREE.MeshStandardMaterial({
+      color: '#fff0c7',
+      emissive: '#ffce79',
+      emissiveIntensity: 0.55
+    });
+
+    addBox(interior,[0.9,0.12,0.9],[x,4.35,0],fixture);
+
+    const light = new THREE.PointLight('#ffdda6',0.85,12);
+    light.position.set(x,3.95,0);
+    interior.add(light);
+  }
+
+  const colliders = [];
+
+  const addCollider = (x,z,width,depth) => colliders.push({
+    minX: restaurant.x+x-width/2,
+    maxX: restaurant.x+x+width/2,
+    minZ: restaurant.z+z-depth/2,
+    maxZ: restaurant.z+z+depth/2
+  });
+
+  addCollider(-8.25,0,0.5,13.8);
+  addCollider(8.25,0,0.5,13.8);
+  addCollider(0,-6.75,16.8,0.5);
+  addCollider(-5.55,6.75,5.7,0.5);
+  addCollider(5.55,6.75,5.7,0.5);
+
+  return { roof, colliders };
+}
+
 function buildRestaurants() {
   RESTAURANTS.forEach(restaurant => {
     const interior = new THREE.Group();
     interior.name = `Interior-${restaurant.id}`;
 
     createTileFloor(interior,16.8,13.8);
+
+    const structure = createRestaurantStructure(interior,restaurant);
+    restaurant.roof = structure.roof;
+    restaurant.colliders = structure.colliders;
+
     createRestaurantCounter(interior);
     createRestaurantDecor(interior);
 
     createTable(interior,-3.2,-1.1,restaurant);
     createTable(interior,3.2,-1.1,restaurant);
+    createTable(interior,-3.2,3.1,restaurant);
+    createTable(interior,3.2,3.1,restaurant);
 
     const lamp = new THREE.PointLight('#ffdda6',1.4,18);
     lamp.position.set(0,3.5,0);
@@ -578,19 +720,22 @@ function buildRestaurants() {
     interior.add(lamp2);
 
     interior.position.set(restaurant.x,0,restaurant.z);
+    restaurant.interior = interior;
     scene.add(interior);
   });
 
   createRestaurantStaff(scene,RESTAURANTS)
-    .then(staff => {
-      restaurantStaff.push(...staff);
-    })
-    .catch(error => {
-      console.error('Erro ao carregar garçonetes:',error);
-    });
+    .then(staff => restaurantStaff.push(...staff))
+    .catch(error => console.error('Erro ao carregar garçonetes:',error));
 }
 
 buildRestaurants();
+
+exteriorColliders.push(
+  ...RESTAURANTS.flatMap(restaurant => restaurant.colliders || [])
+);
+
+player.setColliders(exteriorColliders);
 
 function renderOrder() {
   let total = 0;
@@ -838,6 +983,68 @@ document.querySelector('#close-map')
     mapPanel.classList.remove('visible');
   });
 
+function exitRestaurant() {
+  if (!currentRestaurant) return;
+
+  const restaurant = currentRestaurant;
+
+  restaurant.roof.visible = true;
+  currentRestaurant = null;
+
+  scene.fog = outsideFog;
+  player.setIndoor(false);
+  player.setColliders(exteriorColliders);
+  player.teleport(restaurant.x,restaurant.z+9.2);
+  snapCameraToPlayer();
+
+  actionButton.textContent = '🍽️ ENTRAR NO RESTAURANTE';
+}
+
+function enterRestaurant(restaurant) {
+  if (!restaurant || currentRestaurant || currentHouse) return;
+
+  if (player.currentVehicle) player.exitVehicle();
+
+  closeRestaurant();
+  currentRestaurant = restaurant;
+  player.moveTarget = null;
+
+  restaurant.roof.visible = false;
+  scene.fog = null;
+
+  player.setColliders(restaurant.colliders || []);
+  player.setIndoor(true);
+  player.group.visible = true;
+  player.teleport(restaurant.x,restaurant.z+4.2);
+
+  snapCameraToPlayer();
+
+  actionButton.textContent = '🚪 SAIR DO RESTAURANTE';
+}
+
+function findNearestRestaurantDoor() {
+  if (currentRestaurant || currentHouse || player.currentVehicle) return null;
+
+  let nearest = null;
+  let nearestDistance = Infinity;
+
+  for (const restaurant of RESTAURANTS) {
+    const dx = player.group.position.x-restaurant.x;
+    const dz = player.group.position.z-(restaurant.z+8.3);
+
+    if (Math.abs(dx)>3.2 || dz < -2.4 || dz > 3.2) continue;
+
+    const distance = Math.hypot(dx,dz);
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = restaurant;
+    }
+  }
+
+  return nearestDistance <= 3.2 ? nearest : null;
+}
+
 function exitHouse() {
   if (!currentHouse) return;
 
@@ -913,6 +1120,7 @@ function tryAutoEnterHouse() {
   if (
     !started ||
     currentHouse ||
+    currentRestaurant ||
     player.currentVehicle ||
     player.sitting ||
     restaurantPanel.classList.contains('visible')
@@ -949,6 +1157,18 @@ function interact() {
     return;
   }
 
+  if (currentRestaurant) {
+    exitRestaurant();
+    return;
+  }
+
+  const restaurantDoor = findNearestRestaurantDoor();
+
+  if (restaurantDoor) {
+    enterRestaurant(restaurantDoor);
+    return;
+  }
+
   if (currentHouse) {
     exitHouse();
     return;
@@ -975,6 +1195,7 @@ world.destinations.forEach(destination => {
 
   button.addEventListener('click',() => {
     if (currentHouse) exitHouse();
+    if (currentRestaurant) exitRestaurant();
 
     closeRestaurant();
 
@@ -1020,8 +1241,18 @@ function updateActionButton() {
     return;
   }
 
+  if (currentRestaurant) {
+    actionButton.textContent = '🚪 SAIR DO RESTAURANTE';
+    return;
+  }
+
   if (currentHouse) {
     actionButton.textContent = '🚪 SAIR DE CASA';
+    return;
+  }
+
+  if (findNearestRestaurantDoor()) {
+    actionButton.textContent = '🍽️ ENTRAR NO RESTAURANTE';
     return;
   }
 
