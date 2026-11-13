@@ -413,17 +413,14 @@ export class Player {
       const d = this.group.position.distanceTo(
         vehicle.group.position
       );
-
       if (d < distance) {
         distance = d;
         nearest = vehicle;
       }
     }
-
     this.nearVehicle = distance < 5 ? nearest : null;
     return this.nearVehicle;
   }
-
   enterVehicle(vehicle) {
     if (!vehicle || vehicle.occupied) return;
 
@@ -433,7 +430,6 @@ export class Player {
     this.group.position.copy(vehicle.group.position);
     this.cameraDistance = 10;
   }
-
   exitVehicle() {
     if (!this.currentVehicle) return;
 
@@ -454,162 +450,76 @@ export class Player {
     this.cameraDistance = 7;
   }
 update(delta) {
-  if (this.mixer) {
-    this.mixer.update(delta);
-  }
-  const forward =
-    (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
-    (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
-    this.joystick.y;
 
-  const sideways =
-    (this.keys['d'] || this.keys['arrowright'] ? 1 : 0) -
-    (this.keys['a'] || this.keys['arrowleft'] ? 1 : 0) +
-    this.joystick.x;
-
-  if (this.currentVehicle) {
-    const vehicle = this.currentVehicle;
-
-    vehicle.speed += forward * 18 * delta;
-    vehicle.speed *= Math.pow(0.94, delta * 60);
-    vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
-
-    vehicle.group.rotation.y -= sideways * delta * 1.8;
-
-    const direction = new THREE.Vector3(
-      Math.sin(vehicle.group.rotation.y),
-      0,
-      Math.cos(vehicle.group.rotation.y)
-    );
-
-    vehicle.group.position.addScaledVector(
-      direction,
-      vehicle.speed * delta
-    );
-
-    this.group.position.copy(vehicle.group.position);
-    this.updateCamera();
-    return;
-  }
-
-  // Movimento relativo à direção da câmara.
-  const cameraYaw = this.group.rotation.y + this.cameraYawOffset;
-
-  const forwardDirection = new THREE.Vector3(
-    Math.sin(cameraYaw),
-    0,
-    Math.cos(cameraYaw)
-  );
-
-  const rightDirection = new THREE.Vector3(
-    Math.cos(cameraYaw),
-    0,
-    -Math.sin(cameraYaw)
-  );
-
-  const movement = new THREE.Vector3()
-    .addScaledVector(forwardDirection, forward)
-    .addScaledVector(rightDirection, sideways);
-
-  if (movement.lengthSq() > 0.01) {
-    movement.normalize();
-
-    // O personagem vira naturalmente para onde está a caminhar.
-    const targetRotation = Math.atan2(
-      movement.x,
-      movement.z
-    );
-
-    let angleDifference =
-      targetRotation - this.group.rotation.y;
-
-    angleDifference = Math.atan2(
-      Math.sin(angleDifference),
-      Math.cos(angleDifference)
-    );
-
-    this.group.rotation.y += angleDifference *
-      Math.min(1, delta * 10);
-
-    const distance = this.speed * delta;
-
-    this.moveWithCollision(
-      movement.x * distance,
-      movement.z * distance
-    );
-
-    this.setAnimation('walk');
-  } else {
-    this.setAnimation('idle');
-  }
-
-  this.findNearestVehicle();
-  this.updateCamera();
-}
+  update(delta) {
     if (this.mixer) {
       this.mixer.update(delta);
     }
-
     const forward =
       (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
       (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
       this.joystick.y;
 
-    const turn =
+    const sideways =
       (this.keys['d'] || this.keys['arrowright'] ? 1 : 0) -
       (this.keys['a'] || this.keys['arrowleft'] ? 1 : 0) +
       this.joystick.x;
 
     if (this.currentVehicle) {
       const vehicle = this.currentVehicle;
-
       vehicle.speed += forward * 18 * delta;
       vehicle.speed *= Math.pow(0.94, delta * 60);
-
-      vehicle.speed = THREE.MathUtils.clamp(
-        vehicle.speed, -9, 22
-      );
-
-      vehicle.group.rotation.y -=
-        turn * delta * 1.8 *
-        (Math.abs(vehicle.speed) > 0.5 ? 1 : 0);
+      vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
+      vehicle.group.rotation.y -= sideways * delta * 1.8;
 
       const direction = new THREE.Vector3(
         Math.sin(vehicle.group.rotation.y),
         0,
         Math.cos(vehicle.group.rotation.y)
       );
-
-      vehicle.group.position.addScaledVector(
-        direction,
-        vehicle.speed * delta
-      );
-
+      vehicle.group.position.addScaledVector(direction, vehicle.speed * delta);
       this.group.position.copy(vehicle.group.position);
       this.updateCamera();
       return;
     }
 
-    // O jogador pode virar mesmo parado.
-    if (Math.abs(turn) > 0.05) {
-      this.group.rotation.y -=
-        turn * this.rotationSpeed * delta;
-    }
+    const cameraYaw = this.group.rotation.y + this.cameraYawOffset;
 
-    const moving = Math.abs(forward) > 0.05;
+    const forwardDirection = new THREE.Vector3(
+      -Math.sin(cameraYaw), 0, -Math.cos(cameraYaw)
+    );
 
-    if (moving) {
-      const direction = new THREE.Vector3(
-        Math.sin(this.group.rotation.y),
-        0,
-        Math.cos(this.group.rotation.y)
+    const rightDirection = new THREE.Vector3(
+      Math.cos(cameraYaw), 0, -Math.sin(cameraYaw)
+    );
+
+    const movement = new THREE.Vector3()
+      .addScaledVector(forwardDirection, forward)
+      .addScaledVector(rightDirection, sideways);
+
+    if (movement.lengthSq() > 0.01) {
+      movement.normalize();
+
+      const targetRotation = Math.atan2(
+        -movement.x,
+        -movement.z
       );
 
-      const distance = forward * this.speed * delta;
+      let angleDifference = targetRotation - this.group.rotation.y;
+
+      angleDifference = Math.atan2(
+        Math.sin(angleDifference),
+        Math.cos(angleDifference)
+      );
+
+      this.group.rotation.y +=
+        angleDifference * Math.min(1, delta * 10);
+
+      const distance = this.speed * delta;
 
       this.moveWithCollision(
-        direction.x * distance,
-        direction.z * distance
+        movement.x * distance,
+        movement.z * distance
       );
 
       this.setAnimation('walk');
@@ -620,7 +530,6 @@ update(delta) {
     this.findNearestVehicle();
     this.updateCamera();
   }
-
   updateCamera() {
     const target = this.currentVehicle
       ? this.currentVehicle.group.position
