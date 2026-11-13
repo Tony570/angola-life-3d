@@ -453,8 +453,99 @@ export class Player {
     this.currentVehicle = null;
     this.cameraDistance = 7;
   }
+update(delta) {
+  if (this.mixer) {
+    this.mixer.update(delta);
+  }
+  const forward =
+    (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
+    (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
+    this.joystick.y;
 
-  update(delta) {
+  const sideways =
+    (this.keys['d'] || this.keys['arrowright'] ? 1 : 0) -
+    (this.keys['a'] || this.keys['arrowleft'] ? 1 : 0) +
+    this.joystick.x;
+
+  if (this.currentVehicle) {
+    const vehicle = this.currentVehicle;
+
+    vehicle.speed += forward * 18 * delta;
+    vehicle.speed *= Math.pow(0.94, delta * 60);
+    vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
+
+    vehicle.group.rotation.y -= sideways * delta * 1.8;
+
+    const direction = new THREE.Vector3(
+      Math.sin(vehicle.group.rotation.y),
+      0,
+      Math.cos(vehicle.group.rotation.y)
+    );
+
+    vehicle.group.position.addScaledVector(
+      direction,
+      vehicle.speed * delta
+    );
+
+    this.group.position.copy(vehicle.group.position);
+    this.updateCamera();
+    return;
+  }
+
+  // Movimento relativo à direção da câmara.
+  const cameraYaw = this.group.rotation.y + this.cameraYawOffset;
+
+  const forwardDirection = new THREE.Vector3(
+    Math.sin(cameraYaw),
+    0,
+    Math.cos(cameraYaw)
+  );
+
+  const rightDirection = new THREE.Vector3(
+    Math.cos(cameraYaw),
+    0,
+    -Math.sin(cameraYaw)
+  );
+
+  const movement = new THREE.Vector3()
+    .addScaledVector(forwardDirection, forward)
+    .addScaledVector(rightDirection, sideways);
+
+  if (movement.lengthSq() > 0.01) {
+    movement.normalize();
+
+    // O personagem vira naturalmente para onde está a caminhar.
+    const targetRotation = Math.atan2(
+      movement.x,
+      movement.z
+    );
+
+    let angleDifference =
+      targetRotation - this.group.rotation.y;
+
+    angleDifference = Math.atan2(
+      Math.sin(angleDifference),
+      Math.cos(angleDifference)
+    );
+
+    this.group.rotation.y += angleDifference *
+      Math.min(1, delta * 10);
+
+    const distance = this.speed * delta;
+
+    this.moveWithCollision(
+      movement.x * distance,
+      movement.z * distance
+    );
+
+    this.setAnimation('walk');
+  } else {
+    this.setAnimation('idle');
+  }
+
+  this.findNearestVehicle();
+  this.updateCamera();
+}
     if (this.mixer) {
       this.mixer.update(delta);
     }
