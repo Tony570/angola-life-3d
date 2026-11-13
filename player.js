@@ -17,6 +17,10 @@ export class Player {
     this.walkTime = 0;
     this.onInteract = null;
 
+    this.colliders = [];
+    this.indoor = false;
+    this.radius = 0.48;
+
     this.createCharacter();
     this.group.position.set(0, 0, 18);
     scene.add(this.group);
@@ -102,6 +106,54 @@ export class Player {
     this.group.traverse(obj => {
       if (obj.isMesh) obj.castShadow = true;
     });
+  }
+
+  setColliders(colliders = []) {
+    this.colliders = colliders;
+  }
+
+  setIndoor(value) {
+    this.indoor = value;
+    this.updateCamera();
+  }
+
+  isBlocked(x, z) {
+    for (const wall of this.colliders) {
+      const closestX = THREE.MathUtils.clamp(
+        x,
+        wall.minX,
+        wall.maxX
+      );
+
+      const closestZ = THREE.MathUtils.clamp(
+        z,
+        wall.minZ,
+        wall.maxZ
+      );
+
+      const dx = x - closestX;
+      const dz = z - closestZ;
+
+      if (dx * dx + dz * dz < this.radius * this.radius) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  moveWithCollision(dx, dz) {
+    const x = this.group.position.x;
+    const z = this.group.position.z;
+
+    // Permite deslizar ao longo das paredes.
+    if (!this.isBlocked(x + dx, z)) {
+      this.group.position.x += dx;
+    }
+
+    if (!this.isBlocked(this.group.position.x, z + dz)) {
+      this.group.position.z += dz;
+    }
   }
 
   setupControls() {
@@ -290,9 +342,11 @@ export class Player {
         Math.cos(this.group.rotation.y)
       );
 
-      this.group.position.addScaledVector(
-        direction,
-        forward * this.speed * delta
+      const distance = forward * this.speed * delta;
+
+      this.moveWithCollision(
+        direction.x * distance,
+        direction.z * distance
       );
 
       this.walkTime += delta * 10;
@@ -319,8 +373,17 @@ export class Player {
       ? this.currentVehicle.group.rotation.y
       : this.group.rotation.y;
 
-    const distance = this.currentVehicle ? 10 : 7;
-    const height = this.currentVehicle ? 5 : 4;
+    const distance = this.currentVehicle
+      ? 10
+      : this.indoor
+        ? 3.2
+        : 7;
+
+    const height = this.currentVehicle
+      ? 5
+      : this.indoor
+        ? 2.8
+        : 4;
 
     const desired = new THREE.Vector3(
       target.x - Math.sin(rotation) * distance,
@@ -328,7 +391,7 @@ export class Player {
       target.z - Math.cos(rotation) * distance
     );
 
-    this.camera.position.lerp(desired, 0.12);
+    this.camera.position.lerp(desired, 0.2);
 
     this.camera.lookAt(
       target.x,
