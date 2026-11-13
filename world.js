@@ -389,47 +389,33 @@ export function createWorld(scene) {
     makeBuilding(25, -25, 18, 18, 11, 'office');
     makeBuilding(-25, 25, 18, 18, 7, 'apartment');
     makeBuilding(25, 25, 18, 18, 8, 'apartment');
-
     // Zona comercial
     makeBuilding(-55, -20, 18, 15, 3, 'shop');
     makeBuilding(-55, -43, 18, 15, 2, 'shop');
     makeBuilding(-55, -66, 18, 15, 3, 'shop');
-
     // Bairro residencial
-    makeBuilding(55, 35, 13, 12, 2, 'house');
-    makeBuilding(55, 57, 13, 12, 2, 'house');
-    makeBuilding(78, 35, 13, 12, 1, 'house');
-    makeBuilding(78, 57, 13, 12, 2, 'house');
-  }
-
   // ============================================
   // PRAÇA CENTRAL
   // ============================================
-
   function makePark() {
     const park = new THREE.Mesh(
       new THREE.BoxGeometry(25, 0.25, 25),
       materials.grass2
     );
-
     park.position.set(0, 0.08, 0);
     scene.add(park);
-
     // Fonte
     addCylinder(scene, 0, 0.2, 0, 3.4, 3.4, 0.5, materials.concrete, 24);
     addCylinder(scene, 0, 0.7, 0, 2.8, 2.8, 0.15, materials.water, 24);
     addCylinder(scene, 0, 0.85, 0, 0.45, 0.45, 2.1, materials.concrete, 12);
-
     // Bancos
     for (let i = 0; i < 4; i++) {
       const angle = i * Math.PI / 2;
       const x = Math.cos(angle) * 8;
       const z = Math.sin(angle) * 8;
-
       const bench = new THREE.Group();
       addBox(bench, 0, 0.65, 0, 3, 0.2, 0.8, materials.trunk);
       addBox(bench, 0, 0.9, -0.3, 3, 0.9, 0.15, materials.trunk);
-
       bench.position.set(x, 0, z);
       bench.rotation.y = -angle;
       scene.add(bench);
@@ -462,13 +448,11 @@ export function createWorld(scene) {
           new THREE.ConeGeometry(0.32, 3.5, 5),
           leaves
         );
-
         leaf.position.set(
           Math.cos(i * Math.PI / 4) * 1.15,
           4.9,
           Math.sin(i * Math.PI / 4) * 1.15
         );
-
         leaf.rotation.z = Math.cos(i * Math.PI / 4) * 1.1;
         leaf.rotation.x = Math.sin(i * Math.PI / 4) * 1.1;
         group.add(leaf);
@@ -478,17 +462,14 @@ export function createWorld(scene) {
         new THREE.SphereGeometry(1.7, 8, 7),
         materials.leaf
       );
-
       crown.position.y = 3.2;
       crown.scale.set(1, 1.2, 1);
       crown.castShadow = true;
       group.add(crown);
     }
-
     group.position.set(x, 0, z);
     scene.add(group);
   }
-
   function buildTrees() {
     for (let i = -100; i <= 100; i += 20) {
       makeTree(i, -12, i % 40 === 0);
@@ -496,7 +477,6 @@ export function createWorld(scene) {
       makeTree(-12, i, true);
       makeTree(12, i, false);
     }
-
     // Árvores no bairro
     for (let i = 0; i < 22; i++) {
       const x = -95 + (i * 29) % 190;
@@ -506,16 +486,12 @@ export function createWorld(scene) {
       makeTree(x, z, i % 3 === 0);
     }
   }
-
   // ============================================
   // ILUMINAÇÃO PÚBLICA
   // ============================================
-
   function makeStreetLamp(x, z) {
     const group = new THREE.Group();
-
     addCylinder(group, 0, 0, 0, 0.08, 0.13, 5, materials.black, 8);
-
     const arm = addBox(
       group,
       0.35,
@@ -528,7 +504,6 @@ export function createWorld(scene) {
     );
 
     arm.rotation.z = -0.15;
-
     const lamp = new THREE.Mesh(
       new THREE.BoxGeometry(0.65, 0.18, 0.35),
       new THREE.MeshStandardMaterial({
@@ -537,14 +512,11 @@ export function createWorld(scene) {
         emissiveIntensity: 0.45
       })
     );
-
     lamp.position.set(0.75, 4.75, 0);
     group.add(lamp);
-
     group.position.set(x, 0, z);
     scene.add(group);
   }
-
   function buildStreetLamps() {
     for (let i = -100; i <= 100; i += 25) {
       makeStreetLamp(-10, i);
@@ -553,11 +525,9 @@ export function createWorld(scene) {
       makeStreetLamp(i, 10);
     }
   }
-
   // ============================================
   // CARROS
   // ============================================
-
   function makeCar(x, z, color, rotation = 0) {
     const group = new THREE.Group();
 
@@ -566,29 +536,24 @@ export function createWorld(scene) {
       metalness: 0.25,
       roughness: 0.45
     });
-
     addBox(group, 0, 0.35, 0, 2.2, 0.65, 4.2, bodyMaterial);
     addBox(group, 0, 1, -0.25, 1.8, 0.75, 2.1, materials.glass);
 
     // Capô
     addBox(group, 0, 0.7, 1.25, 2, 0.2, 1.2, bodyMaterial);
-
     // Rodas
     const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x151515 });
-
     for (const wx of [-1.05, 1.05]) {
       for (const wz of [-1.35, 1.35]) {
         const wheel = new THREE.Mesh(
           new THREE.CylinderGeometry(0.43, 0.43, 0.25, 12),
           wheelMaterial
         );
-
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(wx, 0.4, wz);
         group.add(wheel);
       }
     }
-
     // Faróis
     const headlight = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -602,65 +567,51 @@ export function createWorld(scene) {
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
     scene.add(group);
-
     world.vehicles.push({
       group,
       speed: 0,
       occupied: false
     });
-
     return group;
   }
-
   // ============================================
   // PESSOAS / NPCs
   // ============================================
-
   function makePerson(x, z, shirtColor, phase = 0) {
     const group = new THREE.Group();
-
     const skin = new THREE.MeshStandardMaterial({ color: 0x8b5738 });
     const shirt = new THREE.MeshStandardMaterial({ color: shirtColor });
     const trousers = new THREE.MeshStandardMaterial({ color: 0x292d38 });
-
     // Corpo
     addCylinder(group, 0, 0.85, 0, 0.3, 0.38, 0.9, shirt, 8);
-
     // Cabeça
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.25, 10, 8),
       skin
     );
-
     head.position.y = 1.55;
     group.add(head);
-
     // Pernas
     for (const side of [-1, 1]) {
       const leg = new THREE.Mesh(
         new THREE.BoxGeometry(0.18, 0.65, 0.2),
         trousers
       );
-
       leg.position.set(side * 0.13, 0.35, 0);
       group.add(leg);
     }
-
     // Braços
     for (const side of [-1, 1]) {
       const arm = new THREE.Mesh(
         new THREE.CylinderGeometry(0.09, 0.1, 0.65, 7),
         shirt
       );
-
       arm.position.set(side * 0.38, 0.9, 0);
       arm.rotation.z = side * -0.15;
       group.add(arm);
     }
-
     group.position.set(x, 0, z);
     scene.add(group);
-
     world.npcs.push({
       group,
       originX: x,
@@ -674,13 +625,10 @@ export function createWorld(scene) {
       0xb52f2f, 0x2363a4, 0x27724a,
       0xd59b28, 0x683b8c, 0xe2e2e2
     ];
-
     for (let i = 0; i < 24; i++) {
       const x = -80 + (i * 31) % 160;
       const z = -80 + (i * 43) % 160;
-
       if (Math.abs(x) < 15 && Math.abs(z) < 15) continue;
-
       makePerson(
         x,
         z,
@@ -689,43 +637,32 @@ export function createWorld(scene) {
       );
     }
   }
-
   // ============================================
   // MERCADO E POSTO DE COMBUSTÍVEL
   // ============================================
-
   function makeMarket() {
     const group = new THREE.Group();
-
     // Barracas
     for (let i = 0; i < 4; i++) {
       const x = (i - 1.5) * 3.5;
-
       addBox(group, x, 0, 0, 3, 2.4, 2.8, materials.yellow);
       addBox(group, x, 2.4, 0, 3.4, 0.2, 3.2, materials.white);
-
       const roof = new THREE.Mesh(
         new THREE.ConeGeometry(2.1, 1.1, 4),
         new THREE.MeshStandardMaterial({ color: 0xb33d2c })
       );
-
       roof.position.set(x, 3.05, 0);
       roof.rotation.y = Math.PI / 4;
       group.add(roof);
     }
-
     group.position.set(-78, 0, -25);
     scene.add(group);
   }
-
   function makeFuelStation() {
     const group = new THREE.Group();
-
     addBox(group, 0, 0, 0, 15, 0.3, 12, materials.concrete);
-
     // Cobertura
     addBox(group, 0, 4, 0, 15, 0.45, 12, materials.yellow);
-
     // Pilares
     for (const x of [-6, 6]) {
       for (const z of [-4, 4]) {
