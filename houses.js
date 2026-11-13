@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // ============================================
 // ANGOLA LIFE 3D — CASAS E INTERIORES
-// Paredes e móveis com colisões
+// Casas habitáveis com colisões exteriores
 // ============================================
 
 export function createHouseSystem(scene) {
@@ -95,37 +95,82 @@ export function createHouseSystem(scene) {
   }
 
   // ============================================
+  // COLISÕES EXTERIORES DAS CASAS
+  // ============================================
+
+  function createExteriorColliders(location) {
+    const colliders = [];
+
+    function add(x, z, width, depth) {
+      colliders.push({
+        minX: location.x + x - width / 2,
+        maxX: location.x + x + width / 2,
+        minZ: location.z + z - depth / 2,
+        maxZ: location.z + z + depth / 2
+      });
+    }
+
+    // PAREDE LATERAL ESQUERDA
+    add(-6.3, 0, 0.65, 12);
+
+    // PAREDE LATERAL DIREITA
+    add(6.3, 0, 0.65, 12);
+
+    // PAREDE TRASEIRA
+    add(0, -5.8, 13, 0.65);
+
+    // FACHADA ESQUERDA
+    add(-4.5, 6, 4, 0.65);
+
+    // FACHADA DIREITA
+    add(4.5, 6, 4, 0.65);
+
+    // A PORTA CENTRAL FICA LIVRE
+
+    return colliders;
+  }
+
+  // ============================================
   // EXTERIOR DAS CASAS
   // ============================================
 
   function createExterior(location) {
     const exterior = new THREE.Group();
 
+    // PAREDES
     box(exterior, 0, 0, -5.8, 13, 5, 0.35, materials.exterior);
     box(exterior, -6.3, 0, 0, 0.35, 5, 12, materials.exterior);
     box(exterior, 6.3, 0, 0, 0.35, 5, 12, materials.exterior);
 
-    // Entrada frontal aberta
+    // FACHADA COM ENTRADA CENTRAL
     box(exterior, -4.5, 0, 6, 4, 3.2, 0.35, materials.exterior);
     box(exterior, 4.5, 0, 6, 4, 3.2, 0.35, materials.exterior);
+
+    // PARTE SUPERIOR DA ENTRADA
     box(exterior, 0, 3.2, 6, 5, 1.8, 0.35, materials.exterior);
 
-    // Moldura da entrada
+    // MOLDURA DA PORTA
     box(exterior, -1.05, 0, 6.05, 0.15, 2.8, 0.25, materials.wood);
     box(exterior, 1.05, 0, 6.05, 0.15, 2.8, 0.25, materials.wood);
     box(exterior, 0, 2.8, 6.05, 2.2, 0.15, 0.25, materials.wood);
 
+    // TELHADO
     const roof = box(
       exterior, 0, 5, 0, 14, 0.4, 14, materials.roof
     );
 
+    // JANELAS
     makeWindow(exterior, -3.8, 1.3, 6.2, 1.5, 1.3);
     makeWindow(exterior, 3.8, 1.3, 6.2, 1.5, 1.3);
 
     exterior.position.set(location.x, 0, location.z);
     scene.add(exterior);
 
-    return { exterior, roof };
+    return {
+      exterior,
+      roof,
+      colliders: createExteriorColliders(location)
+    };
   }
 
   // ============================================
@@ -151,7 +196,7 @@ export function createHouseSystem(scene) {
     // PAREDE TRASEIRA
     add(0, -9, 18, 0.55);
 
-    // PAREDE FRONTAL — entrada central livre
+    // PAREDE FRONTAL COM ENTRADA LIVRE
     add(-6.5, 9, 5, 0.55);
     add(6.5, 9, 5, 0.55);
 
@@ -193,33 +238,33 @@ export function createHouseSystem(scene) {
   function createInterior(index) {
     const interior = new THREE.Group();
 
-    // Piso
+    // PISO
     box(interior, 0, -0.15, 0, 18, 0.3, 18, materials.floor);
 
-    // Paredes laterais
+    // PAREDES LATERAIS
     box(interior, -9, 0, 0, 0.3, 4.5, 18, materials.wall);
     box(interior, 9, 0, 0, 0.3, 4.5, 18, materials.wall);
 
-    // Parede traseira
+    // PAREDE TRASEIRA
     box(interior, 0, 0, -9, 18, 4.5, 0.3, materials.wall);
 
-    // Parede frontal com passagem central
+    // PAREDE FRONTAL COM PASSAGEM CENTRAL
     box(interior, -6.5, 0, 9, 5, 4.5, 0.3, materials.wall);
     box(interior, 6.5, 0, 9, 5, 4.5, 0.3, materials.wall);
     box(interior, 0, 3.8, 9, 8, 0.7, 0.3, materials.wall);
 
-    // Janelas
+    // JANELAS
     makeWindow(interior, -8.78, 1.4, -3, 0.12, 1.5);
     makeWindow(interior, 8.78, 1.4, 3, 0.12, 1.5);
 
-    // Teto
+    // TETO
     const roof = box(
       interior, 0, 4.5, 0, 18, 0.2, 18, materials.wall
     );
 
     createFurniture(interior);
 
-    // Luz
+    // ILUMINAÇÃO INTERIOR
     const light = new THREE.PointLight(0xffe3b0, 2.2, 35);
     light.position.set(0, 3.7, 0);
     interior.add(light);
@@ -232,7 +277,7 @@ export function createHouseSystem(scene) {
     lamp.position.set(0, 4.15, 0);
     interior.add(lamp);
 
-    // Zona isolada de cada interior
+    // ZONA ISOLADA DE CADA INTERIOR
     const interiorX = 500 + index * 35;
     const interiorZ = 1;
 
@@ -250,7 +295,7 @@ export function createHouseSystem(scene) {
   }
 
   // ============================================
-  // CRIAR AS QUATRO CASAS
+  // LOCALIZAÇÃO DAS CASAS
   // ============================================
 
   const locations = [
@@ -260,18 +305,26 @@ export function createHouseSystem(scene) {
     { name: 'Casa Grande', x: 78, z: 57 }
   ];
 
+  // ============================================
+  // CONSTRUIR AS CASAS
+  // ============================================
+
   locations.forEach((location, index) => {
     const outside = createExterior(location);
     const inside = createInterior(index);
 
     houses.push({
       ...location,
+
       exterior: outside.exterior,
       exteriorRoof: outside.roof,
+      exteriorColliders: outside.colliders,
+
       interior: inside.group,
       interiorRoof: inside.roof,
       interiorX: inside.interiorX,
       interiorZ: inside.interiorZ,
+
       colliders: inside.colliders
     });
   });
