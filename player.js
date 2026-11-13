@@ -13,17 +13,26 @@ export class Player {
     this.scene = scene;
     this.camera = camera;
     this.vehicles = vehicles;
+
     this.group = new THREE.Group();
+    this.group.position.set(0, 0, 18);
+    this.scene.add(this.group);
 
     this.speed = 5;
     this.keys = {};
     this.currentVehicle = null;
     this.nearVehicle = null;
-    this.joystick = { x: 0, y: 0 };
     this.onInteract = null;
     this.colliders = [];
     this.indoor = false;
     this.radius = 0.38;
+
+    this.moveTarget = null;
+    this.raycaster = new THREE.Raycaster();
+    this.groundPlane = new THREE.Plane(
+      new THREE.Vector3(0, 1, 0),
+      0
+    );
 
     this.mixer = null;
     this.idleAction = null;
@@ -42,22 +51,16 @@ export class Player {
     this.cameraMinDistance = 3;
     this.cameraMaxDistance = 14;
     this.cameraHeightAngle = 0.42;
-
-    // Direção absoluta da câmara.
-    // Não depende da rotação do personagem.
     this.cameraYawOffset = 0;
     this.cameraPitch = 0;
 
     this.cameraPointers = new Map();
+    this.pointerStart = new Map();
     this.lastPinchDistance = 0;
     this.cameraDragging = false;
 
-    this.group.position.set(0, 0, 18);
-    this.scene.add(this.group);
-
     this.createCharacter();
     this.setupControls();
-    this.setupJoystick();
     this.setupCameraControls();
   }
 
@@ -87,7 +90,6 @@ export class Player {
       visualRoot.add(model);
 
       this.group.add(visualRoot);
-
       this.model = model;
       this.normalizedModel = visualRoot;
 
@@ -124,29 +126,22 @@ export class Player {
         loader.loadAsync(WALK_URL)
       ]);
 
-      const idleResult = results[0];
-      const walkResult = results[1];
+      if (results[0].status === 'fulfilled') {
+        const clip = results[0].value.animations[0];
 
-      if (idleResult.status === 'fulfilled') {
-        const idleClip = idleResult.value.animations[0];
-
-        if (idleClip) {
-          this.idleAction = this.mixer.clipAction(idleClip);
+        if (clip) {
+          this.idleAction = this.mixer.clipAction(clip);
           this.idleAction.play();
           this.currentAnimation = 'idle';
         }
-      } else {
-        console.error('Erro ao carregar idle:', idleResult.reason);
       }
 
-      if (walkResult.status === 'fulfilled') {
-        const walkClip = walkResult.value.animations[0];
+      if (results[1].status === 'fulfilled') {
+        const clip = results[1].value.animations[0];
 
-        if (walkClip) {
-          this.walkAction = this.mixer.clipAction(walkClip);
+        if (clip) {
+          this.walkAction = this.mixer.clipAction(clip);
         }
-      } else {
-        console.error('Erro ao carregar walk:', walkResult.reason);
       }
 
       if (!this.idleAction && this.walkAction) {
@@ -154,10 +149,7 @@ export class Player {
         this.walkAction.paused = true;
       }
 
-      console.log('Personagem carregado:', HUMAN_HEIGHT, 'metros');
-      console.log('Animação idle:', Boolean(this.idleAction));
-      console.log('Animação walk:', Boolean(this.walkAction));
-
+      console.log('Personagem carregado.');
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
     }
@@ -184,9 +176,7 @@ export class Player {
   updateProceduralAnimation(delta, moving) {
     if (!this.normalizedModel) return;
 
-    if (moving) {
-      this.walkPhase += delta * 8.5;
-    }
+    if (moving) this.walkPhase += delta * 8.5;
 
     const swing = moving ? Math.sin(this.walkPhase) * 0.62 : 0;
     const armSwing = moving
@@ -218,9 +208,7 @@ export class Player {
 
     if (value) {
       this.cameraDistance = THREE.MathUtils.clamp(
-        this.cameraDistance,
-        3,
-        5
+        this.cameraDistance, 3, 5
       );
     }
 
@@ -278,68 +266,54 @@ export class Player {
 
     window.addEventListener('blur', () => {
       this.keys = {};
-      this.joystick.x = 0;
-      this.joystick.y = 0;
+      this.moveTarget = null;
     });
   }
 
-  setupJoystick() {
-    const joystick = document.getElementById('joystick');
-    const knob = document.getElementById('joystick-knob');
+  setDestinationFromScreen(clientX, clientY) {
+    const canvas = this.camera && document.querySelector('canvas');
+    if (!canvas) return;
 
-    if (!joystick || !knob) return;
+    const rect = canvas.getBoundingClientRect();
 
-    let active = false;
+    const mouse = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
 
-    const move = e => {
-      if (!active) return;
+    this.camera.updateMatrixWorld(true);
+    this.raycaster.setFromCamera(mouse, this.camera);
 
-      e.preventDefault();
+    const destination = new THREE.Vector3();
 
-      const rect = joystick.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height / 2;
+    const hit = this.raycaster.ray.intersectPlane(
+      this.groundPlane,
+      destination
+    );
 
-      let dx = e.clientX - cx;
-      let dy = e.clientY - cy;
+    if (!hit) return;
 
-      const max = Math.max(1, rect.width * 0.32);
-      const length = Math.hypot(dx, dy);
+    const distance = Math.hypot(
+      destination.x - this.group.position.x,
+      destination.z - this.group.position.z
+    );
 
-      if (length > max) {
-        dx = dx / length * max;
-        dy = dy / length * max;
-      }
+    if (distance < 0.5) {
+      this.moveTarget = null;
+      return;
+    }
 
-      this.joystick.x = dx / max;
-      this.joystick.y = dy / max;
+    this.moveTarget = new THREE.Vector3(
+      destination.x,
+      0,
+      destination.z
+    );
 
-      knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    };
-
-    const stop = () => {
-      active = false;
-      this.joystick.x = 0;
-      this.joystick.y = 0;
-      knob.style.transform = 'translate(0, 0)';
-    };
-
-    joystick.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      active = true;
-      joystick.setPointerCapture(e.pointerId);
-      move(e);
-    });
-
-    joystick.addEventListener('pointermove', move);
-    joystick.addEventListener('pointerup', stop);
-    joystick.addEventListener('pointercancel', stop);
-    joystick.addEventListener('lostpointercapture', stop);
+    console.log('Novo destino:', destination.x, destination.z);
   }
 
   setupCameraControls() {
     const canvas = document.querySelector('canvas');
-
     if (!canvas) return;
 
     canvas.style.touchAction = 'none';
@@ -351,7 +325,6 @@ export class Player {
 
     const getPinchDistance = () => {
       const points = [...this.cameraPointers.values()];
-
       if (points.length < 2) return 0;
 
       return Math.hypot(
@@ -365,7 +338,9 @@ export class Player {
 
       e.preventDefault();
       canvas.setPointerCapture(e.pointerId);
+
       this.cameraPointers.set(e.pointerId, pointerPosition(e));
+      this.pointerStart.set(e.pointerId, pointerPosition(e));
 
       if (this.cameraPointers.size === 1) {
         this.cameraDragging = true;
@@ -388,13 +363,21 @@ export class Player {
       this.cameraPointers.set(e.pointerId, current);
 
       if (this.cameraPointers.size === 1 && this.cameraDragging) {
-        this.cameraYawOffset -= (current.x - previous.x) * 0.006;
-
-        this.cameraPitch = THREE.MathUtils.clamp(
-          this.cameraPitch + (current.y - previous.y) * 0.004,
-          -0.35,
-          0.65
+        const start = this.pointerStart.get(e.pointerId);
+        const moved = Math.hypot(
+          current.x - start.x,
+          current.y - start.y
         );
+
+        if (moved > 7) {
+          this.cameraYawOffset -= (current.x - previous.x) * 0.006;
+
+          this.cameraPitch = THREE.MathUtils.clamp(
+            this.cameraPitch + (current.y - previous.y) * 0.004,
+            -0.35,
+            0.65
+          );
+        }
       }
 
       if (this.cameraPointers.size >= 2) {
@@ -414,7 +397,22 @@ export class Player {
     });
 
     const releasePointer = e => {
+      const start = this.pointerStart.get(e.pointerId);
+      const current = pointerPosition(e);
+
+      if (start && this.cameraPointers.size === 1) {
+        const moved = Math.hypot(
+          current.x - start.x,
+          current.y - start.y
+        );
+
+        if (moved < 10 && !this.currentVehicle) {
+          this.setDestinationFromScreen(e.clientX, e.clientY);
+        }
+      }
+
       this.cameraPointers.delete(e.pointerId);
+      this.pointerStart.delete(e.pointerId);
 
       if (this.cameraPointers.size === 0) {
         this.cameraDragging = false;
@@ -469,13 +467,13 @@ export class Player {
     }
 
     this.nearVehicle = distance < 5 ? nearest : null;
-
     return this.nearVehicle;
   }
 
   enterVehicle(vehicle) {
     if (!vehicle || vehicle.occupied) return;
 
+    this.moveTarget = null;
     this.currentVehicle = vehicle;
     vehicle.occupied = true;
     this.group.visible = false;
@@ -507,22 +505,18 @@ export class Player {
   update(delta) {
     this.group.position.y = 0;
 
-    if (this.mixer) {
-      this.mixer.update(delta);
-    }
-
-    const forward =
-      (this.keys.w || this.keys.arrowup ? 1 : 0) -
-      (this.keys.s || this.keys.arrowdown ? 1 : 0) -
-      this.joystick.y;
-
-    const sideways =
-      (this.keys.d || this.keys.arrowright ? 1 : 0) -
-      (this.keys.a || this.keys.arrowleft ? 1 : 0) +
-      this.joystick.x;
+    if (this.mixer) this.mixer.update(delta);
 
     if (this.currentVehicle) {
       const vehicle = this.currentVehicle;
+
+      const forward =
+        (this.keys.w || this.keys.arrowup ? 1 : 0) -
+        (this.keys.s || this.keys.arrowdown ? 1 : 0);
+
+      const sideways =
+        (this.keys.d || this.keys.arrowright ? 1 : 0) -
+        (this.keys.a || this.keys.arrowleft ? 1 : 0);
 
       vehicle.speed += forward * 18 * delta;
       vehicle.speed *= Math.pow(0.94, delta * 60);
@@ -545,58 +539,59 @@ export class Player {
       return;
     }
 
-    // O movimento segue exactamente a orientação da câmara.
-    // A rotação do personagem não altera esta direcção.
-    const cameraYaw = this.cameraYawOffset;
+    let moving = false;
 
-    const forwardDirection = new THREE.Vector3(
-      -Math.sin(cameraYaw),
-      0,
-      -Math.cos(cameraYaw)
-    );
+    if (this.moveTarget) {
+      const dx = this.moveTarget.x - this.group.position.x;
+      const dz = this.moveTarget.z - this.group.position.z;
+      const distance = Math.hypot(dx, dz);
 
-    const rightDirection = new THREE.Vector3(
-      Math.cos(cameraYaw),
-      0,
-      -Math.sin(cameraYaw)
-    );
+      if (distance < 0.2) {
+        this.moveTarget = null;
+      } else {
+        moving = true;
 
-    const movement = new THREE.Vector3()
-      .addScaledVector(forwardDirection, forward)
-      .addScaledVector(rightDirection, sideways);
+        const directionX = dx / distance;
+        const directionZ = dz / distance;
 
-    const moving = movement.lengthSq() > 0.01;
+        const targetRotation = Math.atan2(
+          -directionX,
+          -directionZ
+        );
 
-    if (moving) {
-      movement.normalize();
+        let angleDifference = targetRotation - this.group.rotation.y;
 
-      const targetRotation = Math.atan2(
-        -movement.x,
-        -movement.z
-      );
+        angleDifference = Math.atan2(
+          Math.sin(angleDifference),
+          Math.cos(angleDifference)
+        );
 
-      let angleDifference = targetRotation - this.group.rotation.y;
+        this.group.rotation.y +=
+          angleDifference * Math.min(1, delta * 10);
 
-      angleDifference = Math.atan2(
-        Math.sin(angleDifference),
-        Math.cos(angleDifference)
-      );
+        const step = Math.min(this.speed * delta, distance);
 
-      this.group.rotation.y +=
-        angleDifference * Math.min(1, delta * 10);
+        const oldX = this.group.position.x;
+        const oldZ = this.group.position.z;
 
-      const distance = this.speed * delta;
+        this.moveWithCollision(
+          directionX * step,
+          directionZ * step
+        );
 
-      this.moveWithCollision(
-        movement.x * distance,
-        movement.z * distance
-      );
+        const actuallyMoved = Math.hypot(
+          this.group.position.x - oldX,
+          this.group.position.z - oldZ
+        );
 
-      this.setAnimation('walk');
-    } else {
-      this.setAnimation('idle');
+        if (actuallyMoved < 0.001) {
+          this.moveTarget = null;
+          moving = false;
+        }
+      }
     }
 
+    this.setAnimation(moving ? 'walk' : 'idle');
     this.updateProceduralAnimation(delta, moving);
 
     this.findNearestVehicle();
@@ -608,8 +603,6 @@ export class Player {
       ? this.currentVehicle.group.position
       : this.group.position;
 
-    // A câmara do jogador usa uma direcção independente.
-    // Nos veículos, mantém a orientação relativa ao veículo.
     const yaw = this.currentVehicle
       ? this.currentVehicle.group.rotation.y + this.cameraYawOffset
       : this.cameraYawOffset;
@@ -645,6 +638,7 @@ export class Player {
   teleport(x, z) {
     if (this.currentVehicle) this.exitVehicle();
 
+    this.moveTarget = null;
     this.group.position.set(x, 0, z);
     this.updateCamera();
   }
