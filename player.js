@@ -14,13 +14,11 @@ export class Player {
     this.group = new THREE.Group();
 
     this.speed = 5;
-    this.rotationSpeed = 2.8;
     this.keys = {};
     this.currentVehicle = null;
     this.nearVehicle = null;
     this.joystick = { x: 0, y: 0 };
     this.onInteract = null;
-
     this.colliders = [];
     this.indoor = false;
     this.radius = 0.38;
@@ -36,10 +34,7 @@ export class Player {
     this.cameraHeightAngle = 0.42;
     this.cameraYawOffset = 0;
     this.cameraPitch = 0;
-
-    this.cameraTarget = new THREE.Vector3();
     this.cameraPointers = new Map();
-    this.lastCameraPointer = null;
     this.lastPinchDistance = 0;
     this.cameraDragging = false;
 
@@ -59,49 +54,64 @@ export class Player {
       const gltf = await loader.loadAsync(MODEL_URL);
       const model = gltf.scene;
 
-      model.updateWorldMatrix(true, true);
+      model.position.set(0, 0, 0);
+      model.rotation.set(0, 0, 0);
+      model.updateMatrixWorld(true);
 
-      const bounds = new THREE.Box3().setFromObject(model);
+      const bounds = new THREE.Box3();
+
+      model.traverse(object => {
+        if (!object.isMesh || !object.geometry) return;
+
+        if (!object.geometry.boundingBox) {
+          object.geometry.computeBoundingBox();
+        }
+
+        if (object.geometry.boundingBox) {
+          const meshBounds = object.geometry.boundingBox.clone();
+          meshBounds.applyMatrix4(object.matrixWorld);
+          bounds.union(meshBounds);
+        }
+      });
+
+      if (bounds.isEmpty()) bounds.setFromObject(model);
+
       const originalHeight = bounds.max.y - bounds.min.y;
 
       if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-        throw new Error('Não foi possível medir a altura do personagem.');
+        throw new Error('Altura do personagem inválida.');
       }
 
-      const normalized = new THREE.Group();
       const scaleFactor = HUMAN_HEIGHT / originalHeight;
 
-      normalized.add(model);
-      normalized.scale.setScalar(scaleFactor);
-      normalized.position.y = -bounds.min.y * scaleFactor;
+      const visualRoot = new THREE.Group();
+      visualRoot.scale.setScalar(scaleFactor);
+      visualRoot.position.y = -bounds.min.y * scaleFactor;
 
       model.rotation.y = Math.PI;
+      visualRoot.add(model);
+      this.group.add(visualRoot);
+
+      this.model = model;
+      this.normalizedModel = visualRoot;
 
       model.traverse(object => {
         if (object.isMesh) {
           object.castShadow = true;
           object.receiveShadow = true;
-
-          if (object.material) {
-            object.material.needsUpdate = true;
-          }
+          if (object.material) object.material.needsUpdate = true;
         }
       });
 
-      this.group.add(normalized);
-
-      this.model = model;
-      this.normalizedModel = normalized;
-
-      if (gltf.animations && gltf.animations.length > 0) {
+      if (gltf.animations && gltf.animations.length) {
         this.mixer = new THREE.AnimationMixer(model);
 
         const idleClip = gltf.animations.find(clip =>
-          /idle|stand/i.test(clip.name)
+          /idle|stand|breath/i.test(clip.name)
         );
 
         const walkClip = gltf.animations.find(clip =>
-          /walk|run/i.test(clip.name)
+          /walk|walking|run|running/i.test(clip.name)
         );
 
         if (idleClip) {
@@ -118,9 +128,11 @@ export class Player {
           this.walkAction.play();
           this.walkAction.paused = true;
         }
+
+        console.log('Animações:', gltf.animations.map(a => a.name));
       }
 
-      console.log('Jogador carregado com altura de', HUMAN_HEIGHT, 'metros.');
+      console.log('Personagem carregado:', HUMAN_HEIGHT, 'metros');
 
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
@@ -128,22 +140,15 @@ export class Player {
   }
 
   setAnimation(name) {
-    const next = name === 'walk'
-      ? this.walkAction
-      : this.idleAction;
-
-    const previous = name === 'walk'
-      ? this.idleAction
-      : this.walkAction;
+    const next = name === 'walk' ? this.walkAction : this.idleAction;
+    const previous = name === 'walk' ? this.idleAction : this.walkAction;
 
     if (!next || this.currentAnimation === name) return;
 
     next.reset();
     next.fadeIn(0.2).play();
 
-    if (previous) {
-      previous.fadeOut(0.2);
-    }
+    if (previous) previous.fadeOut(0.2);
 
     this.currentAnimation = name;
   }
@@ -157,9 +162,7 @@ export class Player {
 
     if (value) {
       this.cameraDistance = THREE.MathUtils.clamp(
-        this.cameraDistance,
-        3,
-        5
+        this.cameraDistance, 3, 5
       );
     }
 
@@ -168,13 +171,8 @@ export class Player {
 
   isBlocked(x, z) {
     for (const wall of this.colliders) {
-      const closestX = THREE.MathUtils.clamp(
-        x, wall.minX, wall.maxX
-      );
-
-      const closestZ = THREE.MathUtils.clamp(
-        z, wall.minZ, wall.maxZ
-      );
+      const closestX = THREE.MathUtils.clamp(x, wall.minX, wall.maxX);
+      const closestZ = THREE.MathUtils.clamp(z, wall.minZ, wall.maxZ);
 
       const dx = x - closestX;
       const dz = z - closestZ;
@@ -190,14 +188,17 @@ export class Player {
   moveWithCollision(dx, dz) {
     const x = this.group.position.x;
     const z = this.group.position.z;
+    const startsBlocked = this.isBlocked(x, z);
 
-    if (!this.isBlocked(x + dx, z)) {
+    if (startsBlocked || !this.isBlocked(x + dx, z)) {
       this.group.position.x += dx;
     }
 
-    if (!this.isBlocked(this.group.position.x, z + dz)) {
+    if (startsBlocked || !this.isBlocked(this.group.position.x, z + dz)) {
       this.group.position.z += dz;
     }
+
+    this.group.position.y = 0;
   }
 
   setupControls() {
@@ -205,11 +206,8 @@ export class Player {
       const key = e.key.toLowerCase();
 
       if (key === 'e' && !e.repeat) {
-        if (this.onInteract) {
-          this.onInteract();
-        } else {
-          this.toggleVehicle();
-        }
+        if (this.onInteract) this.onInteract();
+        else this.toggleVehicle();
         return;
       }
 
@@ -238,6 +236,8 @@ export class Player {
     const move = e => {
       if (!active) return;
 
+      e.preventDefault();
+
       const rect = joystick.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
@@ -245,7 +245,7 @@ export class Player {
       let dx = e.clientX - cx;
       let dy = e.clientY - cy;
 
-      const max = rect.width * 0.32;
+      const max = Math.max(1, rect.width * 0.32);
       const length = Math.hypot(dx, dy);
 
       if (length > max) {
@@ -306,12 +306,10 @@ export class Player {
       if (e.target !== canvas) return;
 
       e.preventDefault();
-
       canvas.setPointerCapture(e.pointerId);
       this.cameraPointers.set(e.pointerId, pointerPosition(e));
 
       if (this.cameraPointers.size === 1) {
-        this.lastCameraPointer = pointerPosition(e);
         this.cameraDragging = true;
       }
 
@@ -332,12 +330,10 @@ export class Player {
       this.cameraPointers.set(e.pointerId, current);
 
       if (this.cameraPointers.size === 1 && this.cameraDragging) {
-        const dx = current.x - previous.x;
-        const dy = current.y - previous.y;
+        this.cameraYawOffset -= (current.x - previous.x) * 0.006;
 
-        this.cameraYawOffset -= dx * 0.006;
         this.cameraPitch = THREE.MathUtils.clamp(
-          this.cameraPitch + dy * 0.004,
+          this.cameraPitch + (current.y - previous.y) * 0.004,
           -0.35,
           0.65
         );
@@ -347,10 +343,9 @@ export class Player {
         const newDistance = getPinchDistance();
 
         if (this.lastPinchDistance > 0) {
-          const change = this.lastPinchDistance - newDistance;
-
           this.cameraDistance = THREE.MathUtils.clamp(
-            this.cameraDistance + change * 0.025,
+            this.cameraDistance +
+              (this.lastPinchDistance - newDistance) * 0.025,
             this.cameraMinDistance,
             this.cameraMaxDistance
           );
@@ -365,7 +360,6 @@ export class Player {
 
       if (this.cameraPointers.size === 0) {
         this.cameraDragging = false;
-        this.lastCameraPointer = null;
         this.lastPinchDistance = 0;
       } else if (this.cameraPointers.size === 1) {
         this.lastPinchDistance = 0;
@@ -408,9 +402,7 @@ export class Player {
     for (const vehicle of this.vehicles) {
       if (vehicle.occupied) continue;
 
-      const d = this.group.position.distanceTo(
-        vehicle.group.position
-      );
+      const d = this.group.position.distanceTo(vehicle.group.position);
 
       if (d < distance) {
         distance = d;
@@ -419,6 +411,7 @@ export class Player {
     }
 
     this.nearVehicle = distance < 5 ? nearest : null;
+
     return this.nearVehicle;
   }
 
@@ -444,6 +437,7 @@ export class Player {
     );
 
     this.group.position.copy(vehicle.group.position).add(offset);
+    this.group.position.y = 0;
     this.group.visible = true;
 
     vehicle.occupied = false;
@@ -453,18 +447,20 @@ export class Player {
   }
 
   update(delta) {
+    this.group.position.y = 0;
+
     if (this.mixer) {
       this.mixer.update(delta);
     }
 
     const forward =
-      (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
-      (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
+      (this.keys.w || this.keys.arrowup ? 1 : 0) -
+      (this.keys.s || this.keys.arrowdown ? 1 : 0) -
       this.joystick.y;
 
     const sideways =
-      (this.keys['d'] || this.keys['arrowright'] ? 1 : 0) -
-      (this.keys['a'] || this.keys['arrowleft'] ? 1 : 0) +
+      (this.keys.d || this.keys.arrowright ? 1 : 0) -
+      (this.keys.a || this.keys.arrowleft ? 1 : 0) +
       this.joystick.x;
 
     if (this.currentVehicle) {
@@ -491,7 +487,7 @@ export class Player {
       return;
     }
 
-    const cameraYaw = this.group.rotation.y + this.cameraYawOffset;
+    const cameraYaw = this.cameraYawOffset;
 
     const forwardDirection = new THREE.Vector3(
       -Math.sin(cameraYaw),
