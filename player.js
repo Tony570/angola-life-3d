@@ -30,15 +30,14 @@ export class Player {
     this.walkAction = null;
     this.currentAnimation = '';
 
-    // Câmara livre: rotação e zoom
     this.cameraDistance = 7;
     this.cameraMinDistance = 3;
     this.cameraMaxDistance = 14;
     this.cameraHeightAngle = 0.42;
     this.cameraYawOffset = 0;
     this.cameraPitch = 0;
-    this.cameraTarget = new THREE.Vector3();
 
+    this.cameraTarget = new THREE.Vector3();
     this.cameraPointers = new Map();
     this.lastCameraPointer = null;
     this.lastPinchDistance = 0;
@@ -378,7 +377,6 @@ export class Player {
     canvas.addEventListener('pointercancel', releasePointer);
     canvas.addEventListener('lostpointercapture', releasePointer);
 
-    // Zoom também com a roda do rato.
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
 
@@ -413,14 +411,17 @@ export class Player {
       const d = this.group.position.distanceTo(
         vehicle.group.position
       );
+
       if (d < distance) {
         distance = d;
         nearest = vehicle;
       }
     }
+
     this.nearVehicle = distance < 5 ? nearest : null;
     return this.nearVehicle;
   }
+
   enterVehicle(vehicle) {
     if (!vehicle || vehicle.occupied) return;
 
@@ -430,6 +431,7 @@ export class Player {
     this.group.position.copy(vehicle.group.position);
     this.cameraDistance = 10;
   }
+
   exitVehicle() {
     if (!this.currentVehicle) return;
 
@@ -449,12 +451,12 @@ export class Player {
     this.currentVehicle = null;
     this.cameraDistance = 7;
   }
-update(delta) {
 
   update(delta) {
     if (this.mixer) {
       this.mixer.update(delta);
     }
+
     const forward =
       (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
       (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
@@ -467,6 +469,7 @@ update(delta) {
 
     if (this.currentVehicle) {
       const vehicle = this.currentVehicle;
+
       vehicle.speed += forward * 18 * delta;
       vehicle.speed *= Math.pow(0.94, delta * 60);
       vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
@@ -477,7 +480,12 @@ update(delta) {
         0,
         Math.cos(vehicle.group.rotation.y)
       );
-      vehicle.group.position.addScaledVector(direction, vehicle.speed * delta);
+
+      vehicle.group.position.addScaledVector(
+        direction,
+        vehicle.speed * delta
+      );
+
       this.group.position.copy(vehicle.group.position);
       this.updateCamera();
       return;
@@ -486,11 +494,15 @@ update(delta) {
     const cameraYaw = this.group.rotation.y + this.cameraYawOffset;
 
     const forwardDirection = new THREE.Vector3(
-      -Math.sin(cameraYaw), 0, -Math.cos(cameraYaw)
+      -Math.sin(cameraYaw),
+      0,
+      -Math.cos(cameraYaw)
     );
 
     const rightDirection = new THREE.Vector3(
-      Math.cos(cameraYaw), 0, -Math.sin(cameraYaw)
+      Math.cos(cameraYaw),
+      0,
+      -Math.sin(cameraYaw)
     );
 
     const movement = new THREE.Vector3()
@@ -530,6 +542,7 @@ update(delta) {
     this.findNearestVehicle();
     this.updateCamera();
   }
+
   updateCamera() {
     const target = this.currentVehicle
       ? this.currentVehicle.group.position
