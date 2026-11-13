@@ -30,12 +30,16 @@ export class Player {
     this.walkAction = null;
     this.currentAnimation = '';
     this.walkPhase = 0;
+
     this.proceduralBones = {
       leftLeg: [],
       rightLeg: [],
       leftArm: [],
       rightArm: []
     };
+
+    this.diagnosticLines = [];
+    this.diagnosticPanel = null;
 
     this.cameraDistance = 7;
     this.cameraMinDistance = 3;
@@ -50,16 +54,274 @@ export class Player {
     this.group.position.set(0, 0, 18);
     this.scene.add(this.group);
 
+    this.setupDiagnosticPanel();
     this.createCharacter();
     this.setupControls();
     this.setupJoystick();
     this.setupCameraControls();
   }
 
+  setupDiagnosticPanel() {
+    if (document.getElementById('player-diagnostic-button')) return;
+
+    const button = document.createElement('button');
+    button.id = 'player-diagnostic-button';
+    button.textContent = 'VER DIAGNÓSTICO';
+
+    Object.assign(button.style, {
+      position: 'fixed',
+      top: '12px',
+      right: '12px',
+      zIndex: '99999',
+      padding: '10px 13px',
+      border: '1px solid #ffffff',
+      borderRadius: '8px',
+      background: '#17212b',
+      color: '#ffffff',
+      fontSize: '12px',
+      fontWeight: 'bold'
+    });
+
+    const panel = document.createElement('div');
+    panel.id = 'player-diagnostic-panel';
+
+    Object.assign(panel.style, {
+      display: 'none',
+      position: 'fixed',
+      top: '55px',
+      left: '5%',
+      width: '90%',
+      maxHeight: '65vh',
+      overflow: 'auto',
+      zIndex: '100000',
+      padding: '12px',
+      boxSizing: 'border-box',
+      border: '2px solid #ffffff',
+      borderRadius: '10px',
+      background: '#101820',
+      color: '#ffffff',
+      fontSize: '11px',
+      fontFamily: 'monospace'
+    });
+
+    const heading = document.createElement('div');
+    heading.textContent = 'DIAGNÓSTICO DO PERSONAGEM';
+
+    Object.assign(heading.style, {
+      fontWeight: 'bold',
+      marginBottom: '10px',
+      fontSize: '13px'
+    });
+
+    const output = document.createElement('pre');
+    output.id = 'player-diagnostic-output';
+
+    Object.assign(output.style, {
+      whiteSpace: 'pre-wrap',
+      overflowWrap: 'anywhere',
+      margin: '0 0 12px 0'
+    });
+
+    const copyButton = document.createElement('button');
+    copyButton.textContent = 'COPIAR DIAGNÓSTICO';
+
+    Object.assign(copyButton.style, {
+      padding: '10px',
+      marginRight: '8px',
+      background: '#167c45',
+      color: '#ffffff',
+      border: '0',
+      borderRadius: '6px',
+      fontWeight: 'bold'
+    });
+
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'FECHAR';
+
+    Object.assign(closeButton.style, {
+      padding: '10px',
+      background: '#555555',
+      color: '#ffffff',
+      border: '0',
+      borderRadius: '6px'
+    });
+
+    copyButton.addEventListener('click', async () => {
+      const content = this.diagnosticLines.join('\n');
+
+      try {
+        await navigator.clipboard.writeText(content);
+        copyButton.textContent = 'DIAGNÓSTICO COPIADO!';
+      } catch (error) {
+        const temporary = document.createElement('textarea');
+        temporary.value = content;
+        temporary.style.position = 'fixed';
+        temporary.style.opacity = '0';
+        document.body.appendChild(temporary);
+        temporary.select();
+
+        try {
+          document.execCommand('copy');
+          copyButton.textContent = 'DIAGNÓSTICO COPIADO!';
+        } catch (copyError) {
+          copyButton.textContent = 'SELECIONA O TEXTO';
+        }
+
+        temporary.remove();
+      }
+    });
+
+    closeButton.addEventListener('click', () => {
+      panel.style.display = 'none';
+    });
+
+    button.addEventListener('click', () => {
+      panel.style.display =
+        panel.style.display === 'none' ? 'block' : 'none';
+
+      this.refreshDiagnosticDisplay();
+    });
+
+    panel.appendChild(heading);
+    panel.appendChild(output);
+    panel.appendChild(copyButton);
+    panel.appendChild(closeButton);
+
+    document.body.appendChild(button);
+    document.body.appendChild(panel);
+
+    this.diagnosticPanel = panel;
+  }
+
+  addDiagnostic(message) {
+    this.diagnosticLines.push(String(message));
+    console.log('[PLAYER DIAGNOSTIC]', message);
+    this.refreshDiagnosticDisplay();
+  }
+
+  refreshDiagnosticDisplay() {
+    const output = document.getElementById('player-diagnostic-output');
+
+    if (output) {
+      output.textContent = this.diagnosticLines.join('\n');
+    }
+  }
+
+  diagnoseModel(model) {
+    const allBones = [];
+    const skinnedMeshes = [];
+    const recognized = {
+      leftLeg: [],
+      rightLeg: [],
+      leftArm: [],
+      rightArm: []
+    };
+
+    this.addDiagnostic('===== MODELO 3D =====');
+
+    model.traverse(object => {
+      if (object.isBone) {
+        const name = object.name || '(sem nome)';
+        allBones.push(name);
+
+        const lower = name.toLowerCase();
+
+        const entry = {
+          bone: object,
+          rest: object.quaternion.clone()
+        };
+
+        if (/left.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*left|leg_l|thigh_l/.test(lower)) {
+          recognized.leftLeg.push(entry);
+        } else if (/right.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*right|leg_r|thigh_r/.test(lower)) {
+          recognized.rightLeg.push(entry);
+        } else if (/left.*(arm|shoulder)|(?:arm|shoulder).*left|arm_l/.test(lower)) {
+          recognized.leftArm.push(entry);
+        } else if (/right.*(arm|shoulder)|(?:arm|shoulder).*right|arm_r/.test(lower)) {
+          recognized.rightArm.push(entry);
+        }
+      }
+
+      if (object.isSkinnedMesh) {
+        const boneNames = object.skeleton
+          ? object.skeleton.bones.map(bone => bone.name || '(sem nome)')
+          : [];
+
+        skinnedMeshes.push({
+          name: object.name || '(sem nome)',
+          bones: boneNames
+        });
+      }
+    });
+
+    this.proceduralBones = recognized;
+
+    this.addDiagnostic('Total de bones encontrados: ' + allBones.length);
+    this.addDiagnostic('NOMES DE TODOS OS BONES:');
+
+    allBones.forEach((name, index) => {
+      this.addDiagnostic((index + 1) + '. ' + name);
+    });
+
+    this.addDiagnostic('===== MALHAS ANIMADAS =====');
+    this.addDiagnostic('Total de SkinnedMesh: ' + skinnedMeshes.length);
+
+    skinnedMeshes.forEach((mesh, index) => {
+      this.addDiagnostic('Malha ' + (index + 1) + ': ' + mesh.name);
+      this.addDiagnostic('Bones nesta malha: ' + mesh.bones.length);
+      this.addDiagnostic(mesh.bones.join(', '));
+    });
+
+    this.addDiagnostic('===== OSSOS RECONHECIDOS =====');
+    this.addDiagnostic('Perna esquerda: ' + recognized.leftLeg.length);
+    this.addDiagnostic('Perna direita: ' + recognized.rightLeg.length);
+    this.addDiagnostic('Braço esquerdo: ' + recognized.leftArm.length);
+    this.addDiagnostic('Braço direito: ' + recognized.rightArm.length);
+
+    this.addDiagnostic('===== FIM DO MODELO =====');
+  }
+
+  diagnoseClip(label, clip, model) {
+    if (!clip) {
+      this.addDiagnostic(label + ': CLIP NÃO ENCONTRADO');
+      return;
+    }
+
+    this.addDiagnostic('===== ANIMAÇÃO ' + label + ' =====');
+    this.addDiagnostic('Nome: ' + clip.name);
+    this.addDiagnostic('Duração: ' + clip.duration);
+    this.addDiagnostic('Número de tracks: ' + clip.tracks.length);
+
+    const modelBones = new Set();
+
+    model.traverse(object => {
+      if (object.isBone) {
+        modelBones.add(object.name);
+      }
+    });
+
+    clip.tracks.forEach((track, index) => {
+      const trackName = track.name || '(sem nome)';
+      const firstPart = trackName.split('.')[0];
+      const matched = modelBones.has(firstPart);
+
+      this.addDiagnostic(
+        'Track ' + (index + 1) + ': ' +
+        trackName +
+        ' | Bone correspondente: ' +
+        (matched ? 'SIM' : 'NÃO CONFIRMADO')
+      );
+    });
+
+    this.addDiagnostic('===== FIM DA ANIMAÇÃO ' + label + ' =====');
+  }
+
   async createCharacter() {
     const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
     try {
+      this.addDiagnostic('A carregar modelo...');
+
       const gltf = await loader.loadAsync(MODEL_URL);
       const model = gltf.scene;
 
@@ -91,34 +353,13 @@ export class Player {
           object.castShadow = true;
           object.receiveShadow = true;
         }
-
-        if (object.isBone) {
-          const name = (object.name || '').toLowerCase();
-          const entry = {
-            bone: object,
-            rest: object.quaternion.clone()
-          };
-
-          if (/left.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*left|leg_l|thigh_l/.test(name)) {
-            this.proceduralBones.leftLeg.push(entry);
-          } else if (/right.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*right|leg_r|thigh_r/.test(name)) {
-            this.proceduralBones.rightLeg.push(entry);
-          } else if (/left.*(arm|shoulder)|(?:arm|shoulder).*left|arm_l/.test(name)) {
-            this.proceduralBones.leftArm.push(entry);
-          } else if (/right.*(arm|shoulder)|(?:arm|shoulder).*right|arm_r/.test(name)) {
-            this.proceduralBones.rightArm.push(entry);
-          }
-        }
       });
 
-      console.log('Ossos para movimento:', {
-        leftLeg: this.proceduralBones.leftLeg.length,
-        rightLeg: this.proceduralBones.rightLeg.length,
-        leftArm: this.proceduralBones.leftArm.length,
-        rightArm: this.proceduralBones.rightArm.length
-      });
+      this.diagnoseModel(model);
 
       this.mixer = new THREE.AnimationMixer(visualRoot);
+
+      this.addDiagnostic('A carregar animações externas...');
 
       const animationResults = await Promise.allSettled([
         loader.loadAsync(IDLE_URL),
@@ -131,23 +372,31 @@ export class Player {
       if (idleResult.status === 'fulfilled') {
         const idleClip = idleResult.value.animations[0];
 
+        this.diagnoseClip('IDLE', idleClip, model);
+
         if (idleClip) {
           this.idleAction = this.mixer.clipAction(idleClip);
           this.idleAction.play();
           this.currentAnimation = 'idle';
         }
       } else {
-        console.error('Erro ao carregar animação idle:', idleResult.reason);
+        this.addDiagnostic(
+          'ERRO AO CARREGAR IDLE: ' + idleResult.reason
+        );
       }
 
       if (walkResult.status === 'fulfilled') {
         const walkClip = walkResult.value.animations[0];
 
+        this.diagnoseClip('WALK', walkClip, model);
+
         if (walkClip) {
           this.walkAction = this.mixer.clipAction(walkClip);
         }
       } else {
-        console.error('Erro ao carregar animação walk:', walkResult.reason);
+        this.addDiagnostic(
+          'ERRO AO CARREGAR WALK: ' + walkResult.reason
+        );
       }
 
       if (!this.idleAction && this.walkAction) {
@@ -155,11 +404,16 @@ export class Player {
         this.walkAction.paused = true;
       }
 
+      this.addDiagnostic('===== RESULTADO =====');
+      this.addDiagnostic('Modelo carregado: SIM');
+      this.addDiagnostic('Idle disponível: ' + Boolean(this.idleAction));
+      this.addDiagnostic('Walk disponível: ' + Boolean(this.walkAction));
+      this.addDiagnostic('Diagnóstico concluído.');
+
       console.log('Personagem carregado:', HUMAN_HEIGHT, 'metros');
-      console.log('Animação idle:', Boolean(this.idleAction));
-      console.log('Animação walk:', Boolean(this.walkAction));
 
     } catch (error) {
+      this.addDiagnostic('ERRO AO CARREGAR PERSONAGEM: ' + error.message);
       console.error('Erro ao carregar personagem:', error);
     }
   }
