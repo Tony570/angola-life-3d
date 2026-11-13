@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -83,12 +82,9 @@ export class Player {
       }
 
       const scaleFactor = HUMAN_HEIGHT / originalHeight;
-
       const visualRoot = new THREE.Group();
 
-      // Mantém a orientação original do modelo.
       visualRoot.rotation.y = 0;
-
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
       visualRoot.add(model);
@@ -235,17 +231,25 @@ export class Player {
     return false;
   }
 
+  // Movimento com colisão em pequenos passos.
   moveWithCollision(dx, dz) {
-    const x = this.group.position.x;
-    const z = this.group.position.z;
-    const startsBlocked = this.isBlocked(x, z);
+    const maxStep = Math.max(0.08, this.radius * 0.35);
+    const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / maxStep));
+    const stepX = dx / steps;
+    const stepZ = dz / steps;
 
-    if (startsBlocked || !this.isBlocked(x + dx, z)) {
-      this.group.position.x += dx;
-    }
+    for (let i = 0; i < steps; i++) {
+      const nextX = this.group.position.x + stepX;
 
-    if (startsBlocked || !this.isBlocked(this.group.position.x, z + dz)) {
-      this.group.position.z += dz;
+      if (!this.isBlocked(nextX, this.group.position.z)) {
+        this.group.position.x = nextX;
+      }
+
+      const nextZ = this.group.position.z + stepZ;
+
+      if (!this.isBlocked(this.group.position.x, nextZ)) {
+        this.group.position.z = nextZ;
+      }
     }
 
     this.group.position.y = 0;
