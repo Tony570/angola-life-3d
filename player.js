@@ -86,8 +86,8 @@ export class Player {
 
       const visualRoot = new THREE.Group();
 
-      // Corrige a orientação visual do modelo.
-      visualRoot.rotation.y = Math.PI;
+      // Mantém a orientação original do modelo.
+      visualRoot.rotation.y = 0;
 
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
