@@ -1,5 +1,13 @@
 
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
+const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
+const WALK_URL = 'https://models.codelove.in/animations/m_walk_neutral_01.glb';
+
+const HUMAN_HEIGHT = 2.5;
 
 export class Player {
   constructor(scene, camera, vehicles = []) {
@@ -14,213 +22,119 @@ export class Player {
     this.currentVehicle = null;
     this.nearVehicle = null;
     this.joystick = { x: 0, y: 0 };
-    this.walkTime = 0;
     this.onInteract = null;
 
     this.colliders = [];
     this.indoor = false;
-    this.radius = 0.48;
+    this.radius = 0.38;
+
+    this.mixer = null;
+    this.idleAction = null;
+    this.walkAction = null;
+    this.currentAnimation = '';
+
+    this.group.position.set(0, 0, 18);
+    this.scene.add(this.group);
 
     this.createCharacter();
-    this.group.position.set(0, 0, 18);
-    scene.add(this.group);
-
     this.setupControls();
     this.setupJoystick();
   }
 
-  material(color, roughness = 0.8) {
-    return new THREE.MeshStandardMaterial({
-      color,
-      roughness
-    });
+  async createCharacter() {
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+
+    try {
+      const gltf = await loader.loadAsync(MODEL_URL);
+      const model = gltf.scene;
+
+      model.updateWorldMatrix(true, true);
+
+      const bounds = new THREE.Box3().setFromObject(model);
+      const originalHeight = bounds.max.y - bounds.min.y;
+
+      if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
+        throw new Error('Não foi possível medir a altura do modelo humano.');
+      }
+
+      const scale = HUMAN_HEIGHT / originalHeight;
+
+      model.scale.setScalar(scale);
+      model.position.y = -bounds.min.y * scale;
+      model.rotation.y = Math.PI;
+
+      model.traverse(object => {
+        if (object.isMesh) {
+          object.castShadow = true;
+          object.receiveShadow = true;
+        }
+      });
+
+      this.group.add(model);
+      this.model = model;
+
+      this.mixer = new THREE.AnimationMixer(model);
+
+      const animationResults = await Promise.allSettled([
+        loader.loadAsync(IDLE_URL),
+        loader.loadAsync(WALK_URL)
+      ]);
+
+      const idleResult = animationResults[0];
+      const walkResult = animationResults[1];
+
+      if (idleResult.status === 'fulfilled') {
+        const clip = idleResult.value.animations[0];
+
+        if (clip) {
+          this.idleAction = this.mixer.clipAction(clip);
+          this.idleAction.play();
+          this.currentAnimation = 'idle';
+        }
+      }
+
+      if (walkResult.status === 'fulfilled') {
+        const clip = walkResult.value.animations[0];
+
+        if (clip) {
+          this.walkAction = this.mixer.clipAction(clip);
+        }
+      }
+
+      if (!this.idleAction && this.walkAction) {
+        this.walkAction.play();
+        this.currentAnimation = 'walk';
+        this.walkAction.paused = true;
+      }
+
+      console.log('Jogador humano carregado. Altura:', HUMAN_HEIGHT, 'm');
+
+    } catch (error) {
+      console.error('Erro ao carregar o jogador humano:', error);
+    }
   }
 
-  createCharacter() {
-    const skin = this.material('#925d40');
-    const skinLight = this.material('#a96f50');
-    const shirt = this.material('#e7e0d2');
-    const trousers = this.material('#26364c');
-    const shoes = this.material('#202020');
-    const hair = this.material('#171513');
-    const eyes = this.material('#ffffff');
-    const pupils = this.material('#17100c');
-    const mouth = this.material('#48251e');
+  setAnimation(name) {
+    if (this.currentAnimation === name) return;
 
-    const sphere = (name, geometry, material, x, y, z) => {
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.name = name;
-      mesh.position.set(x, y, z);
-      this.group.add(mesh);
-      return mesh;
-    };
+    const next = name === 'walk'
+      ? this.walkAction
+      : this.idleAction;
 
-    // Corpo e roupa
-    const torso = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.34, 0.62, 5, 12),
-      shirt
-    );
-    torso.name = 'body';
-    torso.position.y = 1.35;
-    torso.scale.set(1, 1, 0.78);
-    this.group.add(torso);
+    const previous = name === 'walk'
+      ? this.idleAction
+      : this.walkAction;
 
-    // Pescoço
-    const neck = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.105, 0.12, 0.2, 12),
-      skin
-    );
-    neck.position.set(0, 1.88, 0);
-    this.group.add(neck);
+    if (!next) return;
 
-    // Cabeça
-    sphere(
-      'head',
-      new THREE.SphereGeometry(0.29, 24, 20),
-      skin,
-      0, 2.15, 0
-    );
+    next.reset();
+    next.fadeIn(0.2).play();
 
-    // Orelhas
-    for (const side of [-1, 1]) {
-      sphere(
-        'ear',
-        new THREE.SphereGeometry(0.075, 14, 12),
-        skinLight,
-        side * 0.285, 2.15, 0
-      );
-
-      sphere(
-        'ear-inner',
-        new THREE.SphereGeometry(0.035, 12, 10),
-        skin,
-        side * 0.306, 2.15, 0.035
-      );
+    if (previous) {
+      previous.fadeOut(0.2);
     }
 
-    // Cabelo no topo da cabeça
-    const hairCap = new THREE.Mesh(
-      new THREE.SphereGeometry(
-        0.298, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2
-      ),
-      hair
-    );
-    hairCap.position.set(0, 2.25, 0);
-    this.group.add(hairCap);
-
-    // Laterais do cabelo
-    for (const side of [-1, 1]) {
-      sphere(
-        'side-hair',
-        new THREE.SphereGeometry(0.105, 14, 12),
-        hair,
-        side * 0.22, 2.22, -0.015
-      );
-    }
-
-    // Olhos
-    for (const side of [-1, 1]) {
-      sphere(
-        'eye-white',
-        new THREE.SphereGeometry(0.052, 16, 12),
-        eyes,
-        side * 0.105, 2.19, 0.251
-      );
-
-      sphere(
-        'eye-pupil',
-        new THREE.SphereGeometry(0.027, 14, 12),
-        pupils,
-        side * 0.105, 2.19, 0.294
-      );
-
-      // Sobrancelhas
-      const brow = new THREE.Mesh(
-        new THREE.BoxGeometry(0.105, 0.025, 0.025),
-        hair
-      );
-      brow.position.set(side * 0.105, 2.27, 0.255);
-      brow.rotation.z = side * -0.08;
-      this.group.add(brow);
-    }
-
-    // Nariz
-    sphere(
-      'nose',
-      new THREE.SphereGeometry(0.055, 14, 12),
-      skinLight,
-      0, 2.105, 0.285
-    );
-
-    // Boca
-    const lips = new THREE.Mesh(
-      new THREE.BoxGeometry(0.115, 0.018, 0.018),
-      mouth
-    );
-    lips.position.set(0, 2.015, 0.277);
-    this.group.add(lips);
-
-    // Braços, mãos e pernas
-    this.legs = [];
-    this.arms = [];
-
-    for (const side of [-1, 1]) {
-      // Pernas
-      const leg = new THREE.Group();
-      leg.position.set(side * 0.19, 0.78, 0);
-
-      const legMesh = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.135, 0.57, 5, 10),
-        trousers
-      );
-      legMesh.position.y = -0.29;
-      leg.add(legMesh);
-
-      const shoe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.25, 0.13, 0.38),
-        shoes
-      );
-      shoe.position.set(0, -0.65, 0.08);
-      leg.add(shoe);
-
-      this.group.add(leg);
-      this.legs.push(leg);
-
-      // Braços
-      const arm = new THREE.Group();
-      arm.position.set(side * 0.39, 1.65, 0);
-
-      const upperArm = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.105, 0.43, 5, 10),
-        shirt
-      );
-      upperArm.position.y = -0.23;
-      arm.add(upperArm);
-
-      const forearm = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.085, 0.27, 5, 10),
-        skin
-      );
-      forearm.position.y = -0.58;
-      arm.add(forearm);
-
-      const hand = new THREE.Mesh(
-        new THREE.SphereGeometry(0.095, 14, 12),
-        skin
-      );
-      hand.position.set(0, -0.79, 0);
-      arm.add(hand);
-
-      this.group.add(arm);
-      this.arms.push(arm);
-    }
-
-    this.group.traverse(obj => {
-      if (obj.isMesh) {
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-      }
-    });
+    this.currentAnimation = name;
   }
 
   setColliders(colliders = []) {
@@ -400,6 +314,10 @@ export class Player {
   }
 
   update(delta) {
+    if (this.mixer) {
+      this.mixer.update(delta);
+    }
+
     const forward =
       (this.keys['w'] || this.keys['arrowup'] ? 1 : 0) -
       (this.keys['s'] || this.keys['arrowdown'] ? 1 : 0) -
@@ -459,15 +377,9 @@ export class Player {
         direction.z * distance
       );
 
-      this.walkTime += delta * 10;
-
-      this.legs[0].rotation.x = Math.sin(this.walkTime) * 0.55;
-      this.legs[1].rotation.x = -Math.sin(this.walkTime) * 0.55;
-      this.arms[0].rotation.x = -Math.sin(this.walkTime) * 0.35;
-      this.arms[1].rotation.x = Math.sin(this.walkTime) * 0.35;
+      this.setAnimation('walk');
     } else {
-      this.legs.forEach(leg => leg.rotation.x *= 0.8);
-      this.arms.forEach(arm => arm.rotation.x *= 0.8);
+      this.setAnimation('idle');
     }
 
     this.findNearestVehicle();
@@ -492,8 +404,8 @@ export class Player {
     const height = this.currentVehicle
       ? 5
       : this.indoor
-        ? 2.8
-        : 4;
+        ? 3.5
+        : 5;
 
     const desired = new THREE.Vector3(
       target.x - Math.sin(rotation) * distance,
@@ -505,7 +417,7 @@ export class Player {
 
     this.camera.lookAt(
       target.x,
-      target.y + (this.currentVehicle ? 1.5 : 1.4),
+      target.y + (this.currentVehicle ? 1.5 : 2.0),
       target.z
     );
   }
