@@ -6,7 +6,7 @@ import { Player } from './player.js';
 import './style.css';
 
 // ============================================
-// ANGOLA LIFE 3D — MAIN.JS
+// ANGOLA LIFE 3D — SISTEMA PRINCIPAL
 // Cidade, casas, interiores, carros e mapa
 // ============================================
 
@@ -115,7 +115,15 @@ scene.add(sun);
 
 const world = createWorld(scene);
 const houses = createHouseSystem(scene);
+
 const player = new Player(scene, camera, world.vehicles);
+
+// Colisões de todas as casas enquanto estamos na cidade.
+const exteriorColliders = houses.flatMap(
+  house => house.exteriorColliders || []
+);
+
+player.setColliders(exteriorColliders);
 
 const clock = new THREE.Clock();
 
@@ -224,7 +232,7 @@ world.destinations.forEach(destination => {
 });
 
 // ============================================
-// ENCONTRAR CASA
+// ENCONTRAR CASA E DETETAR A PORTA
 // ============================================
 
 function findNearestHouse() {
@@ -233,12 +241,19 @@ function findNearestHouse() {
   let nearest = null;
   let nearestDistance = Infinity;
 
-  for (const house of houses) {
-    const entranceX = house.x;
-    const entranceZ = house.z + 7;
+  const playerX = player.group.position.x;
+  const playerZ = player.group.position.z;
 
-    const dx = player.group.position.x - entranceX;
-    const dz = player.group.position.z - entranceZ;
+  for (const house of houses) {
+    const dx = playerX - house.x;
+    const dz = playerZ - (house.z + 7);
+
+    // A porta fica na fachada frontal.
+    // Exige aproximação pela frente e alinhamento com a entrada.
+    const alignedWithDoor = Math.abs(dx) <= 3.2;
+    const inFrontOfDoor = dz >= -1 && dz <= 6;
+
+    if (!alignedWithDoor || !inFrontOfDoor) continue;
 
     const distance = Math.hypot(dx, dz);
 
@@ -248,7 +263,7 @@ function findNearestHouse() {
     }
   }
 
-  return nearestDistance <= 5.5 ? nearest : null;
+  return nearestDistance <= 6 ? nearest : null;
 }
 
 // ============================================
@@ -258,35 +273,35 @@ function findNearestHouse() {
 function enterHouse(house) {
   if (!house || currentHouse) return;
 
-  // Sair do carro antes de entrar
+  // Sair do carro antes de entrar.
   if (player.currentVehicle) {
     player.exitVehicle();
   }
 
   currentHouse = house;
 
-  // Mostrar o interior
+  // Mostrar interior.
   house.interior.visible = true;
 
-  // Esconder o teto
+  // Esconder teto interior para permitir ver a casa.
   setInteriorView(house, true);
 
-  // Retirar nevoeiro exterior
+  // Retirar nevoeiro exterior.
   scene.fog = null;
 
-  // Ativar colisões das paredes e móveis
+  // Trocar colisões exteriores pelas interiores.
   player.setColliders(house.colliders || []);
 
-  // Ativar modo interior
+  // Ativar modo interior.
   player.setIndoor(true);
 
-  // Garantir que o personagem está visível
+  // Garantir personagem visível.
   player.group.visible = true;
 
-  // Virar para a entrada
+  // Virar para a entrada.
   player.group.rotation.y = 0;
 
-  // Posicionar dentro da casa
+  // Colocar o jogador dentro da casa.
   player.teleport(
     house.interiorX,
     house.interiorZ
@@ -306,28 +321,28 @@ function exitHouse() {
 
   const house = currentHouse;
 
-  // Desativar colisões interiores
-  player.setColliders([]);
-
-  // Desativar modo interior
-  player.setIndoor(false);
-
-  // Esconder interior
+  // Esconder interior.
   house.interior.visible = false;
 
-  // Restaurar teto
+  // Restaurar teto.
   setInteriorView(house, false);
 
-  // Limpar casa atual
+  // Desativar modo interior.
+  player.setIndoor(false);
+
+  // Limpar casa atual.
   currentHouse = null;
 
-  // Restaurar nevoeiro da cidade
+  // Restaurar nevoeiro da cidade.
   scene.fog = outsideFog;
 
-  // Garantir personagem visível
+  // Restaurar colisões exteriores.
+  player.setColliders(exteriorColliders);
+
+  // Garantir personagem visível.
   player.group.visible = true;
 
-  // Colocar o jogador diante da entrada
+  // Colocar o jogador diante da porta.
   player.teleport(
     house.x,
     house.z + 8
@@ -389,7 +404,7 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 // ============================================
-// HABITANTES
+// HABITANTES DA CIDADE
 // ============================================
 
 function animateNPCs(time) {
