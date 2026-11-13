@@ -3,11 +3,12 @@ import * as THREE from 'three';
 import { createWorld } from './world.js';
 import { createHouseSystem } from './houses.js';
 import { Player } from './player.js';
+import { updatePeople } from './people.js';
 import './style.css';
 
 // ============================================
 // ANGOLA LIFE 3D — SISTEMA PRINCIPAL
-// Cidade, casas, interiores, carros e mapa
+// Cidade, casas, interiores, carros e habitantes
 // ============================================
 
 const app = document.querySelector('#app');
@@ -118,7 +119,6 @@ const houses = createHouseSystem(scene);
 
 const player = new Player(scene, camera, world.vehicles);
 
-// Colisões de todas as casas enquanto estamos na cidade.
 const exteriorColliders = houses.flatMap(
   house => house.exteriorColliders || []
 );
@@ -248,8 +248,6 @@ function findNearestHouse() {
     const dx = playerX - house.x;
     const dz = playerZ - (house.z + 7);
 
-    // A porta fica na fachada frontal.
-    // Exige aproximação pela frente e alinhamento com a entrada.
     const alignedWithDoor = Math.abs(dx) <= 3.2;
     const inFrontOfDoor = dz >= -1 && dz <= 6;
 
@@ -273,35 +271,22 @@ function findNearestHouse() {
 function enterHouse(house) {
   if (!house || currentHouse) return;
 
-  // Sair do carro antes de entrar.
   if (player.currentVehicle) {
     player.exitVehicle();
   }
 
   currentHouse = house;
 
-  // Mostrar interior.
   house.interior.visible = true;
-
-  // Esconder teto interior para permitir ver a casa.
   setInteriorView(house, true);
 
-  // Retirar nevoeiro exterior.
   scene.fog = null;
 
-  // Trocar colisões exteriores pelas interiores.
   player.setColliders(house.colliders || []);
-
-  // Ativar modo interior.
   player.setIndoor(true);
-
-  // Garantir personagem visível.
   player.group.visible = true;
-
-  // Virar para a entrada.
   player.group.rotation.y = 0;
 
-  // Colocar o jogador dentro da casa.
   player.teleport(
     house.interiorX,
     house.interiorZ
@@ -321,28 +306,18 @@ function exitHouse() {
 
   const house = currentHouse;
 
-  // Esconder interior.
   house.interior.visible = false;
-
-  // Restaurar teto.
   setInteriorView(house, false);
 
-  // Desativar modo interior.
   player.setIndoor(false);
 
-  // Limpar casa atual.
   currentHouse = null;
 
-  // Restaurar nevoeiro da cidade.
   scene.fog = outsideFog;
 
-  // Restaurar colisões exteriores.
   player.setColliders(exteriorColliders);
-
-  // Garantir personagem visível.
   player.group.visible = true;
 
-  // Colocar o jogador diante da porta.
   player.teleport(
     house.x,
     house.z + 8
@@ -404,26 +379,6 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 // ============================================
-// HABITANTES DA CIDADE
-// ============================================
-
-function animateNPCs(time) {
-  if (currentHouse) return;
-
-  world.npcs.forEach(npc => {
-    const t = time * 0.35 + npc.phase;
-
-    npc.group.position.x = npc.originX + Math.sin(t) * 3;
-    npc.group.position.z = npc.originZ + Math.cos(t) * 3;
-
-    npc.group.rotation.y = Math.atan2(
-      Math.cos(t),
-      -Math.sin(t)
-    );
-  });
-}
-
-// ============================================
 // BOTÃO DE INTERAÇÃO
 // ============================================
 
@@ -455,11 +410,16 @@ function updateActionButton() {
 
 function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
-  const time = clock.elapsedTime;
 
   if (started) {
     player.update(delta);
-    animateNPCs(time);
+
+    // Atualizar animações dos habitantes.
+    // Não movimentar habitantes enquanto o jogador está dentro de casa.
+    if (!currentHouse) {
+      updatePeople(delta);
+    }
+
     updateActionButton();
   }
 
