@@ -221,7 +221,6 @@ export class Player {
       this.mixer.stopAllAction();
     }
 
-    // Posição básica de sentado: pernas dobradas e braços relaxados.
     const pose = (entries, angle) => {
       for (const entry of entries) {
         const offset = new THREE.Quaternion().setFromEuler(
@@ -314,24 +313,83 @@ export class Player {
     return false;
   }
 
+  resolveCollisionOverlap() {
+    const p = this.group.position;
+
+    for (let pass = 0; pass < 5; pass++) {
+      let corrected = false;
+
+      for (const wall of this.colliders) {
+        const closestX = THREE.MathUtils.clamp(p.x, wall.minX, wall.maxX);
+        const closestZ = THREE.MathUtils.clamp(p.z, wall.minZ, wall.maxZ);
+
+        const dx = p.x - closestX;
+        const dz = p.z - closestZ;
+        const distanceSq = dx * dx + dz * dz;
+
+        if (distanceSq >= this.radius * this.radius) continue;
+
+        if (distanceSq > 0.000001) {
+          const distance = Math.sqrt(distanceSq);
+          const push = this.radius - distance + 0.012;
+
+          p.x += (dx / distance) * push;
+          p.z += (dz / distance) * push;
+        } else {
+          const left = Math.abs(p.x - wall.minX);
+          const right = Math.abs(wall.maxX - p.x);
+          const back = Math.abs(p.z - wall.minZ);
+          const front = Math.abs(wall.maxZ - p.z);
+          const nearest = Math.min(left, right, back, front);
+
+          if (nearest === left) {
+            p.x = wall.minX - this.radius - 0.012;
+          } else if (nearest === right) {
+            p.x = wall.maxX + this.radius + 0.012;
+          } else if (nearest === back) {
+            p.z = wall.minZ - this.radius - 0.012;
+          } else {
+            p.z = wall.maxZ + this.radius + 0.012;
+          }
+        }
+
+        corrected = true;
+      }
+
+      if (!corrected) break;
+    }
+
+    p.y = 0;
+  }
+
   moveWithCollision(dx, dz) {
-    const maxStep = Math.max(0.08, this.radius * 0.35);
-    const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / maxStep));
+    this.resolveCollisionOverlap();
+
+    const distance = Math.hypot(dx, dz);
+    if (distance < 0.00001) return;
+
+    const maxStep = 0.12;
+    const steps = Math.max(1, Math.ceil(distance / maxStep));
     const stepX = dx / steps;
     const stepZ = dz / steps;
 
     for (let i = 0; i < steps; i++) {
-      const nextX = this.group.position.x + stepX;
+      const currentX = this.group.position.x;
+      const currentZ = this.group.position.z;
+      const nextX = currentX + stepX;
+      const nextZ = currentZ + stepZ;
 
-      if (!this.isBlocked(nextX, this.group.position.z)) {
+      if (!this.isBlocked(nextX, nextZ)) {
         this.group.position.x = nextX;
-      }
-
-      const nextZ = this.group.position.z + stepZ;
-
-      if (!this.isBlocked(this.group.position.x, nextZ)) {
         this.group.position.z = nextZ;
+        continue;
       }
+
+      const canMoveX = !this.isBlocked(nextX, currentZ);
+      const canMoveZ = !this.isBlocked(currentX, nextZ);
+
+      if (canMoveX) this.group.position.x = nextX;
+      if (canMoveZ) this.group.position.z = nextZ;
     }
 
     this.group.position.y = 0;
@@ -458,6 +516,7 @@ export class Player {
 
       if (this.cameraPointers.size === 1 && this.cameraDragging) {
         const start = this.pointerStart.get(e.pointerId);
+
         const moved = Math.hypot(
           current.x - start.x,
           current.y - start.y
@@ -686,6 +745,7 @@ export class Player {
         );
 
         if (actuallyMoved < 0.001) {
+          this.resolveCollisionOverlap();
           this.moveTarget = null;
           moving = false;
         }
