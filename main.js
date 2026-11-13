@@ -18,7 +18,6 @@ app.innerHTML = `
       <div class="brand">ANGOLA <span>LIFE 3D</span></div>
       <div class="money">💰 25.000 Kz</div>
     </div>
-
     <div id="welcome" class="screen">
       <div class="welcome-content">
         <div class="logo">ANGOLA LIFE 3D</div>
@@ -26,13 +25,11 @@ app.innerHTML = `
         <button id="start-game">ENTRAR NA CIDADE</button>
       </div>
     </div>
-
     <div id="hud">
       <div class="location">📍 LUANDA, ANGOLA</div>
       <button id="map-button">🗺️ MAPA</button>
       <button id="vehicle-button">🚗 INTERAGIR</button>
     </div>
-
     <div id="map-panel">
       <div class="map-heading">
         <strong>MAPA DE LUANDA</strong>
@@ -40,11 +37,9 @@ app.innerHTML = `
       </div>
       <div id="map-destinations"></div>
     </div>
-
     <div id="joystick">
       <div id="joystick-knob"></div>
     </div>
-
     <div id="mobile-controls">
       <button data-key="w">▲</button>
       <div>
@@ -53,7 +48,6 @@ app.innerHTML = `
         <button data-key="d">▶</button>
       </div>
     </div>
-
     <div id="help">JOYSTICK: MOVER · E: ENTRAR OU SAIR</div>
   </div>
 `;
@@ -115,7 +109,6 @@ scene.add(sun);
 
 const world = createWorld(scene);
 const houses = createHouseSystem(scene);
-
 const player = new Player(scene, camera, world.vehicles);
 
 const exteriorColliders = houses.flatMap(
@@ -194,7 +187,6 @@ function snapCameraToPlayer() {
 
 function setInteriorView(house, inside) {
   if (!house || !house.interiorRoof) return;
-
   house.interiorRoof.visible = !inside;
 }
 
@@ -217,13 +209,10 @@ world.destinations.forEach(destination => {
   button.textContent = '📍 ' + destination.name;
 
   button.addEventListener('click', () => {
-    if (currentHouse) {
-      exitHouse();
-    }
+    if (currentHouse) exitHouse();
 
     player.teleport(destination.x, destination.z);
     snapCameraToPlayer();
-
     mapPanel.classList.remove('visible');
   });
 
@@ -247,7 +236,7 @@ function findNearestHouse() {
     const dx = playerX - house.x;
     const dz = playerZ - (house.z + 6.2);
 
-    const alignedWithDoor = Math.abs(dx) <= 2.2;
+    const alignedWithDoor = Math.abs(dx) <= 2.1;
     const inFrontOfDoor = dz >= 0.25 && dz <= 4.2;
 
     if (!alignedWithDoor || !inFrontOfDoor) continue;
@@ -277,13 +266,15 @@ function tryAutoEnterHouse() {
     const dx = playerX - house.x;
     const distanceFromDoor = playerZ - (house.z + 6.2);
 
-    const alignedWithDoor = Math.abs(dx) <= 1.05;
+    // Largura útil da porta, considerando o raio do personagem.
+    const alignedWithDoor = Math.abs(dx) <= 2.1;
 
-    const atDoorstep =
-      distanceFromDoor >= 0.25 &&
-      distanceFromDoor <= 1.35;
+    // Detecta o personagem antes de chegar à parede.
+    const approachingDoor =
+      distanceFromDoor >= 0.35 &&
+      distanceFromDoor <= 2.0;
 
-    if (alignedWithDoor && atDoorstep) {
+    if (alignedWithDoor && approachingDoor) {
       enterHouse(house);
       return;
     }
@@ -302,6 +293,9 @@ function enterHouse(house) {
   }
 
   currentHouse = house;
+
+  // Cancela qualquer destino anterior.
+  player.moveTarget = null;
 
   house.interior.visible = true;
   setInteriorView(house, true);
@@ -389,7 +383,6 @@ document.querySelectorAll('[data-key]').forEach(button => {
 
   button.addEventListener('pointerdown', event => {
     event.preventDefault();
-
     player.keys[key] = true;
     button.classList.add('pressed');
   });
@@ -440,10 +433,9 @@ function animate() {
   if (started) {
     player.update(delta);
 
-    // Entrada automática ao chegar à porta.
+    // Verificar entrada automática em cada ciclo.
     tryAutoEnterHouse();
 
-    // Actualizar habitantes apenas no exterior.
     if (!currentHouse) {
       updatePeople(delta);
     }
