@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { createPeople } from './people.js';
 
 // ============================================
-// ANGOLA LIFE 3D — WORLD.JS
-// Cidade procedural de Luanda
+// ANGOLA LIFE 3D — CIDADE DE LUANDA
+// Ambiente urbano mais natural e detalhado
 // ============================================
 
 export function createWorld(scene) {
@@ -21,40 +21,50 @@ export function createWorld(scene) {
   };
 
   const materials = {
-    grass: new THREE.MeshStandardMaterial({ color: 0x718d45 }),
-    grass2: new THREE.MeshStandardMaterial({ color: 0x819b50 }),
-    asphalt: new THREE.MeshStandardMaterial({ color: 0x292d32 }),
-    sidewalk: new THREE.MeshStandardMaterial({ color: 0xbab4a5 }),
-    white: new THREE.MeshStandardMaterial({ color: 0xf0e9d8 }),
-    yellow: new THREE.MeshStandardMaterial({ color: 0xf2c230 }),
+    grass: new THREE.MeshStandardMaterial({ color: 0x777d45, roughness: 1 }),
+    grass2: new THREE.MeshStandardMaterial({ color: 0x85865a, roughness: 1 }),
+    asphalt: new THREE.MeshStandardMaterial({ color: 0x303236, roughness: 1 }),
+    asphaltOld: new THREE.MeshStandardMaterial({ color: 0x41413d, roughness: 1 }),
+    sidewalk: new THREE.MeshStandardMaterial({ color: 0xaaa397, roughness: 1 }),
+    sidewalkDark: new THREE.MeshStandardMaterial({ color: 0x817e75, roughness: 1 }),
+    white: new THREE.MeshStandardMaterial({ color: 0xe9e4d8 }),
+    yellow: new THREE.MeshStandardMaterial({ color: 0xe4b72e }),
     black: new THREE.MeshStandardMaterial({ color: 0x202124 }),
     glass: new THREE.MeshStandardMaterial({
-      color: 0x83b7c8,
-      roughness: 0.25,
-      metalness: 0.15
+      color: 0x769eaa,
+      roughness: 0.3,
+      metalness: 0.12
     }),
-    windowDark: new THREE.MeshStandardMaterial({ color: 0x344a56 }),
+    windowDark: new THREE.MeshStandardMaterial({ color: 0x263b43 }),
     green: new THREE.MeshStandardMaterial({ color: 0x347342 }),
     leaf: new THREE.MeshStandardMaterial({ color: 0x43834b }),
     trunk: new THREE.MeshStandardMaterial({ color: 0x765035 }),
-    sand: new THREE.MeshStandardMaterial({ color: 0xd9bd83 }),
+    sand: new THREE.MeshStandardMaterial({ color: 0xd0b17b }),
     water: new THREE.MeshStandardMaterial({
       color: 0x2389a9,
       roughness: 0.3,
       metalness: 0.2
     }),
-    concrete: new THREE.MeshStandardMaterial({ color: 0x99958d })
+    concrete: new THREE.MeshStandardMaterial({ color: 0x99958d }),
+    metal: new THREE.MeshStandardMaterial({ color: 0x555b5d, metalness: 0.65, roughness: 0.5 }),
+    rust: new THREE.MeshStandardMaterial({ color: 0x80533b }),
+    wood: new THREE.MeshStandardMaterial({ color: 0x765037 }),
+    red: new THREE.MeshStandardMaterial({ color: 0x9c382b }),
+    blue: new THREE.MeshStandardMaterial({ color: 0x315c75 })
   };
 
   const buildingColors = [
     0xe5c49a, 0xd8a77f, 0xf0dfbd,
     0xc9b7a0, 0xe2d3b9, 0xd4a18c,
-    0xc8c4ad, 0xe9d7b5, 0xbfa58c
+    0xc8c4ad, 0xe9d7b5, 0xbfa58c,
+    0xd5c6a8, 0xc5a68d, 0xe2cdb0
   ];
 
   const roofColors = [
     0x985e43, 0x6d5550, 0x9b927e, 0x514f4b
   ];
+
+  const signColors = [0xd9a52d, 0x285b75, 0x9c382b, 0x347342];
 
   function addBox(parent, x, y, z, w, h, d, material) {
     const mesh = new THREE.Mesh(
@@ -70,19 +80,24 @@ export function createWorld(scene) {
 
   function addCylinder(parent, x, y, z, radiusTop, radiusBottom, height, material, segments = 8) {
     const mesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        radiusTop,
-        radiusBottom,
-        height,
-        segments
-      ),
+      new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segments),
       material
     );
     mesh.position.set(x, y + height / 2, z);
     mesh.castShadow = true;
+    mesh.receiveShadow = true;
     parent.add(mesh);
     return mesh;
   }
+
+  function variation(x, z, seed = 1) {
+    const value = Math.sin(x * 12.9898 + z * 78.233 + seed * 37.719) * 43758.5453;
+    return value - Math.floor(value);
+  }
+
+  // ============================================
+  // TERRENO
+  // ============================================
 
   function addGround() {
     addBox(scene, 0, -1.2, 0, 260, 1, 260, materials.grass);
@@ -132,6 +147,7 @@ export function createWorld(scene) {
         horizontal ? z + side * offset : z
       );
 
+      pavement.receiveShadow = true;
       scene.add(pavement);
 
       const curb = new THREE.Mesh(
@@ -150,6 +166,26 @@ export function createWorld(scene) {
       );
 
       scene.add(curb);
+
+      // Juntas dos passeios
+      for (let p = -length / 2 + 8; p < length / 2; p += 8) {
+        const joint = new THREE.Mesh(
+          new THREE.BoxGeometry(
+            horizontal ? 0.045 : sidewalkWidth,
+            0.012,
+            horizontal ? sidewalkWidth : 0.045
+          ),
+          materials.sidewalkDark
+        );
+
+        joint.position.set(
+          horizontal ? x + p : x + side * offset,
+          0.181,
+          horizontal ? z + side * offset : z + p
+        );
+
+        scene.add(joint);
+      }
     }
 
     if (width >= 12) {
@@ -171,6 +207,28 @@ export function createWorld(scene) {
 
         scene.add(line);
       }
+    }
+
+    // Pequenas zonas de asfalto reparado
+    for (let i = 0; i < 3; i++) {
+      const p = -length / 2 + 18 + i * (length / 3);
+
+      const patch = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          horizontal ? 2.5 : width * 0.55,
+          0.014,
+          horizontal ? width * 0.55 : 2.5
+        ),
+        materials.asphaltOld
+      );
+
+      patch.position.set(
+        horizontal ? x + p : x,
+        0.016,
+        horizontal ? z : z + p
+      );
+
+      scene.add(patch);
     }
   }
 
@@ -210,112 +268,303 @@ export function createWorld(scene) {
       makeCrosswalk(position, 35, true);
       makeCrosswalk(35, position, false);
     });
+
+    // Tampas de saneamento nas ruas principais
+    for (const position of [-70, -35, 35, 70]) {
+      for (const side of [-1, 1]) {
+        const cover = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.38, 0.38, 0.035, 16),
+          materials.metal
+        );
+        cover.position.set(side * 4.8, 0.025, position + 12);
+        scene.add(cover);
+      }
+    }
   }
 
   // ============================================
-  // EDIFÍCIOS
+  // DETALHES DE FACHADAS
+  // ============================================
+
+  function addWindowFrame(group, x, y, z, width, height) {
+    const frame = new THREE.MeshStandardMaterial({ color: 0xd8d0bd });
+
+    addBox(group, x, y, z, width + 0.18, 0.1, 0.12, frame);
+    addBox(group, x, y + height - 0.08, z, width + 0.18, 0.1, 0.12, frame);
+    addBox(group, x - width / 2, y, z, 0.09, height, 0.12, frame);
+    addBox(group, x + width / 2, y, z, 0.09, height, 0.12, frame);
+  }
+
+  function addBalcony(group, x, y, z, width) {
+    const balconyFloor = new THREE.MeshStandardMaterial({ color: 0xaaa69c });
+    const railing = new THREE.MeshStandardMaterial({
+      color: 0x555b5d,
+      metalness: 0.6,
+      roughness: 0.55
+    });
+
+    addBox(group, x, y, z + 0.75, width + 0.35, 0.15, 1.3, balconyFloor);
+    addBox(group, x, y + 0.85, z + 1.35, width + 0.35, 0.08, 0.08, railing);
+    addBox(group, x - width / 2, y + 0.42, z + 0.75, 0.08, 0.85, 1.2, railing);
+    addBox(group, x + width / 2, y + 0.42, z + 0.75, 0.08, 0.85, 1.2, railing);
+
+    const bars = Math.max(3, Math.floor(width / 0.45));
+    for (let i = 0; i <= bars; i++) {
+      const bx = x - width / 2 + (i / bars) * width;
+      addBox(group, bx, y + 0.08, z + 1.35, 0.045, 0.75, 0.045, railing);
+    }
+  }
+
+  function addAirConditioner(group, x, y, z) {
+    const casing = new THREE.MeshStandardMaterial({ color: 0xe2e0d8 });
+    addBox(group, x, y, z, 0.85, 0.42, 0.38, casing);
+    addBox(group, x, y + 0.1, z + 0.2, 0.55, 0.16, 0.035, materials.metal);
+  }
+
+  function addWaterTank(group, x, y, z) {
+    const tankMaterial = new THREE.MeshStandardMaterial({
+      color: 0x343c42,
+      roughness: 0.7
+    });
+
+    addCylinder(group, x, y, z, 0.9, 0.9, 1.5, tankMaterial, 12);
+
+    const lid = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 0.9, 0.12, 12),
+      materials.black
+    );
+    lid.position.set(x, y + 1.55, z);
+    group.add(lid);
+
+    addCylinder(group, x, y - 0.6, z, 0.07, 0.07, 0.65, materials.metal, 6);
+  }
+
+  function addRoofDetails(group, width, depth, height, seed) {
+    const parapet = new THREE.MeshStandardMaterial({ color: 0xb8ad9a });
+
+    // Pequeno muro à volta do telhado
+    addBox(group, 0, height + 0.35, depth / 2 - 0.12, width, 0.55, 0.2, parapet);
+    addBox(group, 0, height + 0.35, -depth / 2 + 0.12, width, 0.55, 0.2, parapet);
+    addBox(group, width / 2 - 0.12, height + 0.35, 0, 0.2, 0.55, depth, parapet);
+    addBox(group, -width / 2 + 0.12, height + 0.35, 0, 0.2, 0.55, depth, parapet);
+
+    if (seed % 3 !== 0) {
+      addWaterTank(
+        group,
+        width * 0.22,
+        height + 0.9,
+        -depth * 0.18
+      );
+    }
+
+    if (seed % 4 === 0) {
+      const smallRoom = new THREE.MeshStandardMaterial({ color: 0xc6bca9 });
+      addBox(group, -width * 0.22, height + 0.4, -depth * 0.15, 2.8, 2.1, 2.6, smallRoom);
+    }
+  }
+
+  // ============================================
+  // CONSTRUÇÃO DOS EDIFÍCIOS
   // ============================================
 
   function makeBuilding(x, z, width, depth, floors, type = 'house') {
     const group = new THREE.Group();
-
     const height = floors * 3.2;
+    const seed = Math.abs(Math.floor(x * 3 + z * 7));
 
+    const wallColor = buildingColors[seed % buildingColors.length];
     const wallMaterial = new THREE.MeshStandardMaterial({
-      color: buildingColors[
-        Math.abs(Math.floor(x * 3 + z * 7)) % buildingColors.length
-      ],
-      roughness: 0.85
+      color: wallColor,
+      roughness: 0.9
     });
 
     const roofMaterial = new THREE.MeshStandardMaterial({
-      color: roofColors[
-        Math.abs(Math.floor(x + z * 2)) % roofColors.length
-      ]
+      color: roofColors[Math.abs(Math.floor(x + z * 2)) % roofColors.length],
+      roughness: 0.95
+    });
+
+    const trimMaterial = new THREE.MeshStandardMaterial({
+      color: seed % 2 === 0 ? 0xe5ddcb : 0xb8a993
     });
 
     addBox(group, 0, 0, 0, width, height, depth, wallMaterial);
     addBox(group, 0, 0, 0, width + 0.35, 0.35, depth + 0.35, materials.concrete);
     addBox(group, 0, height, 0, width + 0.5, 0.35, depth + 0.5, roofMaterial);
 
-    const columns = Math.max(2, Math.floor(width / 2.3));
+    // Faixa horizontal entre pisos
+    for (let floor = 1; floor < floors; floor++) {
+      addBox(
+        group,
+        0,
+        floor * 3.2 - 0.08,
+        depth / 2 + 0.08,
+        width,
+        0.12,
+        0.12,
+        trimMaterial
+      );
+    }
+
+    const columns = Math.max(2, Math.floor(width / 2.7));
 
     for (let floor = 0; floor < floors; floor++) {
       for (let col = 0; col < columns; col++) {
         const wx = -width / 2 + (col + 0.5) * width / columns;
         const wy = 0.8 + floor * 3.2;
+        const windowWidth = Math.min(1.15, width / columns * 0.55);
 
         addBox(
           group,
           wx,
           wy,
           depth / 2 + 0.035,
-          1.05,
-          1.45,
-          0.08,
+          windowWidth + 0.2,
+          1.55,
+          0.1,
           materials.windowDark
         );
 
         addBox(
           group,
           wx,
-          wy + 0.08,
-          depth / 2 + 0.09,
-          0.85,
-          1.15,
+          wy + 0.1,
+          depth / 2 + 0.1,
+          windowWidth,
+          1.25,
           0.035,
           materials.glass
         );
 
-        addBox(
+        addWindowFrame(
           group,
           wx,
-          wy - 0.78,
-          depth / 2 + 0.12,
-          1.2,
-          0.12,
-          0.25,
-          materials.white
+          wy - 0.05,
+          depth / 2 + 0.13,
+          windowWidth,
+          1.45
         );
 
-        if (type === 'apartment' && floor > 0 && col % 2 === 0) {
-          addBox(
+        // Algumas janelas têm grades metálicas
+        if ((seed + floor + col) % 3 === 0) {
+          for (let bar = -1; bar <= 1; bar++) {
+            addBox(
+              group,
+              wx + bar * 0.27,
+              wy,
+              depth / 2 + 0.19,
+              0.035,
+              1.4,
+              0.035,
+              materials.metal
+            );
+          }
+        }
+
+        // Varandas em alguns edifícios
+        if (
+          (type === 'apartment' || type === 'office') &&
+          floor > 0 &&
+          col % 2 === 0 &&
+          seed % 2 === 0
+        ) {
+          addBalcony(
             group,
             wx,
-            wy - 0.65,
-            depth / 2 + 0.35,
-            1.45,
-            0.12,
-            0.65,
-            materials.concrete
+            wy - 0.55,
+            depth / 2 + 0.12,
+            Math.min(1.5, width / columns * 0.75)
+          );
+        }
+
+        // Aparelhos de ar condicionado
+        if ((seed + floor * 2 + col) % 5 === 0) {
+          addAirConditioner(
+            group,
+            wx + 0.85,
+            wy + 0.25,
+            depth / 2 + 0.18
           );
         }
       }
     }
 
+    // Porta de entrada
     const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x69432e });
-
     addBox(
       group,
       0,
       0,
-      depth / 2 + 0.06,
+      depth / 2 + 0.12,
       1.15,
       2.3,
-      0.15,
+      0.18,
       doorMaterial
     );
 
+    // Degraus de entrada
+    addBox(
+      group,
+      0,
+      0,
+      depth / 2 + 0.5,
+      1.7,
+      0.16,
+      0.55,
+      materials.concrete
+    );
+
     if (type === 'shop') {
+      const signMaterial = new THREE.MeshStandardMaterial({
+        color: signColors[seed % signColors.length],
+        roughness: 0.7
+      });
+
+      // Montra e porta comercial
       addBox(
         group,
         0,
-        2.45,
-        depth / 2 + 0.12,
-        width * 0.8,
+        0.45,
+        depth / 2 + 0.15,
+        width * 0.72,
+        1.6,
+        0.12,
+        materials.glass
+      );
+
+      // Moldura da montra
+      addBox(
+        group,
+        0,
+        2.25,
+        depth / 2 + 0.2,
+        width * 0.9,
         0.55,
-        0.2,
+        0.22,
+        signMaterial
+      );
+
+      // Toldos
+      addBox(
+        group,
+        0,
+        2.05,
+        depth / 2 + 0.55,
+        width * 0.85,
+        0.12,
+        1,
         materials.yellow
+      );
+
+      // Portas de enrolar laterais
+      addBox(
+        group,
+        -width * 0.38,
+        0,
+        depth / 2 + 0.17,
+        0.65,
+        2.25,
+        0.12,
+        materials.metal
       );
     }
 
@@ -334,9 +583,55 @@ export function createWorld(scene) {
       }
     }
 
+    // Colunas decorativas nas entradas de alguns edifícios
+    if (type === 'office' || seed % 4 === 0) {
+      for (const side of [-1, 1]) {
+        addBox(
+          group,
+          side * (width / 2 - 0.35),
+          0,
+          depth / 2 + 0.25,
+          0.35,
+          2.7,
+          0.35,
+          trimMaterial
+        );
+      }
+    }
+
+    addRoofDetails(group, width, depth, height, seed);
+
     group.position.set(x, 0, z);
     scene.add(group);
     return group;
+  }
+
+  // ============================================
+  // MUROS E PORTÕES DE BAIRRO
+  // ============================================
+
+  function makeWallAndGate(x, z, width, rotation = 0) {
+    const group = new THREE.Group();
+    const wall = new THREE.MeshStandardMaterial({ color: 0xbcae98 });
+    const gate = new THREE.MeshStandardMaterial({
+      color: 0x42494b,
+      metalness: 0.55,
+      roughness: 0.65
+    });
+
+    addBox(group, -width * 0.3, 0, 0, width * 0.4, 1.8, 0.35, wall);
+    addBox(group, width * 0.3, 0, 0, width * 0.4, 1.8, 0.35, wall);
+    addBox(group, 0, 0, 0, width * 0.2, 1.7, 0.2, gate);
+
+    for (let i = -3; i <= 3; i++) {
+      addBox(group, i * 0.3, 0, 0, 0.045, 1.65, 0.08, materials.metal);
+    }
+
+    addBox(group, 0, 1.7, 0, width, 0.15, 0.4, wall);
+
+    group.position.set(x, 0, z);
+    group.rotation.y = rotation;
+    scene.add(group);
   }
 
   function buildCityBlocks() {
@@ -362,14 +657,26 @@ export function createWorld(scene) {
           floors,
           type
         );
+
+        // Alguns bairros têm muros e portões
+        if ((xi + zi) % 3 === 0) {
+          makeWallAndGate(
+            buildingX + 10,
+            buildingZ + 5,
+            7,
+            Math.PI / 2
+          );
+        }
       });
     });
 
+    // Edifícios altos do centro
     makeBuilding(-25, -25, 18, 18, 9, 'office');
     makeBuilding(25, -25, 18, 18, 11, 'office');
     makeBuilding(-25, 25, 18, 18, 7, 'apartment');
     makeBuilding(25, 25, 18, 18, 8, 'apartment');
 
+    // Zona comercial
     makeBuilding(-55, -20, 18, 15, 3, 'shop');
     makeBuilding(-55, -43, 18, 15, 2, 'shop');
     makeBuilding(-55, -66, 18, 15, 3, 'shop');
@@ -404,6 +711,22 @@ export function createWorld(scene) {
       bench.position.set(x, 0, z);
       bench.rotation.y = -angle;
       scene.add(bench);
+    }
+
+    // Caminhos de circulação
+    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      const path = new THREE.Mesh(
+        new THREE.BoxGeometry(2, 0.06, 8),
+        materials.sidewalk
+      );
+
+      path.position.set(
+        Math.cos(angle) * 8,
+        0.23,
+        Math.sin(angle) * 8
+      );
+      path.rotation.y = -angle;
+      scene.add(path);
     }
   }
 
@@ -564,6 +887,11 @@ export function createWorld(scene) {
     addBox(group, -0.7, 0.55, 2.12, 0.4, 0.22, 0.08, headlight);
     addBox(group, 0.7, 0.55, 2.12, 0.4, 0.22, 0.08, headlight);
 
+    // Espelhos laterais
+    for (const side of [-1, 1]) {
+      addBox(group, side * 1.12, 1.05, 0.55, 0.18, 0.15, 0.35, materials.black);
+    }
+
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
     scene.add(group);
@@ -598,6 +926,9 @@ export function createWorld(scene) {
       roof.position.set(x, 3.05, 0);
       roof.rotation.y = Math.PI / 4;
       group.add(roof);
+
+      // Balcão de venda
+      addBox(group, x, 0.8, 1.5, 2.6, 0.12, 0.3, materials.wood);
     }
 
     group.position.set(-78, 0, -25);
@@ -623,6 +954,9 @@ export function createWorld(scene) {
     for (let i = -1; i <= 1; i++) {
       addBox(group, i * 4, 0.3, 0, 1.1, 1.6, 0.8, materials.white);
       addBox(group, i * 4, 1.9, 0, 0.8, 0.4, 0.12, materials.black);
+
+      // Mangueira da bomba
+      addCylinder(group, i * 4 + 0.5, 0.8, 0.5, 0.035, 0.035, 0.8, materials.black, 6);
     }
 
     group.position.set(78, 0, -35);
@@ -642,6 +976,13 @@ export function createWorld(scene) {
     for (let z = -100; z <= 100; z += 18) {
       makeTree(-106, z, true);
     }
+
+    // Protecção da marginal
+    for (let z = -105; z <= 105; z += 5) {
+      addBox(scene, -110, 0.4, z, 0.12, 0.8, 0.12, materials.metal);
+    }
+
+    addBox(scene, -110, 0.8, 0, 0.15, 0.12, 220, materials.metal);
   }
 
   // ============================================
@@ -658,13 +999,11 @@ export function createWorld(scene) {
   makeMarket();
   makeFuelStation();
 
-  // Carregar personagens 3D
+  // Habitantes 3D
   createPeople(scene, world);
 
-  // Carro inicial perto do jogador
+  // Carros iniciais
   makeCar(5, 25, 0xc62828, 0);
-
-  // Outros carros pela cidade
   makeCar(-42, 35, 0xeeeeee, Math.PI / 2);
   makeCar(55, -70, 0x2255aa, Math.PI / 2);
   makeCar(-72, 70, 0x252525, 0);
