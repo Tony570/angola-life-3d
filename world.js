@@ -490,10 +490,6 @@ export function createWorld(scene) {
     makeBuilding(25, -25, 18, 18, 11, 'office');
     makeBuilding(-25, 25, 18, 18, 7, 'apartment');
     makeBuilding(25, 25, 18, 18, 8, 'apartment');
-
-    makeBuilding(-55, -20, 18, 15, 3, 'shop');
-    makeBuilding(-55, -43, 18, 15, 2, 'shop');
-    makeBuilding(-55, -66, 18, 15, 3, 'shop');
   }
 
   // ============================================
