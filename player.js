@@ -85,6 +85,10 @@ export class Player {
       const scaleFactor = HUMAN_HEIGHT / originalHeight;
 
       const visualRoot = new THREE.Group();
+
+      // Corrige a orientação visual do modelo.
+      visualRoot.rotation.y = Math.PI;
+
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
       visualRoot.add(model);
@@ -553,10 +557,12 @@ export class Player {
 
         const directionX = dx / distance;
         const directionZ = dz / distance;
+
         const targetRotation = Math.atan2(
-  directionX,
-  directionZ
-);
+          directionX,
+          directionZ
+        );
+
         let angleDifference = targetRotation - this.group.rotation.y;
 
         angleDifference = Math.atan2(
