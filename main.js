@@ -111,9 +111,87 @@ const world = createWorld(scene);
 const houses = createHouseSystem(scene);
 const player = new Player(scene, camera, world.vehicles);
 
-const exteriorColliders = houses.flatMap(
+// ============================================
+// COLISÕES DOS EDIFÍCIOS DA CIDADE
+// Bloqueia paredes laterais, traseiras e partes
+// da fachada, mantendo o vão central da porta livre.
+// ============================================
+
+function createCityBuildingColliders(buildings = []) {
+  const colliders = [];
+
+  const addBox = (centerX, centerZ, width, depth) => {
+    if (width <= 0 || depth <= 0) return;
+
+    colliders.push({
+      minX: centerX - width / 2,
+      maxX: centerX + width / 2,
+      minZ: centerZ - depth / 2,
+      maxZ: centerZ + depth / 2
+    });
+  };
+
+  for (const building of buildings) {
+    const wall = 0.32;
+    const doorWidth = building.type === 'shop' ? 2.8 : 1.9;
+    const sideWidth = Math.max(0, (building.width - doorWidth) / 2);
+    const frontZ = building.z + building.depth / 2;
+
+    // Paredes laterais e parede traseira.
+    addBox(
+      building.x - building.width / 2 + wall / 2,
+      building.z,
+      wall,
+      building.depth
+    );
+
+    addBox(
+      building.x + building.width / 2 - wall / 2,
+      building.z,
+      wall,
+      building.depth
+    );
+
+    addBox(
+      building.x,
+      building.z - building.depth / 2 + wall / 2,
+      building.width,
+      wall
+    );
+
+    // Fachada: duas partes laterais. O centro fica aberto como porta.
+    if (sideWidth > 0) {
+      addBox(
+        building.x - building.width / 2 + sideWidth / 2,
+        frontZ,
+        sideWidth,
+        wall
+      );
+
+      addBox(
+        building.x + building.width / 2 - sideWidth / 2,
+        frontZ,
+        sideWidth,
+        wall
+      );
+    }
+  }
+
+  return colliders;
+}
+
+const houseExteriorColliders = houses.flatMap(
   house => house.exteriorColliders || []
 );
+
+const cityBuildingColliders = createCityBuildingColliders(
+  world.buildings || []
+);
+
+const exteriorColliders = [
+  ...houseExteriorColliders,
+  ...cityBuildingColliders
+];
 
 player.setColliders(exteriorColliders);
 
