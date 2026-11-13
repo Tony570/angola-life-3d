@@ -1,6 +1,6 @@
 
 import * as THREE from 'three';
-
+import { createPeople } from './people.js';
 // ============================================
 // ANGOLA LIFE 3D — WORLD.JS
 // Cidade procedural de Luanda
