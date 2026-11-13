@@ -1,167 +1,276 @@
+
 import * as THREE from 'three';
 
 export class Player {
-  constructor(scene, camera) {
+  constructor(scene, camera, vehicles) {
     this.scene = scene;
     this.camera = camera;
-    
-    // --- 1. CRIAR O MODELO 3D DO PERSONAGEM ---
-    this.group = new THREE.Group();
+    this.vehicles = vehicles;
 
-    // Corpo (Tronco)
-    const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.4);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2e3440, roughness: 0.7 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 1.2;
+    this.group = new THREE.Group();
+    this.input = { x: 0, z: 0 };
+    this.speed = 8;
+    this.vehicle = null;
+    this.keys = {};
+
+    const mat = color =>
+      new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+
+    const skin = mat(0x8b5236);
+    const shirt = mat(0x1976d2);
+    const pants = mat(0x242c3a);
+    const shoes = mat(0x171717);
+
+    const body = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.32, 0.55, 5, 10),
+      shirt
+    );
+    body.position.y = 1.1;
     body.castShadow = true;
     this.group.add(body);
 
-    // Cabeça
-    const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xd08770, roughness: 0.6 }); // Tom de pele
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = 2.05;
-    head.castShadow = true;
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.27, 16, 16),
+      skin
+    );
+    head.position.y = 1.85;
     this.group.add(head);
 
-    // Pernas
-    const legGeo = new THREE.BoxGeometry(0.32, 1.0, 0.35);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x4c566a });
-    
-    const leftLeg = new THREE.Mesh(legGeo, legMat);
-    leftLeg.position.set(-0.2, 0.5, 0);
-    leftLeg.castShadow = true;
-    this.group.add(leftLeg);
+    const hair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.275, 16, 8, 0, Math.PI * 2, 0, 1.3),
+      mat(0x17120f)
+    );
+    hair.position.y = 1.95;
+    this.group.add(hair);
 
-    const rightLeg = new THREE.Mesh(legGeo, legMat);
-    rightLeg.position.set(0.2, 0.5, 0);
-    rightLeg.castShadow = true;
-    this.group.add(rightLeg);
+    this.limbs = [];
 
-    // Posicionar o jogador no centro de Luanda (Praça inicial)
+    for (const side of [-1, 1]) {
+      const arm = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.09, 0.48, 5, 8),
+        skin
+      );
+      arm.position.set(side * 0.4, 1.12, 0);
+      arm.rotation.z = -side * 0.12;
+      this.group.add(arm);
+
+      const leg = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.13, 0.5, 5, 8),
+        pants
+      );
+      leg.position.set(side * 0.16, 0.42, 0);
+      this.group.add(leg);
+
+      this.limbs.push({ arm, leg, side });
+    }
+
+    const foot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.14, 0.4),
+      shoes
+    );
+
+    for (const side of [-1, 1]) {
+      const f = foot.clone();
+      f.position.set(side * 0.16, 0.12, 0.08);
+      this.group.add(f);
+    }
+
     this.group.position.set(0, 0, 0);
     this.scene.add(this.group);
 
-    // --- 2. CONFIGURAÇÕES DE MOVIMENTO ---
-    this.moveSpeed = 0.12;
-    this.inputVector = { x: 0, z: 0 };
-    this.rotationAngle = 0;
+    this.setupControls();
+    this.setupJoystick();
 
-    // Configurar o Joystick Tátil na UI
-    this.setupJoystickUI();
+    this.camera.position.set(0, 6, 12);
   }
 
-  // Criar interface visual do Joystick para Android / Navegador
-  setupJoystickUI() {
-    // Container do Joystick
-    const joystickContainer = document.createElement('div');
-    joystickContainer.id = 'joystick-container';
-    joystickContainer.style.cssText = `
-      position: fixed;
-      bottom: 40px;
-      left: 40px;
-      width: 120px;
-      height: 120px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      z-index: 100;
-      pointer-events: auto;
-      touch-action: none;
-    `;
+  setupControls() {
+    window.addEventListener('keydown', e => {
+      this.keys[e.code] = true;
 
-    // Botão / Pega móvel do Joystick
-    const joystickKnob = document.createElement('div');
-    joystickKnob.id = 'joystick-knob';
-    joystickKnob.style.cssText = `
-      position: absolute;
-      top: 35px;
-      left: 35px;
-      width: 50px;
-      height: 50px;
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      pointer-events: none;
-      transition: transform 0.05s ease-out;
-    joystickContainer.appendChild(joystickKnob);
-    document.body.appendChild(joystickContainer);
-    // Gestão de Eventos Táctil e Rato
-    let isDragging = false;
-    const maxRadius = 35;
+      if (e.code === 'KeyE' && !e.repeat) {
+        this.toggleVehicle();
+      }
+    });
 
-    const handleStart = (clientX, clientY) => {
-      isDragging = true;
-      updateJoystick(clientX, clientY);
-    };
-    const handleMove = (clientX, clientY) => {
-      if (!isDragging) return;
-      updateJoystick(clientX, clientY);
-    };
-    const handleEnd = () => {
-      isDragging = false;
-      this.inputVector = { x: 0, z: 0 };
-      joystickKnob.style.transform = `translate(0px, 0px)`;
-    };
+    window.addEventListener('keyup', e => {
+      this.keys[e.code] = false;
+    });
+  }
 
-    const updateJoystick = (clientX, clientY) => {
-      const rect = joystickContainer.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+  setupJoystick() {
+    const base = document.createElement('div');
+    base.id = 'joystick';
+    base.innerHTML = '<div id="joystick-knob"></div>';
+    document.body.appendChild(base);
 
-      let dx = clientX - centerX;
-      let dy = clientY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+    const knob = base.firstElementChild;
+    let active = false;
+    const radius = 42;
 
-      if (distance > maxRadius) {
-        dx = (dx / distance) * maxRadius;
-        dy = (dy / distance) * maxRadius;
+    const move = (x, y) => {
+      const rect = base.getBoundingClientRect();
+      let dx = x - (rect.left + rect.width / 2);
+      let dy = y - (rect.top + rect.height / 2);
+
+      const length = Math.hypot(dx, dy);
+
+      if (length > radius) {
+        dx = dx / length * radius;
+        dy = dy / length * radius;
       }
 
-      joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-
-      // Normalizar input (-1 a 1)
-      this.inputVector.x = dx / maxRadius;
-      this.inputVector.z = dy / maxRadius;
+      this.input.x = dx / radius;
+      this.input.z = dy / radius;
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
     };
 
-    // Listeners para Mobile (Touch) e PC (Mouse)
-    joystickContainer.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX, e.touches[0].clientY));
-    window.addEventListener('touchmove', (e) => {
-      if(e.touches.length > 0) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    base.addEventListener('pointerdown', e => {
+      active = true;
+      base.setPointerCapture(e.pointerId);
+      move(e.clientX, e.clientY);
     });
-    window.addEventListener('touchend', handleEnd);
 
-    joystickContainer.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
-    window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-    window.addEventListener('mouseup', handleEnd);
+    base.addEventListener('pointermove', e => {
+      if (active) move(e.clientX, e.clientY);
+    });
+
+    const stop = () => {
+      active = false;
+      this.input.x = 0;
+      this.input.z = 0;
+      knob.style.transform = 'translate(0, 0)';
+    };
+
+    base.addEventListener('pointerup', stop);
+    base.addEventListener('pointercancel', stop);
   }
 
-  // Atualização de posições a cada frame
-  update() {
-    if (this.inputVector.x !== 0 || this.inputVector.z !== 0) {
-      // Movimentar com base no input do joystick
-      this.group.position.x += this.inputVector.x * this.moveSpeed;
-      this.group.position.z += this.inputVector.z * this.moveSpeed;
-
-      // Calcular rotação para o personagem olhar na direção do movimento
-      const angle = Math.atan2(this.inputVector.x, this.inputVector.z);
-      this.group.rotation.y = angle;
+  toggleVehicle() {
+    if (this.vehicle) {
+      this.vehicle.occupied = false;
+      this.group.visible = true;
+      this.group.position.copy(this.vehicle.group.position);
+      this.group.position.x += 3;
+      this.vehicle = null;
+      return;
     }
 
-    // --- 3. CÂMARA EM TERCEIRA PESSOA ACOMPANHANDO O JOGADOR ---
-    const targetCameraPos = new THREE.Vector3(
-      this.group.position.x,
-      this.group.position.y + 8,
-      this.group.position.z + 14
-    );
+    let nearest = null;
+    let distance = 5;
 
-    // Suavizar movimento da câmara (Lerp)
-    this.camera.position.lerp(targetCameraPos, 0.1);
+    for (const v of this.vehicles) {
+      const d = this.group.position.distanceTo(v.group.position);
+
+      if (d < distance) {
+        nearest = v;
+        distance = d;
+      }
+    }
+
+    if (nearest) {
+      this.vehicle = nearest;
+      nearest.occupied = true;
+      this.group.visible = false;
+    }
+  }
+
+  setPosition(x, z) {
+    if (this.vehicle) return;
+
+    this.group.position.set(x, 0, z);
+  }
+
+  update(delta = 0.016) {
+    let x = this.input.x;
+    let z = this.input.z;
+
+    if (this.keys.ArrowLeft || this.keys.KeyA) x -= 1;
+    if (this.keys.ArrowRight || this.keys.KeyD) x += 1;
+    if (this.keys.ArrowUp || this.keys.KeyW) z -= 1;
+    if (this.keys.ArrowDown || this.keys.KeyS) z += 1;
+
+    const length = Math.hypot(x, z);
+
+    if (length > 1) {
+      x /= length;
+      z /= length;
+    }
+
+    const moving = length > 0.05;
+
+    if (this.vehicle) {
+      const v = this.vehicle;
+
+      if (this.keys.ArrowUp || this.keys.KeyW || z < -0.1) {
+        v.speed = Math.min(v.speed + delta * 12, 24);
+      } else if (this.keys.ArrowDown || this.keys.KeyS || z > 0.1) {
+        v.speed = Math.max(v.speed - delta * 18, -8);
+      } else {
+        v.speed *= 0.97;
+      }
+
+      if (Math.abs(x) > 0.05) {
+        v.group.rotation.y -= x * delta * 1.5 * Math.sign(v.speed || 1);
+      }
+
+      const direction = new THREE.Vector3(
+        Math.sin(v.group.rotation.y),
+        0,
+        Math.cos(v.group.rotation.y)
+      );
+
+      v.group.position.addScaledVector(direction, -v.speed * delta);
+
+      for (const wheel of v.wheels) {
+        wheel.rotation.x += v.speed * delta;
+      }
+
+      this.group.position.copy(v.group.position);
+      this.camera.position.lerp(
+        new THREE.Vector3(
+          v.group.position.x,
+          7,
+          v.group.position.z + 12
+        ),
+        0.08
+      );
+    } else {
+      this.group.position.x += x * this.speed * delta;
+      this.group.position.z += z * this.speed * delta;
+
+      if (moving) {
+        this.group.rotation.y = Math.atan2(x, z);
+        const t = performance.now() * 0.012;
+
+        for (const limb of this.limbs) {
+          limb.leg.rotation.x = Math.sin(t) * 0.5 * limb.side;
+          limb.arm.rotation.x = -Math.sin(t) * 0.4 * limb.side;
+        }
+      } else {
+        for (const limb of this.limbs) {
+          limb.leg.rotation.x = 0;
+          limb.arm.rotation.x = 0;
+        }
+      }
+
+      const desired = new THREE.Vector3(
+        this.group.position.x,
+        5,
+        this.group.position.z + 9
+      );
+
+      this.camera.position.lerp(desired, 0.09);
+    }
+
+    const target = this.vehicle
+      ? this.vehicle.group.position
+      : this.group.position;
+
     this.camera.lookAt(
-      this.group.position.x,
-      this.group.position.y + 1.5,
-      this.group.position.z
+      target.x,
+      this.vehicle ? 1.3 : 1.2,
+      target.z
     );
   }
-  }
+}
