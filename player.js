@@ -29,54 +29,151 @@ export class Player {
     this.setupJoystick();
   }
 
-  material(color) {
+  material(color, roughness = 0.8) {
     return new THREE.MeshStandardMaterial({
       color,
-      roughness: 0.8
+      roughness
     });
   }
 
   createCharacter() {
     const skin = this.material('#925d40');
+    const skinLight = this.material('#a96f50');
     const shirt = this.material('#e7e0d2');
     const trousers = this.material('#26364c');
     const shoes = this.material('#202020');
+    const hair = this.material('#171513');
+    const eyes = this.material('#ffffff');
+    const pupils = this.material('#17100c');
+    const mouth = this.material('#48251e');
 
+    const sphere = (name, geometry, material, x, y, z) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.name = name;
+      mesh.position.set(x, y, z);
+      this.group.add(mesh);
+      return mesh;
+    };
+
+    // Corpo e roupa
     const torso = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.38, 0.65, 4, 8),
+      new THREE.CapsuleGeometry(0.34, 0.62, 5, 12),
       shirt
     );
+    torso.name = 'body';
     torso.position.y = 1.35;
+    torso.scale.set(1, 1, 0.78);
     this.group.add(torso);
 
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.29, 14, 12),
+    // Pescoço
+    const neck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.105, 0.12, 0.2, 12),
       skin
     );
-    head.position.y = 2.15;
-    this.group.add(head);
+    neck.position.set(0, 1.88, 0);
+    this.group.add(neck);
 
-    const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(
-        0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2
-      ),
-      this.material('#171513')
+    // Cabeça
+    sphere(
+      'head',
+      new THREE.SphereGeometry(0.29, 24, 20),
+      skin,
+      0, 2.15, 0
     );
-    hair.position.y = 2.28;
-    this.group.add(hair);
 
+    // Orelhas
+    for (const side of [-1, 1]) {
+      sphere(
+        'ear',
+        new THREE.SphereGeometry(0.075, 14, 12),
+        skinLight,
+        side * 0.285, 2.15, 0
+      );
+
+      sphere(
+        'ear-inner',
+        new THREE.SphereGeometry(0.035, 12, 10),
+        skin,
+        side * 0.306, 2.15, 0.035
+      );
+    }
+
+    // Cabelo no topo da cabeça
+    const hairCap = new THREE.Mesh(
+      new THREE.SphereGeometry(
+        0.298, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2
+      ),
+      hair
+    );
+    hairCap.position.set(0, 2.25, 0);
+    this.group.add(hairCap);
+
+    // Laterais do cabelo
+    for (const side of [-1, 1]) {
+      sphere(
+        'side-hair',
+        new THREE.SphereGeometry(0.105, 14, 12),
+        hair,
+        side * 0.22, 2.22, -0.015
+      );
+    }
+
+    // Olhos
+    for (const side of [-1, 1]) {
+      sphere(
+        'eye-white',
+        new THREE.SphereGeometry(0.052, 16, 12),
+        eyes,
+        side * 0.105, 2.19, 0.251
+      );
+
+      sphere(
+        'eye-pupil',
+        new THREE.SphereGeometry(0.027, 14, 12),
+        pupils,
+        side * 0.105, 2.19, 0.294
+      );
+
+      // Sobrancelhas
+      const brow = new THREE.Mesh(
+        new THREE.BoxGeometry(0.105, 0.025, 0.025),
+        hair
+      );
+      brow.position.set(side * 0.105, 2.27, 0.255);
+      brow.rotation.z = side * -0.08;
+      this.group.add(brow);
+    }
+
+    // Nariz
+    sphere(
+      'nose',
+      new THREE.SphereGeometry(0.055, 14, 12),
+      skinLight,
+      0, 2.105, 0.285
+    );
+
+    // Boca
+    const lips = new THREE.Mesh(
+      new THREE.BoxGeometry(0.115, 0.018, 0.018),
+      mouth
+    );
+    lips.position.set(0, 2.015, 0.277);
+    this.group.add(lips);
+
+    // Braços, mãos e pernas
     this.legs = [];
     this.arms = [];
 
     for (const side of [-1, 1]) {
+      // Pernas
       const leg = new THREE.Group();
-      leg.position.set(side * 0.19, 0.75, 0);
+      leg.position.set(side * 0.19, 0.78, 0);
 
       const legMesh = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.14, 0.58, 4, 7),
+        new THREE.CapsuleGeometry(0.135, 0.57, 5, 10),
         trousers
       );
-      legMesh.position.y = -0.28;
+      legMesh.position.y = -0.29;
       leg.add(legMesh);
 
       const shoe = new THREE.Mesh(
@@ -89,22 +186,40 @@ export class Player {
       this.group.add(leg);
       this.legs.push(leg);
 
+      // Braços
       const arm = new THREE.Group();
-      arm.position.set(side * 0.43, 1.65, 0);
+      arm.position.set(side * 0.39, 1.65, 0);
 
-      const armMesh = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.11, 0.52, 4, 7),
+      const upperArm = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.105, 0.43, 5, 10),
         shirt
       );
-      armMesh.position.y = -0.28;
-      arm.add(armMesh);
+      upperArm.position.y = -0.23;
+      arm.add(upperArm);
+
+      const forearm = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.085, 0.27, 5, 10),
+        skin
+      );
+      forearm.position.y = -0.58;
+      arm.add(forearm);
+
+      const hand = new THREE.Mesh(
+        new THREE.SphereGeometry(0.095, 14, 12),
+        skin
+      );
+      hand.position.set(0, -0.79, 0);
+      arm.add(hand);
 
       this.group.add(arm);
       this.arms.push(arm);
     }
 
     this.group.traverse(obj => {
-      if (obj.isMesh) obj.castShadow = true;
+      if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
     });
   }
 
@@ -120,15 +235,11 @@ export class Player {
   isBlocked(x, z) {
     for (const wall of this.colliders) {
       const closestX = THREE.MathUtils.clamp(
-        x,
-        wall.minX,
-        wall.maxX
+        x, wall.minX, wall.maxX
       );
 
       const closestZ = THREE.MathUtils.clamp(
-        z,
-        wall.minZ,
-        wall.maxZ
+        z, wall.minZ, wall.maxZ
       );
 
       const dx = x - closestX;
@@ -146,7 +257,6 @@ export class Player {
     const x = this.group.position.x;
     const z = this.group.position.z;
 
-    // Permite deslizar ao longo das paredes.
     if (!this.isBlocked(x + dx, z)) {
       this.group.position.x += dx;
     }
