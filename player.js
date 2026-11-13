@@ -58,24 +58,7 @@ export class Player {
       model.rotation.set(0, 0, 0);
       model.updateMatrixWorld(true);
 
-      const bounds = new THREE.Box3();
-
-      model.traverse(object => {
-        if (!object.isMesh || !object.geometry) return;
-
-        if (!object.geometry.boundingBox) {
-          object.geometry.computeBoundingBox();
-        }
-
-        if (object.geometry.boundingBox) {
-          const meshBounds = object.geometry.boundingBox.clone();
-          meshBounds.applyMatrix4(object.matrixWorld);
-          bounds.union(meshBounds);
-        }
-      });
-
-      if (bounds.isEmpty()) bounds.setFromObject(model);
-
+      const bounds = new THREE.Box3().setFromObject(model);
       const originalHeight = bounds.max.y - bounds.min.y;
 
       if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
@@ -88,9 +71,8 @@ export class Player {
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
 
-      // Manter a orientação original do modelo.
-      model.rotation.y = Math.PI;
-
+      // Mantém a orientação original do modelo.
+      // Não rodar o modelo 180 graus.
       visualRoot.add(model);
       this.group.add(visualRoot);
 
@@ -148,8 +130,8 @@ export class Player {
     if (!next || this.currentAnimation === name) return;
 
     next.reset();
-    next.paused = false;
     next.enabled = true;
+    next.paused = false;
     next.fadeIn(0.2).play();
 
     if (previous) {
@@ -568,10 +550,11 @@ export class Player {
     const horizontalDistance = distance * Math.cos(pitch);
     const verticalDistance = distance * Math.sin(pitch);
 
+    // Câmara atrás do personagem.
     const desired = new THREE.Vector3(
-      target.x - Math.sin(yaw) * horizontalDistance,
+      target.x + Math.sin(yaw) * horizontalDistance,
       target.y + verticalDistance + 1.2,
-      target.z - Math.cos(yaw) * horizontalDistance
+      target.z + Math.cos(yaw) * horizontalDistance
     );
 
     this.camera.position.lerp(desired, 0.18);
