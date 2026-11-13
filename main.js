@@ -1,5 +1,7 @@
+
 import * as THREE from 'three';
 import { createWorld } from './world.js';
+import { createHouseSystem } from './houses.js';
 import { Player } from './player.js';
 import './style.css';
 
@@ -23,7 +25,7 @@ app.innerHTML = `
     <div id="hud">
       <div class="location">📍 LUANDA, ANGOLA</div>
       <button id="map-button">🗺️ MAPA</button>
-      <button id="vehicle-button">🚗 ENTRAR NO CARRO</button>
+      <button id="vehicle-button">🚗 INTERAGIR</button>
     </div>
 
     <div id="map-panel">
@@ -47,7 +49,7 @@ app.innerHTML = `
       </div>
     </div>
 
-    <div id="help">WASD / SETAS: MOVER · E: ENTRAR OU SAIR DO CARRO</div>
+    <div id="help">JOYSTICK: MOVER · E: ENTRAR OU SAIR</div>
   </div>
 `;
 
@@ -61,7 +63,7 @@ const camera = new THREE.PerspectiveCamera(
   65,
   window.innerWidth / window.innerHeight,
   0.1,
-  500
+  700
 );
 camera.position.set(0, 6, 28);
 
@@ -75,8 +77,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 game.prepend(renderer.domElement);
 
-const hemi = new THREE.HemisphereLight('#ffffff', '#76634b', 2);
-scene.add(hemi);
+scene.add(new THREE.HemisphereLight('#ffffff', '#76634b', 2));
 
 const sun = new THREE.DirectionalLight('#fff0d2', 2.2);
 sun.position.set(-40, 70, 35);
@@ -85,26 +86,24 @@ sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 
 const world = createWorld(scene);
+const houses = createHouseSystem(scene);
 const player = new Player(scene, camera, world.vehicles);
 
 const clock = new THREE.Clock();
 
 const welcome = document.querySelector('#welcome');
 const startButton = document.querySelector('#start-game');
-const vehicleButton = document.querySelector('#vehicle-button');
+const actionButton = document.querySelector('#vehicle-button');
 const mapButton = document.querySelector('#map-button');
 const mapPanel = document.querySelector('#map-panel');
 
 let started = false;
+let currentHouse = null;
 
 startButton.addEventListener('click', () => {
   started = true;
   welcome.classList.add('hidden');
   player.updateCamera();
-});
-
-vehicleButton.addEventListener('click', () => {
-  player.toggleVehicle();
 });
 
 mapButton.addEventListener('click', () => {
@@ -123,12 +122,73 @@ world.destinations.forEach(destination => {
   button.textContent = '📍 ' + destination.name;
 
   button.addEventListener('click', () => {
+    if (currentHouse) exitHouse();
     player.teleport(destination.x, destination.z);
     mapPanel.classList.remove('visible');
   });
 
   destinations.appendChild(button);
 });
+
+function findNearestHouse() {
+  if (currentHouse) return null;
+
+  let nearest = null;
+  let nearestDistance = Infinity;
+
+  for (const house of houses) {
+    const dx = player.group.position.x - house.x;
+    const dz = player.group.position.z - house.z;
+    const distance = Math.hypot(dx, dz);
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearest = house;
+    }
+  }
+
+  return nearestDistance <= 13 ? nearest : null;
+}
+
+function enterHouse(house) {
+  if (!house || currentHouse) return;
+
+  currentHouse = house;
+  house.interior.visible = true;
+
+  player.teleport(house.interiorX, house.interiorZ);
+  actionButton.textContent = '🚪 SAIR DE CASA';
+}
+
+function exitHouse() {
+  if (!currentHouse) return;
+
+  const house = currentHouse;
+  house.interior.visible = false;
+  currentHouse = null;
+
+  player.teleport(house.x, house.z + 13);
+  actionButton.textContent = '🏠 ENTRAR EM CASA';
+}
+
+function interact() {
+  if (currentHouse) {
+    exitHouse();
+    return;
+  }
+
+  const house = findNearestHouse();
+
+  if (house) {
+    enterHouse(house);
+    return;
+  }
+
+  player.toggleVehicle();
+}
+
+player.onInteract = interact;
+actionButton.addEventListener('click', interact);
 
 // Controlos móveis
 document.querySelectorAll('[data-key]').forEach(button => {
@@ -159,13 +219,25 @@ function animateNPCs(delta, time) {
   });
 }
 
-function updateVehicleButton() {
+function updateActionButton() {
+  if (currentHouse) {
+    actionButton.textContent = '🚪 SAIR DE CASA';
+    return;
+  }
+
+  const house = findNearestHouse();
+
+  if (house) {
+    actionButton.textContent = '🏠 ENTRAR EM CASA';
+    return;
+  }
+
   if (player.currentVehicle) {
-    vehicleButton.textContent = '🚶 SAIR DO CARRO';
+    actionButton.textContent = '🚶 SAIR DO CARRO';
   } else if (player.findNearestVehicle()) {
-    vehicleButton.textContent = '🚗 ENTRAR NO CARRO';
+    actionButton.textContent = '🚗 ENTRAR NO CARRO';
   } else {
-    vehicleButton.textContent = '🚗 SEM CARRO PRÓXIMO';
+    actionButton.textContent = '🚶 A EXPLORAR';
   }
 }
 
@@ -175,8 +247,12 @@ function animate() {
 
   if (started) {
     player.update(delta);
-    animateNPCs(delta, time);
-    updateVehicleButton();
+
+    if (!currentHouse) {
+      animateNPCs(delta, time);
+    }
+
+    updateActionButton();
   }
 
   renderer.render(scene, camera);
