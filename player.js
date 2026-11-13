@@ -4,6 +4,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
+const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
+const WALK_URL = 'https://models.codelove.in/animations/m_walk_neutral_01.glb';
+
 const HUMAN_HEIGHT = 2.5;
 
 export class Player {
@@ -70,10 +73,8 @@ export class Player {
       const visualRoot = new THREE.Group();
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
-
-      // Mantém a orientação original do modelo.
-      // Não rodar o modelo 180 graus.
       visualRoot.add(model);
+
       this.group.add(visualRoot);
 
       this.model = model;
@@ -83,40 +84,50 @@ export class Player {
         if (object.isMesh) {
           object.castShadow = true;
           object.receiveShadow = true;
-          if (object.material) object.material.needsUpdate = true;
         }
       });
 
-      if (gltf.animations && gltf.animations.length) {
-        this.mixer = new THREE.AnimationMixer(model);
+      // Usar as mesmas animações externas dos habitantes.
+      this.mixer = new THREE.AnimationMixer(visualRoot);
 
-        const idleClip = gltf.animations.find(clip =>
-          /idle|stand|breath/i.test(clip.name)
-        );
+      const animationResults = await Promise.allSettled([
+        loader.loadAsync(IDLE_URL),
+        loader.loadAsync(WALK_URL)
+      ]);
 
-        const walkClip = gltf.animations.find(clip =>
-          /walk|walking|run|running/i.test(clip.name)
-        );
+      const idleResult = animationResults[0];
+      const walkResult = animationResults[1];
+
+      if (idleResult.status === 'fulfilled') {
+        const idleClip = idleResult.value.animations[0];
 
         if (idleClip) {
           this.idleAction = this.mixer.clipAction(idleClip);
           this.idleAction.play();
           this.currentAnimation = 'idle';
         }
+      } else {
+        console.error('Erro ao carregar animação idle:', idleResult.reason);
+      }
+
+      if (walkResult.status === 'fulfilled') {
+        const walkClip = walkResult.value.animations[0];
 
         if (walkClip) {
           this.walkAction = this.mixer.clipAction(walkClip);
         }
+      } else {
+        console.error('Erro ao carregar animação walk:', walkResult.reason);
+      }
 
-        if (!this.idleAction && this.walkAction) {
-          this.walkAction.play();
-          this.walkAction.paused = true;
-        }
-
-        console.log('Animações:', gltf.animations.map(a => a.name));
+      if (!this.idleAction && this.walkAction) {
+        this.walkAction.play();
+        this.walkAction.paused = true;
       }
 
       console.log('Personagem carregado:', HUMAN_HEIGHT, 'metros');
+      console.log('Animação idle:', Boolean(this.idleAction));
+      console.log('Animação walk:', Boolean(this.walkAction));
 
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
@@ -550,7 +561,6 @@ export class Player {
     const horizontalDistance = distance * Math.cos(pitch);
     const verticalDistance = distance * Math.sin(pitch);
 
-    // Câmara atrás do personagem.
     const desired = new THREE.Vector3(
       target.x + Math.sin(yaw) * horizontalDistance,
       target.y + verticalDistance + 1.2,
