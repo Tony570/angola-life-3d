@@ -21,14 +21,72 @@ let assetsPromise = null;
 let activeWorld = null;
 
 const JOBS = [
-  { role: 'Polícia', gender: 'male', x: 5, z: 9, patrol: true, outfit: 0x263b65 },
-  { role: 'Agente de trânsito', gender: 'male', x: 8, z: -9, patrol: true, outfit: 0xd99b24 },
-  { role: 'Funcionária de restaurante', gender: 'female', x: -55, z: -10, patrol: false, outfit: 0x9b2940 },
-  { role: 'Funcionário de restaurante', gender: 'male', x: -49, z: -35, patrol: false, outfit: 0xeeeeee },
-  { role: 'Rececionista de hotel', gender: 'female', x: 30, z: -17, patrol: false, outfit: 0x283e55 },
-  { role: 'Funcionário de hotel', gender: 'male', x: 20, z: -17, patrol: false, outfit: 0x70452e },
-  { role: 'Trabalhador de escritório', gender: 'male', x: -30, z: -17, patrol: false, outfit: 0x526b45 },
-  { role: 'Trabalhadora de escritório', gender: 'female', x: 30, z: 17, patrol: false, outfit: 0x743f83 }
+  {
+    role: 'Polícia',
+    gender: 'male',
+    x: 41.1,
+    z: -45,
+    patrol: true,
+    axis: 'z',
+    outfit: 0x263b65
+  },
+  {
+    role: 'Agente de trânsito',
+    gender: 'male',
+    x: -41.1,
+    z: 45,
+    patrol: true,
+    axis: 'z',
+    outfit: 0xd99b24
+  },
+  {
+    role: 'Funcionária de restaurante',
+    gender: 'female',
+    x: -76.1,
+    z: -20,
+    patrol: false,
+    outfit: 0x9b2940
+  },
+  {
+    role: 'Funcionário de restaurante',
+    gender: 'male',
+    x: -76.1,
+    z: -55,
+    patrol: false,
+    outfit: 0xeeeeee
+  },
+  {
+    role: 'Rececionista de hotel',
+    gender: 'female',
+    x: 76.1,
+    z: 15,
+    patrol: false,
+    outfit: 0x283e55
+  },
+  {
+    role: 'Funcionário de hotel',
+    gender: 'male',
+    x: 76.1,
+    z: 55,
+    patrol: false,
+    outfit: 0x70452e
+  },
+  {
+    role: 'Trabalhador de escritório',
+    gender: 'male',
+    x: 41.1,
+    z: 75,
+    patrol: false,
+    outfit: 0x526b45
+  },
+  {
+    role: 'Trabalhadora de escritório',
+    gender: 'female',
+    x: -41.1,
+    z: -75,
+    patrol: false,
+    outfit: 0x743f83
+  }
 ];
 
 function loadAssets() {
@@ -40,7 +98,14 @@ function loadAssets() {
       loader.loadAsync(URLS.femaleIdle),
       loader.loadAsync(URLS.maleWalk),
       loader.loadAsync(URLS.femaleWalk)
-    ]).then(([male, female, maleIdle, femaleIdle, maleWalk, femaleWalk]) => ({
+    ]).then(([
+      male,
+      female,
+      maleIdle,
+      femaleIdle,
+      maleWalk,
+      femaleWalk
+    ]) => ({
       male: male.scene,
       female: female.scene,
       maleIdle: maleIdle.animations[0],
@@ -68,16 +133,11 @@ function customizeClothes(model, color) {
       const material = original.clone();
       const name = (material.name || '').toLowerCase();
 
-      const isSkinOrHair =
-        /skin|face|head|hair|eye|teeth|mouth|body_skin/.test(name);
-
       const isClothing =
         /cloth|shirt|jacket|pants|trouser|uniform|dress|coat|suit|top/.test(name);
 
       if (isClothing && material.color) {
         material.color.setHex(color);
-      } else if (!isSkinOrHair && material.color) {
-        material.color.multiply(new THREE.Color(color));
       }
 
       return material;
@@ -99,10 +159,10 @@ function makeNPC(scene, job, assets, index) {
   const originalHeight = bounds.max.y - bounds.min.y;
 
   if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-    throw new Error('Não foi possível medir a altura do figurante: ' + job.role);
+    throw new Error('Altura inválida do personagem: ' + job.role);
   }
 
-  // Todos os figurantes ficam exatamente com 2,5 metros.
+  // Todos os personagens têm exatamente 2,5 metros.
   const scale = HUMAN_HEIGHT / originalHeight;
 
   model.scale.setScalar(scale);
@@ -118,12 +178,19 @@ function makeNPC(scene, job, assets, index) {
 
   const mixer = new THREE.AnimationMixer(model);
 
-  const idle = mixer.clipAction(assets[job.gender + 'Idle']);
-  const walk = mixer.clipAction(assets[job.gender + 'Walk']);
+  const idle = mixer.clipAction(
+    assets[job.gender + 'Idle']
+  );
+
+  const walk = mixer.clipAction(
+    assets[job.gender + 'Walk']
+  );
 
   idle.play();
 
-  console.log(job.role + ': altura ' + HUMAN_HEIGHT + ' metros');
+  console.log(
+    job.role + ' carregado com altura de ' + HUMAN_HEIGHT + ' metros'
+  );
 
   return {
     root,
@@ -134,6 +201,7 @@ function makeNPC(scene, job, assets, index) {
     current: 'idle',
     role: job.role,
     patrol: Boolean(job.patrol),
+    axis: job.axis || 'z',
     originX: job.x,
     originZ: job.z,
     phase: index * 1.7,
@@ -146,12 +214,22 @@ function makeNPC(scene, job, assets, index) {
 function setAnimation(npc, name) {
   if (npc.current === name) return;
 
-  const next = name === 'walk' ? npc.walk : npc.idle;
-  const previous = name === 'walk' ? npc.idle : npc.walk;
+  const next = name === 'walk'
+    ? npc.walk
+    : npc.idle;
+
+  const previous = name === 'walk'
+    ? npc.idle
+    : npc.walk;
+
+  if (!next) return;
 
   next.reset();
   next.fadeIn(0.25).play();
-  previous.fadeOut(0.25);
+
+  if (previous) {
+    previous.fadeOut(0.25);
+  }
 
   npc.current = name;
 }
@@ -163,16 +241,17 @@ export function createPeople(scene, world) {
   loadAssets()
     .then(assets => {
       JOBS.forEach((job, index) => {
-        world.npcs.push(makeNPC(scene, job, assets, index));
+        const npc = makeNPC(scene, job, assets, index);
+        world.npcs.push(npc);
       });
 
       console.log(
-        'ANGOLA LIFE 3D: figurantes carregados:',
+        'ANGOLA LIFE 3D: personagens distribuídos:',
         world.npcs.length
       );
     })
     .catch(error => {
-      console.error('Erro ao carregar figurantes:', error);
+      console.error('Erro ao carregar personagens:', error);
     });
 }
 
@@ -198,13 +277,27 @@ export function updatePeople(delta) {
     }
 
     if (npc.current === 'walk') {
-      npc.root.position.x += npc.direction * npc.speed * delta;
+      const movement = npc.direction * npc.speed * delta;
 
-      npc.root.rotation.y = npc.direction > 0
-        ? Math.PI / 2
-        : -Math.PI / 2;
+      if (npc.axis === 'z') {
+        npc.root.position.z += movement;
 
-      if (Math.abs(npc.root.position.x - npc.originX) > 2.5) {
+        npc.root.rotation.y = npc.direction > 0
+          ? 0
+          : Math.PI;
+      } else {
+        npc.root.position.x += movement;
+
+        npc.root.rotation.y = npc.direction > 0
+          ? Math.PI / 2
+          : -Math.PI / 2;
+      }
+
+      const distance = npc.axis === 'z'
+        ? Math.abs(npc.root.position.z - npc.originZ)
+        : Math.abs(npc.root.position.x - npc.originX);
+
+      if (distance > 2.5) {
         npc.direction *= -1;
       }
     }
