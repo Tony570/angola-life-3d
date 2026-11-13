@@ -4,9 +4,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
-const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
-const WALK_URL = 'https://models.codelove.in/animations/m_walk_neutral_01.glb';
-
 const HUMAN_HEIGHT = 2.5;
 
 export class Player {
@@ -16,7 +13,7 @@ export class Player {
     this.vehicles = vehicles;
     this.group = new THREE.Group();
 
-    this.speed = 10;
+    this.speed = 5;
     this.rotationSpeed = 2.8;
     this.keys = {};
     this.currentVehicle = null;
@@ -54,69 +51,77 @@ export class Player {
       const originalHeight = bounds.max.y - bounds.min.y;
 
       if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-        throw new Error('Não foi possível medir a altura do modelo humano.');
+        throw new Error('Não foi possível medir a altura do personagem.');
       }
 
-      const scale = HUMAN_HEIGHT / originalHeight;
+      // Mantém a escala original do modelo e normaliza
+      // a altura através de um grupo separado.
+      const normalized = new THREE.Group();
+      const scaleFactor = HUMAN_HEIGHT / originalHeight;
 
-      model.scale.setScalar(scale);
-      model.position.y = -bounds.min.y * scale;
+      normalized.add(model);
+      normalized.scale.setScalar(scaleFactor);
+      normalized.position.y = -bounds.min.y * scaleFactor;
+
       model.rotation.y = Math.PI;
 
       model.traverse(object => {
         if (object.isMesh) {
           object.castShadow = true;
           object.receiveShadow = true;
+
+          if (object.material) {
+            object.material.needsUpdate = true;
+          }
         }
       });
 
-      this.group.add(model);
+      this.group.add(normalized);
+
       this.model = model;
+      this.normalizedModel = normalized;
 
-      this.mixer = new THREE.AnimationMixer(model);
+      // Usa apenas animações que já pertençam ao modelo.
+      // Evita aplicar animações externas incompatíveis com o esqueleto.
+      if (gltf.animations && gltf.animations.length > 0) {
+        this.mixer = new THREE.AnimationMixer(model);
 
-      const animationResults = await Promise.allSettled([
-        loader.loadAsync(IDLE_URL),
-        loader.loadAsync(WALK_URL)
-      ]);
+        const idleClip = gltf.animations.find(clip =>
+          /idle|stand/i.test(clip.name)
+        );
 
-      const idleResult = animationResults[0];
-      const walkResult = animationResults[1];
+        const walkClip = gltf.animations.find(clip =>
+          /walk|run/i.test(clip.name)
+        );
 
-      if (idleResult.status === 'fulfilled') {
-        const clip = idleResult.value.animations[0];
-
-        if (clip) {
-          this.idleAction = this.mixer.clipAction(clip);
+        if (idleClip) {
+          this.idleAction = this.mixer.clipAction(idleClip);
           this.idleAction.play();
           this.currentAnimation = 'idle';
         }
-      }
 
-      if (walkResult.status === 'fulfilled') {
-        const clip = walkResult.value.animations[0];
+        if (walkClip) {
+          this.walkAction = this.mixer.clipAction(walkClip);
+        }
 
-        if (clip) {
-          this.walkAction = this.mixer.clipAction(clip);
+        if (!this.idleAction && this.walkAction) {
+          this.walkAction.play();
+          this.walkAction.paused = true;
         }
       }
 
-      if (!this.idleAction && this.walkAction) {
-        this.walkAction.play();
-        this.currentAnimation = 'walk';
-        this.walkAction.paused = true;
-      }
-
-      console.log('Jogador humano carregado. Altura:', HUMAN_HEIGHT, 'm');
+      console.log(
+        'Personagem carregado. Altura configurada:',
+        HUMAN_HEIGHT,
+        'metros'
+      );
 
     } catch (error) {
-      console.error('Erro ao carregar o jogador humano:', error);
+      console.error('Erro ao carregar personagem:', error);
     }
   }
 
   setAnimation(name) {
-    if (this.currentAnimation === name) return;
-
     const next = name === 'walk'
       ? this.walkAction
       : this.idleAction;
@@ -125,7 +130,7 @@ export class Player {
       ? this.idleAction
       : this.walkAction;
 
-    if (!next) return;
+    if (!next || this.currentAnimation === name) return;
 
     next.reset();
     next.fadeIn(0.2).play();
@@ -199,6 +204,12 @@ export class Player {
     window.addEventListener('keyup', e => {
       this.keys[e.key.toLowerCase()] = false;
     });
+
+    window.addEventListener('blur', () => {
+      this.keys = {};
+      this.joystick.x = 0;
+      this.joystick.y = 0;
+    });
   }
 
   setupJoystick() {
@@ -249,6 +260,7 @@ export class Player {
     joystick.addEventListener('pointermove', move);
     joystick.addEventListener('pointerup', stop);
     joystick.addEventListener('pointercancel', stop);
+    joystick.addEventListener('lostpointercapture', stop);
   }
 
   toggleVehicle() {
@@ -333,11 +345,13 @@ export class Player {
 
       vehicle.speed += forward * 18 * delta;
       vehicle.speed *= Math.pow(0.94, delta * 60);
+
       vehicle.speed = THREE.MathUtils.clamp(
         vehicle.speed, -9, 22
       );
 
-      vehicle.group.rotation.y -= turn * delta * 1.8 *
+      vehicle.group.rotation.y -=
+        turn * delta * 1.8 *
         (Math.abs(vehicle.speed) > 0.5 ? 1 : 0);
 
       const direction = new THREE.Vector3(
@@ -356,14 +370,16 @@ export class Player {
       return;
     }
 
-    const moving =
-      Math.abs(forward) > 0.05 ||
-      Math.abs(turn) > 0.05;
-
-    if (moving) {
+    // Virar é independente de andar.
+    if (Math.abs(turn) > 0.05) {
       this.group.rotation.y -=
         turn * this.rotationSpeed * delta;
+    }
 
+    // Só anda quando existe comando para frente ou trás.
+    const moving = Math.abs(forward) > 0.05;
+
+    if (moving) {
       const direction = new THREE.Vector3(
         Math.sin(this.group.rotation.y),
         0,
