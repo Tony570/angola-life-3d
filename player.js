@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 
 export class Player {
@@ -6,6 +7,7 @@ export class Player {
     this.camera = camera;
     this.vehicles = vehicles;
     this.group = new THREE.Group();
+
     this.speed = 10;
     this.rotationSpeed = 2.8;
     this.keys = {};
@@ -13,6 +15,7 @@ export class Player {
     this.nearVehicle = null;
     this.joystick = { x: 0, y: 0 };
     this.walkTime = 0;
+    this.onInteract = null;
 
     this.createCharacter();
     this.group.position.set(0, 0, 18);
@@ -23,7 +26,10 @@ export class Player {
   }
 
   material(color) {
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.8 });
+    return new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.8
+    });
   }
 
   createCharacter() {
@@ -47,7 +53,9 @@ export class Player {
     this.group.add(head);
 
     const hair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.SphereGeometry(
+        0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2
+      ),
       this.material('#171513')
     );
     hair.position.y = 2.28;
@@ -59,6 +67,7 @@ export class Player {
     for (const side of [-1, 1]) {
       const leg = new THREE.Group();
       leg.position.set(side * 0.19, 0.75, 0);
+
       const legMesh = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.14, 0.58, 4, 7),
         trousers
@@ -72,17 +81,20 @@ export class Player {
       );
       shoe.position.set(0, -0.65, 0.08);
       leg.add(shoe);
+
       this.group.add(leg);
       this.legs.push(leg);
 
       const arm = new THREE.Group();
       arm.position.set(side * 0.43, 1.65, 0);
+
       const armMesh = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.11, 0.52, 4, 7),
         shirt
       );
       armMesh.position.y = -0.28;
       arm.add(armMesh);
+
       this.group.add(arm);
       this.arms.push(arm);
     }
@@ -94,11 +106,18 @@ export class Player {
 
   setupControls() {
     window.addEventListener('keydown', e => {
-      this.keys[e.key.toLowerCase()] = true;
+      const key = e.key.toLowerCase();
 
-      if (e.key.toLowerCase() === 'e') {
-        this.toggleVehicle();
+      if (key === 'e' && !e.repeat) {
+        if (this.onInteract) {
+          this.onInteract();
+        } else {
+          this.toggleVehicle();
+        }
+        return;
       }
+
+      this.keys[key] = true;
     });
 
     window.addEventListener('keyup', e => {
@@ -134,6 +153,7 @@ export class Player {
 
       this.joystick.x = dx / max;
       this.joystick.y = dy / max;
+
       knob.style.transform = `translate(${dx}px, ${dy}px)`;
     };
 
@@ -175,7 +195,10 @@ export class Player {
     for (const vehicle of this.vehicles) {
       if (vehicle.occupied) continue;
 
-      const d = this.group.position.distanceTo(vehicle.group.position);
+      const d = this.group.position.distanceTo(
+        vehicle.group.position
+      );
+
       if (d < distance) {
         distance = d;
         nearest = vehicle;
@@ -200,10 +223,15 @@ export class Player {
 
     const vehicle = this.currentVehicle;
     const offset = new THREE.Vector3(2.8, 0, 0);
-    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), vehicle.group.rotation.y);
+
+    offset.applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      vehicle.group.rotation.y
+    );
 
     this.group.position.copy(vehicle.group.position).add(offset);
     this.group.visible = true;
+
     vehicle.occupied = false;
     vehicle.speed = 0;
     this.currentVehicle = null;
@@ -222,9 +250,12 @@ export class Player {
 
     if (this.currentVehicle) {
       const vehicle = this.currentVehicle;
+
       vehicle.speed += forward * 18 * delta;
       vehicle.speed *= Math.pow(0.94, delta * 60);
-      vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
+      vehicle.speed = THREE.MathUtils.clamp(
+        vehicle.speed, -9, 22
+      );
 
       vehicle.group.rotation.y -= turn * delta * 1.8 *
         (Math.abs(vehicle.speed) > 0.5 ? 1 : 0);
@@ -245,10 +276,13 @@ export class Player {
       return;
     }
 
-    const moving = Math.abs(forward) > 0.05 || Math.abs(turn) > 0.05;
+    const moving =
+      Math.abs(forward) > 0.05 ||
+      Math.abs(turn) > 0.05;
 
     if (moving) {
-      this.group.rotation.y -= turn * this.rotationSpeed * delta;
+      this.group.rotation.y -=
+        turn * this.rotationSpeed * delta;
 
       const direction = new THREE.Vector3(
         Math.sin(this.group.rotation.y),
@@ -262,6 +296,7 @@ export class Player {
       );
 
       this.walkTime += delta * 10;
+
       this.legs[0].rotation.x = Math.sin(this.walkTime) * 0.55;
       this.legs[1].rotation.x = -Math.sin(this.walkTime) * 0.55;
       this.arms[0].rotation.x = -Math.sin(this.walkTime) * 0.35;
@@ -294,6 +329,7 @@ export class Player {
     );
 
     this.camera.position.lerp(desired, 0.12);
+
     this.camera.lookAt(
       target.x,
       target.y + (this.currentVehicle ? 1.5 : 1.4),
@@ -303,6 +339,7 @@ export class Player {
 
   teleport(x, z) {
     if (this.currentVehicle) this.exitVehicle();
+
     this.group.position.set(x, 0, z);
     this.updateCamera();
   }
