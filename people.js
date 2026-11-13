@@ -21,72 +21,14 @@ let assetsPromise = null;
 let activeWorld = null;
 
 const JOBS = [
-  {
-    role: 'Polícia',
-    gender: 'male',
-    x: 41.1,
-    z: -45,
-    patrol: true,
-    axis: 'z',
-    outfit: 0x263b65
-  },
-  {
-    role: 'Agente de trânsito',
-    gender: 'male',
-    x: -41.1,
-    z: 45,
-    patrol: true,
-    axis: 'z',
-    outfit: 0xd99b24
-  },
-  {
-    role: 'Funcionária de restaurante',
-    gender: 'female',
-    x: -76.1,
-    z: -20,
-    patrol: false,
-    outfit: 0x9b2940
-  },
-  {
-    role: 'Funcionário de restaurante',
-    gender: 'male',
-    x: -76.1,
-    z: -55,
-    patrol: false,
-    outfit: 0xeeeeee
-  },
-  {
-    role: 'Rececionista de hotel',
-    gender: 'female',
-    x: 76.1,
-    z: 15,
-    patrol: false,
-    outfit: 0x283e55
-  },
-  {
-    role: 'Funcionário de hotel',
-    gender: 'male',
-    x: 76.1,
-    z: 55,
-    patrol: false,
-    outfit: 0x70452e
-  },
-  {
-    role: 'Trabalhador de escritório',
-    gender: 'male',
-    x: 41.1,
-    z: 75,
-    patrol: false,
-    outfit: 0x526b45
-  },
-  {
-    role: 'Trabalhadora de escritório',
-    gender: 'female',
-    x: -41.1,
-    z: -75,
-    patrol: false,
-    outfit: 0x743f83
-  }
+  { role: 'Polícia', gender: 'male', x: 41.1, z: -45, patrol: true, axis: 'z', outfit: 0x263b65 },
+  { role: 'Agente de trânsito', gender: 'male', x: -41.1, z: 45, patrol: true, axis: 'z', outfit: 0xd99b24 },
+  { role: 'Funcionária de restaurante', gender: 'female', x: -76.1, z: -20, patrol: false, outfit: 0x9b2940 },
+  { role: 'Funcionário de restaurante', gender: 'male', x: -76.1, z: -55, patrol: false, outfit: 0xeeeeee },
+  { role: 'Rececionista de hotel', gender: 'female', x: 76.1, z: 15, patrol: false, outfit: 0x283e55 },
+  { role: 'Funcionário de hotel', gender: 'male', x: 76.1, z: 55, patrol: false, outfit: 0x70452e },
+  { role: 'Trabalhador de escritório', gender: 'male', x: 41.1, z: 75, patrol: false, outfit: 0x526b45 },
+  { role: 'Trabalhadora de escritório', gender: 'female', x: -41.1, z: -75, patrol: false, outfit: 0x743f83 }
 ];
 
 function loadAssets() {
@@ -98,14 +40,7 @@ function loadAssets() {
       loader.loadAsync(URLS.femaleIdle),
       loader.loadAsync(URLS.maleWalk),
       loader.loadAsync(URLS.femaleWalk)
-    ]).then(([
-      male,
-      female,
-      maleIdle,
-      femaleIdle,
-      maleWalk,
-      femaleWalk
-    ]) => ({
+    ]).then(([male, female, maleIdle, femaleIdle, maleWalk, femaleWalk]) => ({
       male: male.scene,
       female: female.scene,
       maleIdle: maleIdle.animations[0],
@@ -149,56 +84,74 @@ function customizeClothes(model, color) {
   });
 }
 
+function normalizeCharacter(model) {
+  // Mede o modelo completo antes de alterar a escala.
+  model.updateMatrixWorld(true);
+
+  const bounds = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  bounds.getSize(size);
+
+  const originalHeight = size.y;
+
+  if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
+    throw new Error('Não foi possível medir a altura do personagem.');
+  }
+
+  // Grupo independente para preservar a escala original do modelo.
+  const normalized = new THREE.Group();
+  normalized.add(model);
+
+  const factor = HUMAN_HEIGHT / originalHeight;
+
+  normalized.scale.setScalar(factor);
+  normalized.position.y = -bounds.min.y * factor;
+
+  normalized.updateMatrixWorld(true);
+
+  return normalized;
+}
+
 function makeNPC(scene, job, assets, index) {
   const root = new THREE.Group();
   const model = clone(assets[job.gender]);
 
-  model.updateWorldMatrix(true, true);
+  const normalizedModel = normalizeCharacter(model);
 
-  const bounds = new THREE.Box3().setFromObject(model);
-  const originalHeight = bounds.max.y - bounds.min.y;
+  customizeClothes(normalizedModel, job.outfit);
 
-  if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-    throw new Error('Altura inválida do personagem: ' + job.role);
-  }
-
-  // Todos os personagens têm exatamente 2,5 metros.
-  const scale = HUMAN_HEIGHT / originalHeight;
-
-  model.scale.setScalar(scale);
-  model.position.y = -bounds.min.y * scale;
-
-  customizeClothes(model, job.outfit);
-
-  root.add(model);
+  root.add(normalizedModel);
   root.position.set(job.x, 0, job.z);
   root.rotation.y = Math.PI;
 
   scene.add(root);
 
-  const mixer = new THREE.AnimationMixer(model);
+  const mixer = new THREE.AnimationMixer(normalizedModel);
 
-  const idle = mixer.clipAction(
-    assets[job.gender + 'Idle']
-  );
+  const idleClip = assets[job.gender + 'Idle'];
+  const walkClip = assets[job.gender + 'Walk'];
 
-  const walk = mixer.clipAction(
-    assets[job.gender + 'Walk']
-  );
+  const idle = idleClip ? mixer.clipAction(idleClip) : null;
+  const walk = walkClip ? mixer.clipAction(walkClip) : null;
 
-  idle.play();
+  if (idle) {
+    idle.play();
+  } else if (walk) {
+    walk.play();
+    walk.paused = true;
+  }
 
   console.log(
-    job.role + ' carregado com altura de ' + HUMAN_HEIGHT + ' metros'
+    job.role + ': altura configurada para ' + HUMAN_HEIGHT + ' metros.'
   );
 
   return {
     root,
-    model,
+    model: normalizedModel,
     mixer,
     idle,
     walk,
-    current: 'idle',
+    current: idle ? 'idle' : 'walk',
     role: job.role,
     patrol: Boolean(job.patrol),
     axis: job.axis || 'z',
@@ -214,13 +167,8 @@ function makeNPC(scene, job, assets, index) {
 function setAnimation(npc, name) {
   if (npc.current === name) return;
 
-  const next = name === 'walk'
-    ? npc.walk
-    : npc.idle;
-
-  const previous = name === 'walk'
-    ? npc.idle
-    : npc.walk;
+  const next = name === 'walk' ? npc.walk : npc.idle;
+  const previous = name === 'walk' ? npc.idle : npc.walk;
 
   if (!next) return;
 
@@ -246,12 +194,12 @@ export function createPeople(scene, world) {
       });
 
       console.log(
-        'ANGOLA LIFE 3D: personagens distribuídos:',
+        'ANGOLA LIFE 3D: habitantes carregados:',
         world.npcs.length
       );
     })
     .catch(error => {
-      console.error('Erro ao carregar personagens:', error);
+      console.error('Erro ao carregar habitantes:', error);
     });
 }
 
@@ -266,7 +214,7 @@ export function updatePeople(delta) {
     npc.timer -= delta;
 
     if (npc.timer <= 0) {
-      if (npc.current === 'idle') {
+      if (npc.current === 'idle' && npc.walk) {
         setAnimation(npc, 'walk');
         npc.timer = 3.5;
       } else {
@@ -281,16 +229,10 @@ export function updatePeople(delta) {
 
       if (npc.axis === 'z') {
         npc.root.position.z += movement;
-
-        npc.root.rotation.y = npc.direction > 0
-          ? 0
-          : Math.PI;
+        npc.root.rotation.y = npc.direction > 0 ? 0 : Math.PI;
       } else {
         npc.root.position.x += movement;
-
-        npc.root.rotation.y = npc.direction > 0
-          ? Math.PI / 2
-          : -Math.PI / 2;
+        npc.root.rotation.y = npc.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
       }
 
       const distance = npc.axis === 'z'
