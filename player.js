@@ -6,7 +6,6 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
 const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
 const WALK_URL = 'https://models.codelove.in/animations/m_walk_neutral_01.glb';
-
 const HUMAN_HEIGHT = 2.5;
 
 export class Player {
@@ -30,6 +29,13 @@ export class Player {
     this.idleAction = null;
     this.walkAction = null;
     this.currentAnimation = '';
+    this.walkPhase = 0;
+    this.proceduralBones = {
+      leftLeg: [],
+      rightLeg: [],
+      leftArm: [],
+      rightArm: []
+    };
 
     this.cameraDistance = 7;
     this.cameraMinDistance = 3;
@@ -85,9 +91,33 @@ export class Player {
           object.castShadow = true;
           object.receiveShadow = true;
         }
+
+        if (object.isBone) {
+          const name = (object.name || '').toLowerCase();
+          const entry = {
+            bone: object,
+            rest: object.quaternion.clone()
+          };
+
+          if (/left.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*left|leg_l|thigh_l/.test(name)) {
+            this.proceduralBones.leftLeg.push(entry);
+          } else if (/right.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*right|leg_r|thigh_r/.test(name)) {
+            this.proceduralBones.rightLeg.push(entry);
+          } else if (/left.*(arm|shoulder)|(?:arm|shoulder).*left|arm_l/.test(name)) {
+            this.proceduralBones.leftArm.push(entry);
+          } else if (/right.*(arm|shoulder)|(?:arm|shoulder).*right|arm_r/.test(name)) {
+            this.proceduralBones.rightArm.push(entry);
+          }
+        }
       });
 
-      // Usar as mesmas animações externas dos habitantes.
+      console.log('Ossos para movimento:', {
+        leftLeg: this.proceduralBones.leftLeg.length,
+        rightLeg: this.proceduralBones.rightLeg.length,
+        leftArm: this.proceduralBones.leftArm.length,
+        rightArm: this.proceduralBones.rightArm.length
+      });
+
       this.mixer = new THREE.AnimationMixer(visualRoot);
 
       const animationResults = await Promise.allSettled([
@@ -135,21 +165,49 @@ export class Player {
   }
 
   setAnimation(name) {
+    if (this.currentAnimation === name) return;
+
     const next = name === 'walk' ? this.walkAction : this.idleAction;
     const previous = name === 'walk' ? this.idleAction : this.walkAction;
 
-    if (!next || this.currentAnimation === name) return;
-
-    next.reset();
-    next.enabled = true;
-    next.paused = false;
-    next.fadeIn(0.2).play();
-
-    if (previous) {
-      previous.fadeOut(0.2);
+    if (next) {
+      next.reset();
+      next.enabled = true;
+      next.paused = false;
+      next.fadeIn(0.2).play();
     }
 
+    if (previous) previous.fadeOut(0.2);
+
     this.currentAnimation = name;
+  }
+
+  updateProceduralAnimation(delta, moving) {
+    if (!this.normalizedModel) return;
+
+    if (moving) {
+      this.walkPhase += delta * 8.5;
+    }
+
+    const swing = moving ? Math.sin(this.walkPhase) * 0.62 : 0;
+    const armSwing = moving
+      ? Math.sin(this.walkPhase + Math.PI) * 0.38
+      : 0;
+
+    const apply = (entries, angle) => {
+      for (const entry of entries) {
+        const offset = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(angle, 0, 0)
+        );
+
+        entry.bone.quaternion.copy(entry.rest).multiply(offset);
+      }
+    };
+
+    apply(this.proceduralBones.leftLeg, swing);
+    apply(this.proceduralBones.rightLeg, -swing);
+    apply(this.proceduralBones.leftArm, armSwing);
+    apply(this.proceduralBones.rightArm, -armSwing);
   }
 
   setColliders(colliders = []) {
@@ -533,6 +591,11 @@ export class Player {
     } else {
       this.setAnimation('idle');
     }
+
+    this.updateProceduralAnimation(
+      delta,
+      movement.lengthSq() > 0.01
+    );
 
     this.findNearestVehicle();
     this.updateCamera();
