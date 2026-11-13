@@ -8,7 +8,6 @@ import './style.css';
 
 // ============================================
 // ANGOLA LIFE 3D — SISTEMA PRINCIPAL
-// Cidade, casas, interiores, carros e habitantes
 // ============================================
 
 const app = document.querySelector('#app');
@@ -232,11 +231,11 @@ world.destinations.forEach(destination => {
 });
 
 // ============================================
-// ENCONTRAR CASA E DETETAR A PORTA
+// DETECTAR A PROXIMIDADE DA PORTA
 // ============================================
 
 function findNearestHouse() {
-  if (currentHouse) return null;
+  if (currentHouse || player.currentVehicle) return null;
 
   let nearest = null;
   let nearestDistance = Infinity;
@@ -246,10 +245,10 @@ function findNearestHouse() {
 
   for (const house of houses) {
     const dx = playerX - house.x;
-    const dz = playerZ - (house.z + 7);
+    const dz = playerZ - (house.z + 6.2);
 
-    const alignedWithDoor = Math.abs(dx) <= 3.2;
-    const inFrontOfDoor = dz >= -1 && dz <= 6;
+    const alignedWithDoor = Math.abs(dx) <= 2.2;
+    const inFrontOfDoor = dz >= 0.25 && dz <= 4.2;
 
     if (!alignedWithDoor || !inFrontOfDoor) continue;
 
@@ -261,7 +260,34 @@ function findNearestHouse() {
     }
   }
 
-  return nearestDistance <= 6 ? nearest : null;
+  return nearestDistance <= 4.2 ? nearest : null;
+}
+
+// ============================================
+// ENTRADA AUTOMÁTICA PELA PORTA
+// ============================================
+
+function tryAutoEnterHouse() {
+  if (!started || currentHouse || player.currentVehicle) return;
+
+  const playerX = player.group.position.x;
+  const playerZ = player.group.position.z;
+
+  for (const house of houses) {
+    const dx = playerX - house.x;
+    const distanceFromDoor = playerZ - (house.z + 6.2);
+
+    const alignedWithDoor = Math.abs(dx) <= 1.05;
+
+    const atDoorstep =
+      distanceFromDoor >= 0.25 &&
+      distanceFromDoor <= 1.35;
+
+    if (alignedWithDoor && atDoorstep) {
+      enterHouse(house);
+      return;
+    }
+  }
 }
 
 // ============================================
@@ -379,7 +405,7 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 // ============================================
-// BOTÃO DE INTERAÇÃO
+// INDICADOR DE ENTRADA
 // ============================================
 
 function updateActionButton() {
@@ -414,8 +440,10 @@ function animate() {
   if (started) {
     player.update(delta);
 
-    // Atualizar animações dos habitantes.
-    // Não movimentar habitantes enquanto o jogador está dentro de casa.
+    // Entrada automática ao chegar à porta.
+    tryAutoEnterHouse();
+
+    // Actualizar habitantes apenas no exterior.
     if (!currentHouse) {
       updatePeople(delta);
     }
