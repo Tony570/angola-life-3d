@@ -88,7 +88,9 @@ export class Player {
       visualRoot.scale.setScalar(scaleFactor);
       visualRoot.position.y = -bounds.min.y * scaleFactor;
 
+      // Manter a orientação original do modelo.
       model.rotation.y = Math.PI;
+
       visualRoot.add(model);
       this.group.add(visualRoot);
 
@@ -146,9 +148,13 @@ export class Player {
     if (!next || this.currentAnimation === name) return;
 
     next.reset();
+    next.paused = false;
+    next.enabled = true;
     next.fadeIn(0.2).play();
 
-    if (previous) previous.fadeOut(0.2);
+    if (previous) {
+      previous.fadeOut(0.2);
+    }
 
     this.currentAnimation = name;
   }
