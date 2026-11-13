@@ -4,6 +4,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 
+const HUMAN_HEIGHT = 2.5;
+
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 const URLS = {
@@ -21,12 +23,12 @@ let activeWorld = null;
 const JOBS = [
   { role: 'Polícia', gender: 'male', x: 5, z: 9, patrol: true, outfit: 0x263b65 },
   { role: 'Agente de trânsito', gender: 'male', x: 8, z: -9, patrol: true, outfit: 0xd99b24 },
-  { role: 'Funcionária de restaurante', gender: 'female', x: -55, z: -10, outfit: 0x9b2940 },
-  { role: 'Funcionário de restaurante', gender: 'male', x: -49, z: -35, outfit: 0xeeeeee },
-  { role: 'Rececionista de hotel', gender: 'female', x: 30, z: -17, outfit: 0x283e55 },
-  { role: 'Funcionário de hotel', gender: 'male', x: 20, z: -17, outfit: 0x70452e },
-  { role: 'Trabalhador de escritório', gender: 'male', x: -30, z: -17, outfit: 0x526b45 },
-  { role: 'Trabalhadora de escritório', gender: 'female', x: 30, z: 17, outfit: 0x743f83 }
+  { role: 'Funcionária de restaurante', gender: 'female', x: -55, z: -10, patrol: false, outfit: 0x9b2940 },
+  { role: 'Funcionário de restaurante', gender: 'male', x: -49, z: -35, patrol: false, outfit: 0xeeeeee },
+  { role: 'Rececionista de hotel', gender: 'female', x: 30, z: -17, patrol: false, outfit: 0x283e55 },
+  { role: 'Funcionário de hotel', gender: 'male', x: 20, z: -17, patrol: false, outfit: 0x70452e },
+  { role: 'Trabalhador de escritório', gender: 'male', x: -30, z: -17, patrol: false, outfit: 0x526b45 },
+  { role: 'Trabalhadora de escritório', gender: 'female', x: 30, z: 17, patrol: false, outfit: 0x743f83 }
 ];
 
 function loadAssets() {
@@ -91,11 +93,17 @@ function makeNPC(scene, job, assets, index) {
   const root = new THREE.Group();
   const model = clone(assets[job.gender]);
 
-  const bounds = new THREE.Box3().setFromObject(model);
-  const originalHeight = Math.max(bounds.max.y - bounds.min.y, 0.01);
+  model.updateWorldMatrix(true, true);
 
-  // Altura controlada para evitar personagens gigantes.
-  const scale = 1.55 / originalHeight;
+  const bounds = new THREE.Box3().setFromObject(model);
+  const originalHeight = bounds.max.y - bounds.min.y;
+
+  if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
+    throw new Error('Não foi possível medir a altura do figurante: ' + job.role);
+  }
+
+  // Todos os figurantes ficam exatamente com 2,5 metros.
+  const scale = HUMAN_HEIGHT / originalHeight;
 
   model.scale.setScalar(scale);
   model.position.y = -bounds.min.y * scale;
@@ -109,10 +117,13 @@ function makeNPC(scene, job, assets, index) {
   scene.add(root);
 
   const mixer = new THREE.AnimationMixer(model);
+
   const idle = mixer.clipAction(assets[job.gender + 'Idle']);
   const walk = mixer.clipAction(assets[job.gender + 'Walk']);
 
   idle.play();
+
+  console.log(job.role + ': altura ' + HUMAN_HEIGHT + ' metros');
 
   return {
     root,
@@ -155,7 +166,10 @@ export function createPeople(scene, world) {
         world.npcs.push(makeNPC(scene, job, assets, index));
       });
 
-      console.log('ANGOLA LIFE 3D: figurantes carregados:', world.npcs.length);
+      console.log(
+        'ANGOLA LIFE 3D: figurantes carregados:',
+        world.npcs.length
+      );
     })
     .catch(error => {
       console.error('Erro ao carregar figurantes:', error);
