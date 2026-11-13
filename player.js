@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -27,6 +28,10 @@ export class Player {
     this.radius = 0.38;
 
     this.moveTarget = null;
+    this.sitting = false;
+    this.previousSitPosition = null;
+    this.previousSitRotation = 0;
+
     this.raycaster = new THREE.Raycaster();
     this.groundPlane = new THREE.Plane(
       new THREE.Vector3(0, 1, 0),
@@ -174,7 +179,7 @@ export class Player {
   }
 
   updateProceduralAnimation(delta, moving) {
-    if (!this.normalizedModel) return;
+    if (!this.normalizedModel || this.sitting) return;
 
     if (moving) this.walkPhase += delta * 8.5;
 
@@ -197,6 +202,84 @@ export class Player {
     apply(this.proceduralBones.rightLeg, -swing);
     apply(this.proceduralBones.leftArm, armSwing);
     apply(this.proceduralBones.rightArm, -armSwing);
+  }
+
+  sitAt(x, z, rotationY = 0) {
+    if (this.currentVehicle || this.sitting) return false;
+
+    this.moveTarget = null;
+    this.keys = {};
+
+    this.previousSitPosition = this.group.position.clone();
+    this.previousSitRotation = this.group.rotation.y;
+
+    this.group.position.set(x, 0, z);
+    this.group.rotation.y = rotationY;
+    this.sitting = true;
+
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+    }
+
+    // Posição básica de sentado: pernas dobradas e braços relaxados.
+    const pose = (entries, angle) => {
+      for (const entry of entries) {
+        const offset = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(angle, 0, 0)
+        );
+
+        entry.bone.quaternion.copy(entry.rest).multiply(offset);
+      }
+    };
+
+    pose(this.proceduralBones.leftLeg, -1.05);
+    pose(this.proceduralBones.rightLeg, -1.05);
+    pose(this.proceduralBones.leftArm, -0.18);
+    pose(this.proceduralBones.rightArm, -0.18);
+
+    this.currentAnimation = 'sit';
+    this.updateCamera();
+
+    return true;
+  }
+
+  standUp() {
+    if (!this.sitting) return false;
+
+    this.sitting = false;
+
+    if (this.previousSitPosition) {
+      this.group.position.copy(this.previousSitPosition);
+    }
+
+    this.group.position.y = 0;
+    this.group.rotation.y = this.previousSitRotation;
+
+    this.previousSitPosition = null;
+    this.moveTarget = null;
+
+    const resetBones = entries => {
+      for (const entry of entries) {
+        entry.bone.quaternion.copy(entry.rest);
+      }
+    };
+
+    resetBones(this.proceduralBones.leftLeg);
+    resetBones(this.proceduralBones.rightLeg);
+    resetBones(this.proceduralBones.leftArm);
+    resetBones(this.proceduralBones.rightArm);
+
+    this.currentAnimation = '';
+
+    if (this.idleAction) {
+      this.idleAction.reset();
+      this.idleAction.enabled = true;
+      this.idleAction.play();
+      this.currentAnimation = 'idle';
+    }
+
+    this.updateCamera();
+    return true;
   }
 
   setColliders(colliders = []) {
@@ -231,7 +314,6 @@ export class Player {
     return false;
   }
 
-  // Movimento com colisão em pequenos passos.
   moveWithCollision(dx, dz) {
     const maxStep = Math.max(0.08, this.radius * 0.35);
     const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / maxStep));
@@ -265,6 +347,8 @@ export class Player {
         return;
       }
 
+      if (this.sitting) return;
+
       this.keys[key] = true;
     });
 
@@ -279,6 +363,8 @@ export class Player {
   }
 
   setDestinationFromScreen(clientX, clientY) {
+    if (this.sitting) return;
+
     const canvas = this.camera && document.querySelector('canvas');
     if (!canvas) return;
 
@@ -414,7 +500,7 @@ export class Player {
           current.y - start.y
         );
 
-        if (moved < 10 && !this.currentVehicle) {
+        if (moved < 10 && !this.currentVehicle && !this.sitting) {
           this.setDestinationFromScreen(e.clientX, e.clientY);
         }
       }
@@ -447,6 +533,8 @@ export class Player {
   }
 
   toggleVehicle() {
+    if (this.sitting) return;
+
     if (this.currentVehicle) {
       this.exitVehicle();
       return;
@@ -479,7 +567,7 @@ export class Player {
   }
 
   enterVehicle(vehicle) {
-    if (!vehicle || vehicle.occupied) return;
+    if (!vehicle || vehicle.occupied || this.sitting) return;
 
     this.moveTarget = null;
     this.currentVehicle = vehicle;
@@ -514,6 +602,11 @@ export class Player {
     this.group.position.y = 0;
 
     if (this.mixer) this.mixer.update(delta);
+
+    if (this.sitting) {
+      this.updateCamera();
+      return;
+    }
 
     if (this.currentVehicle) {
       const vehicle = this.currentVehicle;
@@ -644,6 +737,7 @@ export class Player {
   }
 
   teleport(x, z) {
+    if (this.sitting) this.standUp();
     if (this.currentVehicle) this.exitVehicle();
 
     this.moveTarget = null;
