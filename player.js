@@ -30,12 +30,27 @@ export class Player {
     this.walkAction = null;
     this.currentAnimation = '';
 
+    // Câmara livre: rotação e zoom
+    this.cameraDistance = 7;
+    this.cameraMinDistance = 3;
+    this.cameraMaxDistance = 14;
+    this.cameraHeightAngle = 0.42;
+    this.cameraYawOffset = 0;
+    this.cameraPitch = 0;
+    this.cameraTarget = new THREE.Vector3();
+
+    this.cameraPointers = new Map();
+    this.lastCameraPointer = null;
+    this.lastPinchDistance = 0;
+    this.cameraDragging = false;
+
     this.group.position.set(0, 0, 18);
     this.scene.add(this.group);
 
     this.createCharacter();
     this.setupControls();
     this.setupJoystick();
+    this.setupCameraControls();
   }
 
   async createCharacter() {
@@ -54,8 +69,6 @@ export class Player {
         throw new Error('Não foi possível medir a altura do personagem.');
       }
 
-      // Mantém a escala original do modelo e normaliza
-      // a altura através de um grupo separado.
       const normalized = new THREE.Group();
       const scaleFactor = HUMAN_HEIGHT / originalHeight;
 
@@ -81,8 +94,6 @@ export class Player {
       this.model = model;
       this.normalizedModel = normalized;
 
-      // Usa apenas animações que já pertençam ao modelo.
-      // Evita aplicar animações externas incompatíveis com o esqueleto.
       if (gltf.animations && gltf.animations.length > 0) {
         this.mixer = new THREE.AnimationMixer(model);
 
@@ -110,11 +121,7 @@ export class Player {
         }
       }
 
-      console.log(
-        'Personagem carregado. Altura configurada:',
-        HUMAN_HEIGHT,
-        'metros'
-      );
+      console.log('Jogador carregado com altura de', HUMAN_HEIGHT, 'metros.');
 
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
@@ -148,6 +155,15 @@ export class Player {
 
   setIndoor(value) {
     this.indoor = value;
+
+    if (value) {
+      this.cameraDistance = THREE.MathUtils.clamp(
+        this.cameraDistance,
+        3,
+        5
+      );
+    }
+
     this.updateCamera();
   }
 
@@ -252,6 +268,7 @@ export class Player {
     };
 
     joystick.addEventListener('pointerdown', e => {
+      e.preventDefault();
       active = true;
       joystick.setPointerCapture(e.pointerId);
       move(e);
@@ -261,6 +278,116 @@ export class Player {
     joystick.addEventListener('pointerup', stop);
     joystick.addEventListener('pointercancel', stop);
     joystick.addEventListener('lostpointercapture', stop);
+  }
+
+  setupCameraControls() {
+    const canvas = document.querySelector('canvas');
+
+    if (!canvas) return;
+
+    canvas.style.touchAction = 'none';
+
+    const pointerPosition = e => ({
+      x: e.clientX,
+      y: e.clientY
+    });
+
+    const getPinchDistance = () => {
+      const points = [...this.cameraPointers.values()];
+
+      if (points.length < 2) return 0;
+
+      return Math.hypot(
+        points[0].x - points[1].x,
+        points[0].y - points[1].y
+      );
+    };
+
+    canvas.addEventListener('pointerdown', e => {
+      if (e.target !== canvas) return;
+
+      e.preventDefault();
+
+      canvas.setPointerCapture(e.pointerId);
+      this.cameraPointers.set(e.pointerId, pointerPosition(e));
+
+      if (this.cameraPointers.size === 1) {
+        this.lastCameraPointer = pointerPosition(e);
+        this.cameraDragging = true;
+      }
+
+      if (this.cameraPointers.size === 2) {
+        this.lastPinchDistance = getPinchDistance();
+        this.cameraDragging = false;
+      }
+    });
+
+    canvas.addEventListener('pointermove', e => {
+      if (!this.cameraPointers.has(e.pointerId)) return;
+
+      e.preventDefault();
+
+      const previous = this.cameraPointers.get(e.pointerId);
+      const current = pointerPosition(e);
+
+      this.cameraPointers.set(e.pointerId, current);
+
+      if (this.cameraPointers.size === 1 && this.cameraDragging) {
+        const dx = current.x - previous.x;
+        const dy = current.y - previous.y;
+
+        this.cameraYawOffset -= dx * 0.006;
+        this.cameraPitch = THREE.MathUtils.clamp(
+          this.cameraPitch + dy * 0.004,
+          -0.35,
+          0.65
+        );
+      }
+
+      if (this.cameraPointers.size >= 2) {
+        const newDistance = getPinchDistance();
+
+        if (this.lastPinchDistance > 0) {
+          const change = this.lastPinchDistance - newDistance;
+
+          this.cameraDistance = THREE.MathUtils.clamp(
+            this.cameraDistance + change * 0.025,
+            this.cameraMinDistance,
+            this.cameraMaxDistance
+          );
+        }
+
+        this.lastPinchDistance = newDistance;
+      }
+    });
+
+    const releasePointer = e => {
+      this.cameraPointers.delete(e.pointerId);
+
+      if (this.cameraPointers.size === 0) {
+        this.cameraDragging = false;
+        this.lastCameraPointer = null;
+        this.lastPinchDistance = 0;
+      } else if (this.cameraPointers.size === 1) {
+        this.lastPinchDistance = 0;
+        this.cameraDragging = true;
+      }
+    };
+
+    canvas.addEventListener('pointerup', releasePointer);
+    canvas.addEventListener('pointercancel', releasePointer);
+    canvas.addEventListener('lostpointercapture', releasePointer);
+
+    // Zoom também com a roda do rato.
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+
+      this.cameraDistance = THREE.MathUtils.clamp(
+        this.cameraDistance + e.deltaY * 0.01,
+        this.cameraMinDistance,
+        this.cameraMaxDistance
+      );
+    }, { passive: false });
   }
 
   toggleVehicle() {
@@ -304,6 +431,7 @@ export class Player {
     vehicle.occupied = true;
     this.group.visible = false;
     this.group.position.copy(vehicle.group.position);
+    this.cameraDistance = 10;
   }
 
   exitVehicle() {
@@ -323,6 +451,7 @@ export class Player {
     vehicle.occupied = false;
     vehicle.speed = 0;
     this.currentVehicle = null;
+    this.cameraDistance = 7;
   }
 
   update(delta) {
@@ -370,13 +499,12 @@ export class Player {
       return;
     }
 
-    // Virar é independente de andar.
+    // O jogador pode virar mesmo parado.
     if (Math.abs(turn) > 0.05) {
       this.group.rotation.y -=
         turn * this.rotationSpeed * delta;
     }
 
-    // Só anda quando existe comando para frente ou trás.
     const moving = Math.abs(forward) > 0.05;
 
     if (moving) {
@@ -412,28 +540,30 @@ export class Player {
       : this.group.rotation.y;
 
     const distance = this.currentVehicle
-      ? 10
-      : this.indoor
-        ? 3.2
-        : 7;
+      ? Math.max(this.cameraDistance, 8)
+      : THREE.MathUtils.clamp(
+          this.cameraDistance,
+          this.indoor ? 2.5 : this.cameraMinDistance,
+          this.cameraMaxDistance
+        );
 
-    const height = this.currentVehicle
-      ? 5
-      : this.indoor
-        ? 3.5
-        : 5;
+    const yaw = rotation + this.cameraYawOffset;
+    const pitch = this.cameraHeightAngle + this.cameraPitch;
+
+    const horizontalDistance = distance * Math.cos(pitch);
+    const verticalDistance = distance * Math.sin(pitch);
 
     const desired = new THREE.Vector3(
-      target.x - Math.sin(rotation) * distance,
-      target.y + height,
-      target.z - Math.cos(rotation) * distance
+      target.x - Math.sin(yaw) * horizontalDistance,
+      target.y + verticalDistance + 1.2,
+      target.z - Math.cos(yaw) * horizontalDistance
     );
 
-    this.camera.position.lerp(desired, 0.2);
+    this.camera.position.lerp(desired, 0.18);
 
     this.camera.lookAt(
       target.x,
-      target.y + (this.currentVehicle ? 1.5 : 2.0),
+      target.y + (this.currentVehicle ? 1.5 : 1.35),
       target.z
     );
   }
