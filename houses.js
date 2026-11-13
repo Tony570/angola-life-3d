@@ -1,9 +1,7 @@
-
 import * as THREE from 'three';
 
 // ============================================
 // ANGOLA LIFE 3D — CASAS E INTERIORES
-// Casas habitáveis com colisões exteriores
 // ============================================
 
 export function createHouseSystem(scene) {
@@ -95,7 +93,7 @@ export function createHouseSystem(scene) {
   }
 
   // ============================================
-  // COLISÕES EXTERIORES DAS CASAS
+  // COLISÕES EXTERIORES
   // ============================================
 
   function createExteriorColliders(location) {
@@ -110,22 +108,11 @@ export function createHouseSystem(scene) {
       });
     }
 
-    // PAREDE LATERAL ESQUERDA
     add(-6.3, 0, 0.65, 12);
-
-    // PAREDE LATERAL DIREITA
     add(6.3, 0, 0.65, 12);
-
-    // PAREDE TRASEIRA
     add(0, -5.8, 13, 0.65);
-
-    // FACHADA ESQUERDA
     add(-4.5, 6, 4, 0.65);
-
-    // FACHADA DIREITA
     add(4.5, 6, 4, 0.65);
-
-    // A PORTA CENTRAL FICA LIVRE
 
     return colliders;
   }
@@ -137,7 +124,6 @@ export function createHouseSystem(scene) {
   function createExterior(location) {
     const exterior = new THREE.Group();
 
-    // PAREDES
     box(exterior, 0, 0, -5.8, 13, 5, 0.35, materials.exterior);
     box(exterior, -6.3, 0, 0, 0.35, 5, 12, materials.exterior);
     box(exterior, 6.3, 0, 0, 0.35, 5, 12, materials.exterior);
@@ -145,8 +131,6 @@ export function createHouseSystem(scene) {
     // FACHADA COM ENTRADA CENTRAL
     box(exterior, -4.5, 0, 6, 4, 3.2, 0.35, materials.exterior);
     box(exterior, 4.5, 0, 6, 4, 3.2, 0.35, materials.exterior);
-
-    // PARTE SUPERIOR DA ENTRADA
     box(exterior, 0, 3.2, 6, 5, 1.8, 0.35, materials.exterior);
 
     // MOLDURA DA PORTA
@@ -189,11 +173,9 @@ export function createHouseSystem(scene) {
       });
     }
 
-    // PAREDES LATERAIS
+    // PAREDES
     add(-9, 0, 0.55, 18);
     add(9, 0, 0.55, 18);
-
-    // PAREDE TRASEIRA
     add(0, -9, 18, 0.55);
 
     // PAREDE FRONTAL COM ENTRADA LIVRE
@@ -262,6 +244,7 @@ export function createHouseSystem(scene) {
       interior, 0, 4.5, 0, 18, 0.2, 18, materials.wall
     );
 
+    // MOBÍLIA
     createFurniture(interior);
 
     // ILUMINAÇÃO INTERIOR
