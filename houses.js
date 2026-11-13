@@ -1,9 +1,8 @@
 
 import * as THREE from 'three';
 
-// ANGOLA LIFE 3D — HABITAÇÕES REAIS
-// API compatível com main.js: createHouseSystem(scene) devolve casas
-// com exteriorColliders, interior, interiorRoof, interiorX/Z e colliders.
+// ANGOLA LIFE 3D — SISTEMA DE HABITAÇÕES
+// Mantém a API de casas compatível com main.js.
 
 export function createHouseSystem(scene) {
   const houses = [];
@@ -41,7 +40,10 @@ export function createHouseSystem(scene) {
   }
 
   function cylinder(parent, x, y, z, radius, height, material) {
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, 16), material);
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, height, 16),
+      material
+    );
     mesh.position.set(x, y + height / 2, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -51,8 +53,11 @@ export function createHouseSystem(scene) {
 
   function addWindow(group, x, y, z, width, height, front = true) {
     const depth = 0.12;
+
     box(group, x, y, z, width, height, 0.07, mat.glass, false);
+
     const frameZ = z + (front ? 0.09 : -0.09);
+
     box(group, x, y - 0.06, frameZ, width + 0.18, 0.12, depth, mat.white);
     box(group, x, y + height - 0.04, frameZ, width + 0.18, 0.12, depth, mat.white);
     box(group, x - width / 2 - 0.04, y, frameZ, 0.1, height, depth, mat.white);
@@ -62,7 +67,12 @@ export function createHouseSystem(scene) {
 
   function addTree(group, x, z) {
     cylinder(group, x, 0, z, 0.18, 1.7, mat.wood);
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 10), mat.leaf);
+
+    const crown = new THREE.Mesh(
+      new THREE.SphereGeometry(0.85, 12, 10),
+      mat.leaf
+    );
+
     crown.position.set(x, 2.25, z);
     crown.castShadow = true;
     group.add(crown);
@@ -92,9 +102,11 @@ export function createHouseSystem(scene) {
     const doorPivot = new THREE.Group();
     doorPivot.position.set(-1.82, 0.08, 6.12);
     group.add(doorPivot);
+
     box(doorPivot, 0.88, 0, 0, 1.76, 2.72, 0.14, mat.wood);
     box(doorPivot, 0.88, 0.18, -0.09, 1.48, 2.28, 0.035, mat.woodLight);
     cylinder(doorPivot, 1.53, 1.25, -0.12, 0.055, 0.1, mat.metal);
+
     doorPivot.rotation.y = -1.08;
 
     addWindow(group, -4.55, 1.45, 6.2, 1.65, 1.45);
@@ -102,13 +114,21 @@ export function createHouseSystem(scene) {
     addWindow(group, -6.48, 1.45, -1.4, 1.8, 1.45, false);
     addWindow(group, 6.48, 1.45, -1.4, 1.8, 1.45, false);
 
-    const leftRoof = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.28, 14), mat.roof);
+    const leftRoof = new THREE.Mesh(
+      new THREE.BoxGeometry(7.4, 0.28, 14),
+      mat.roof
+    );
+
     leftRoof.position.set(-3.45, 5.05, 0);
     leftRoof.rotation.z = -0.42;
     leftRoof.castShadow = true;
     group.add(leftRoof);
 
-    const rightRoof = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.28, 14), mat.roof);
+    const rightRoof = new THREE.Mesh(
+      new THREE.BoxGeometry(7.4, 0.28, 14),
+      mat.roof
+    );
+
     rightRoof.position.set(3.45, 5.05, 0);
     rightRoof.rotation.z = 0.42;
     rightRoof.castShadow = true;
@@ -119,12 +139,16 @@ export function createHouseSystem(scene) {
 
     for (const x of [-5.8, 5.8]) {
       box(group, x, 2.65, 6.25, 0.18, 0.3, 0.12, mat.dark);
+
       const lamp = new THREE.PointLight(0xffd49a, 0.35, 5);
       lamp.position.set(x, 2.65, 6.45);
       group.add(lamp);
     }
 
-    for (const x of [-8.2, 8.2]) addTree(group, x, 5.8);
+    for (const x of [-8.2, 8.2]) {
+      addTree(group, x, 5.8);
+    }
+
     box(group, 0, -0.02, 9.5, 18, 0.12, 5, mat.green, false);
     box(group, 0, 0.02, 8.05, 4.4, 0.08, 3.2, mat.concrete, false);
 
@@ -132,12 +156,15 @@ export function createHouseSystem(scene) {
     scene.add(group);
 
     const colliders = [];
-    const add = (x, z, w, d) => colliders.push({
-      minX: location.x + x - w / 2,
-      maxX: location.x + x + w / 2,
-      minZ: location.z + z - d / 2,
-      maxZ: location.z + z + d / 2
-    });
+
+    const add = (x, z, w, d) => {
+      colliders.push({
+        minX: location.x + x - w / 2,
+        maxX: location.x + x + w / 2,
+        minZ: location.z + z - d / 2,
+        maxZ: location.z + z + d / 2
+      });
+    };
 
     add(-6.3, 0, 0.65, 12.6);
     add(6.3, 0, 0.65, 12.6);
@@ -145,15 +172,22 @@ export function createHouseSystem(scene) {
     add(-4.55, 6, 3.8, 0.65);
     add(4.55, 6, 3.8, 0.65);
 
-    return { exterior: group, roof: leftRoof, colliders, doorPivot };
+    return {
+      exterior: group,
+      roof: leftRoof,
+      colliders,
+      doorPivot
+    };
   }
 
   function addLivingRoom(g, variant) {
     const sofaMaterial = variant === 2 ? mat.red : mat.sofa;
+
     box(g, -5.7, 0.28, 2.0, 3.8, 0.55, 1.15, sofaMaterial);
     box(g, -5.7, 0.82, 1.45, 3.8, 0.75, 0.2, sofaMaterial);
     box(g, -7.55, 0.48, 2.0, 0.25, 0.7, 1.15, sofaMaterial);
     box(g, -3.85, 0.48, 2.0, 0.25, 0.7, 1.15, sofaMaterial);
+
     box(g, -5.4, 0.48, -0.2, 2.1, 0.14, 1.1, mat.woodLight);
 
     for (const x of [-6.25, -4.55]) {
@@ -184,6 +218,7 @@ export function createHouseSystem(scene) {
 
   function addKitchen(g, variant) {
     const cabinet = variant === 2 ? mat.woodLight : mat.white;
+
     box(g, 5.5, 0.12, 5.8, 5.5, 0.95, 1.15, cabinet);
     box(g, 5.5, 1.08, 5.8, 5.65, 0.13, 1.3, mat.dark);
 
@@ -263,6 +298,7 @@ export function createHouseSystem(scene) {
     addBathroom(g);
 
     const roof = box(g, 0, 4.2, 0, 18, 0.18, 18, mat.wall, false);
+
     const interiorX = 500 + index * 35;
     const interiorZ = 0;
 
@@ -271,12 +307,15 @@ export function createHouseSystem(scene) {
     scene.add(g);
 
     const colliders = [];
-    const add = (x, z, w, d) => colliders.push({
-      minX: interiorX + x - w / 2,
-      maxX: interiorX + x + w / 2,
-      minZ: interiorZ + z - d / 2,
-      maxZ: interiorZ + z + d / 2
-    });
+
+    const add = (x, z, w, d) => {
+      colliders.push({
+        minX: interiorX + x - w / 2,
+        maxX: interiorX + x + w / 2,
+        minZ: interiorZ + z - d / 2,
+        maxZ: interiorZ + z + d / 2
+      });
+    };
 
     add(-9, 0, 0.45, 18);
     add(9, 0, 0.45, 18);
@@ -299,7 +338,13 @@ export function createHouseSystem(scene) {
     add(8.05, 3.35, 1.1, 1.15);
     add(2.0, -0.3, 3.0, 1.8);
 
-    return { group: g, roof, interiorX, interiorZ, colliders };
+    return {
+      group: g,
+      roof,
+      interiorX,
+      interiorZ,
+      colliders
+    };
   }
 
   const locations = [
