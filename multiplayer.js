@@ -290,6 +290,10 @@ export function createMultiplayer({ scene, player, online } = {}) {
       const target = remoteTargets.get(id);
       if (!target) continue;
       const distance = Math.hypot(target.position.x - local.x, target.position.z - local.z);
+      if (distance > SHOW_DISTANCE + 30) {
+        removeRemote(id);
+        continue;
+      }
       root.visible = distance <= SHOW_DISTANCE;
       root.position.lerp(target.position, Math.min(1, delta * 10));
       let difference = target.rotationY - root.rotation.y;
@@ -298,6 +302,7 @@ export function createMultiplayer({ scene, player, online } = {}) {
     }
     if (pruneTimer >= 2.5) {
       pruneTimer = 0;
+      syncPresence();
       for (const [id, target] of remoteTargets) {
         if (performance.now() - target.lastSeen > 12000) removeRemote(id);
       }
