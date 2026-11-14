@@ -8,8 +8,8 @@ export function createKilambaDistrict(scene) {
     sidewalk: mat(0xc8c5bc), concrete: mat(0xb7b4ac), cream: mat(0xe7dfcf),
     white: mat(0xf1eee6), sand: mat(0xc9b99d), terracotta: mat(0xa94f3e),
     red: mat(0x963f35), charcoal: mat(0x353b3e),
-    glass: new THREE.MeshPhysicalMaterial({ color: 0x8fc2cf, roughness: .16, metalness: .08, transparent: true, opacity: .48 }),
-    darkGlass: new THREE.MeshPhysicalMaterial({ color: 0x29434b, roughness: .2, metalness: .12, transparent: true, opacity: .68 }),
+    glass: new THREE.MeshPhysicalMaterial({ color: 0x55727b, roughness: .24, metalness: .12, transparent: false, opacity: 1, depthWrite: true, clearcoat: .35 }),
+    darkGlass: new THREE.MeshPhysicalMaterial({ color: 0x172b34, roughness: .28, metalness: .16, transparent: false, opacity: 1, depthWrite: true, clearcoat: .25 }),
     metal: mat(0x50595c, .42, .55), rail: mat(0x343b3e, .42, .45),
     wood: mat(0x795238), leaf: mat(0x347b4a), leafLight: mat(0x559354), trunk: mat(0x755038),
     yellow: mat(0xe0bd6c), whiteLine: mat(0xe8e5d9), roadLine: mat(0xe4c76b)
@@ -60,7 +60,10 @@ export function createKilambaDistrict(scene) {
 
     // Avenida principal: duas faixas largas, bermas e separador ajardinado.
     box(scene,0,-.02,0,190,.12,16,M.asphalt,false);
-    for (const z of [-10,10]) box(scene,0,.015,z,190,.16,2.2,M.sidewalk,false);
+    for (const z of [-10,10]) {
+      box(scene,0,.015,z,190,.16,2.8,M.sidewalk,false);
+      box(scene,0,.045,z-Math.sign(z)*1.95,190,.20,.14,M.concrete,false);
+    }
     box(scene,0,.035,0,190,.025,.22,M.whiteLine,false);
     for (let x=-88;x<=88;x+=12) {
       box(scene,x,.052,-4.6,5.2,.018,.12,M.roadLine,false);
@@ -75,8 +78,9 @@ export function createKilambaDistrict(scene) {
         const length=segment[1]-segment[0];
         box(scene,x,-.015,center,4.8,.12,length,M.asphalt,false);
         for (const side of [-1,1]) {
-          box(scene,x+side*3.15,.015,center,1.25,.16,length,M.sidewalk,false);
-          box(scene,x+side*2.42,.052,center,.10,.018,length-.8,M.whiteLine,false);
+          box(scene,x+side*3.25,.015,center,1.7,.16,length,M.sidewalk,false);
+          box(scene,x+side*2.43,.045,center,.14,.20,length,M.concrete,false);
+          box(scene,x+side*3.25,.105,center,.045,.018,length-.8,M.whiteLine,false);
         }
         for(let z=segment[0]+5;z<segment[1]-2;z+=11) {
           box(scene,x,.052,z,.12,.018,4.0,M.roadLine,false);
