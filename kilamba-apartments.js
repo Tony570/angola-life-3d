@@ -314,8 +314,9 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for(let n=0;n<=10;n++) box(level,-2.5+n*.5,.16,9.08,.045,.85,.045,M.metal);
     box(level,0,1.2,8.35,5.0,.06,.06,M.metal);
   }
-  function addApartmentFloor(parent,floorIndex,variant,doorList) {
+  function addApartmentFloor(parent,floorIndex,variant,doorList,furnitureColliders) {
     const level=new THREE.Group();
+    level.userData.houseFloor=floorIndex;
     level.position.y=floorIndex*FLOOR_HEIGHT;
     level.scale.set(INTERIOR_SCALE_XZ, INTERIOR_SCALE_Y, INTERIOR_SCALE_XZ);
     parent.add(level);
@@ -349,6 +350,23 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       box(level,-4.8,.025,3.0,6.4,.035,4.7,accentMaterial,false);
       box(level,-4.8,.047,3.0,6.1,.018,4.4,lightMaterial,false);
     }
+    if(floorIndex>0) {
+      addApartmentFurniture(level,variant);
+      furnitureColliders.push(
+        {x:-5.2,z:3.2,w:2.7,d:1.0,floor:floorIndex},
+        {x:-5.1,z:1.0,w:1.9,d:1.0,floor:floorIndex},
+        {x:-5.2,z:-.15,w:3.15,d:.58,floor:floorIndex},
+        {x:-5.0,z:-6.6,w:3.15,d:2.85,floor:floorIndex},
+        {x:-1.9,z:-6.5,w:1.15,d:1.65,floor:floorIndex},
+        {x:2.1,z:-6.55,w:2.65,d:2.65,floor:floorIndex},
+        {x:4.25,z:-4.7,w:1.15,d:.9,floor:floorIndex},
+        {x:5.8,z:3.0,w:4.35,d:1.12,floor:floorIndex},
+        {x:7.55,z:4.65,w:.95,d:1.0,floor:floorIndex},
+        {x:5.85,z:-5.85,w:.8,d:.9,floor:floorIndex},
+        {x:7.5,z:-6.75,w:1.15,d:.35,floor:floorIndex},
+        {x:7.7,z:-5.55,w:.95,d:.65,floor:floorIndex}
+      );
+    }
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
       bulb.position.set(x,2.55,z); level.add(bulb);
@@ -367,7 +385,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     root.visible=false;
     scene.add(root);
     const doors=[];
-    for(let floor=0;floor<FLOOR_COUNT;floor++) addApartmentFloor(root,floor,index+floor,doors);
+    const furnitureColliders=[];
+    for(let floor=0;floor<FLOOR_COUNT;floor++) addApartmentFloor(root,floor,index+floor,doors,furnitureColliders);
 
     // Elevator shaft and doors are part of the shared lobby on every level.
     const shaft=new THREE.Group(); root.add(shaft);
@@ -407,12 +426,16 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(3.15,4.25,2.55,1.15,0); add(6.15,4.25,1.85,1.15,0);
     add(4.7,5.2,1.95,1.12,0); add(-.1,5.85,1.45,.72,0);
     add(-7.0,1.0,.8,.8,0); add(7.0,1.0,.8,.8,0); add(6.45,6.7,1.4,.65,0);
-    // Colisão dos funcionários alinhada com as posições visuais reais (sem escala extra).
-    for (const x of [-4.9,-2.6]) colliders.push({
-      minX:building.x+x-.38,maxX:building.x+x+.38,
-      minZ:building.z+4.45-.38,maxZ:building.z+4.45+.38,
-      floor:0
-    });
+    // Colisões dos móveis dos apartamentos, convertidas para coordenadas do mundo.
+    for(const item of furnitureColliders) {
+      colliders.push({
+        minX:building.x+(item.x-item.w/2)*INTERIOR_SCALE_XZ,
+        maxX:building.x+(item.x+item.w/2)*INTERIOR_SCALE_XZ,
+        minZ:building.z+(item.z-item.d/2)*INTERIOR_SCALE_XZ,
+        maxZ:building.z+(item.z+item.d/2)*INTERIOR_SCALE_XZ,
+        floor:item.floor
+      });
+    }
     for (const door of doors) {
       const c=door.userData.houseDoorCollider;
       colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
