@@ -543,7 +543,7 @@ player.onModelReady = () => {
   if (activeHouse) ensureHouseResidents(activeHouse);
 };
 
-function enterHouse(house) {
+function enterHouse(house, initialFloor = 0) {
   house.ensureInterior();
   ensureHouseResidents(house);
   if (!house.interactables) {
@@ -574,7 +574,7 @@ function enterHouse(house) {
   player.teleport(house.interiorX, house.interiorZ + 6.95);
   elevatorPanel.hidden = false;
   homePanel.hidden = false;
-  goToFloor(0);
+  goToFloor(initialFloor);
   interactButton.textContent = '🚪 SAIR DO BLOCO';
 }
 function leaveHouse() {
@@ -711,10 +711,41 @@ function updateHousePrompt() {
   }
 }
 
-startButton.addEventListener('click', () => {
+startButton.addEventListener('click', async () => {
+  if (started) return;
+  startButton.disabled = true;
+  startButton.textContent = 'A CARREGAR A TUA CASA...';
+
+  let ownedHome = null;
+  if (online.isAuthenticated()) {
+    try {
+      const properties = await online.getOwnedProperties();
+      for (const property of properties) {
+        const match = String(property.property_name || '').match(/^(.*?) · Piso ([1-4])$/);
+        if (!match) continue;
+        const house = houses.find(item => item.name === match[1]);
+        if (house) {
+          ownedHome = { house, floor: Number(match[2]) };
+          break;
+        }
+      }
+    } catch (error) {
+      console.warn('Não foi possível carregar a residência do jogador:', error);
+    }
+  }
+
   started = true;
   welcome.classList.add('hidden');
-  player.update(0);
+  if (ownedHome) {
+    // O proprietário começa dentro do apartamento que já lhe pertence.
+    enterHouse(ownedHome.house, ownedHome.floor);
+    districtLocation.textContent = '🏠 A TUA CASA · ' + ownedHome.house.name.toUpperCase();
+  } else {
+    // Sem propriedade registada, mantém-se o ponto inicial normal da cidade.
+    player.update(0);
+  }
+  startButton.disabled = false;
+  startButton.textContent = 'ENTRAR NO KILAMBA';
 });
 
 // Cada botão gere o seu próprio toque. A libertação é global para evitar
