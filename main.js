@@ -41,6 +41,10 @@ app.innerHTML = `
     <button id="map-button">🗺️ MAPA</button>
     <button id="vehicle-button">🚗 INTERAGIR</button>
   </div>
+  <div id="driving-hud" aria-live="polite">
+    <span>VELOCIDADE</span><strong id="driving-speed">0</strong><small>KM/H</small>
+    <span class="driving-gear">MARCHA <b id="driving-gear">N</b></span>
+  </div>
 
   <div id="map-panel" aria-hidden="true">
     <div class="phone-map">
@@ -619,6 +623,9 @@ const clock = new THREE.Clock();
 const welcome = document.querySelector('#welcome');
 const startButton = document.querySelector('#start-game');
 const actionButton = document.querySelector('#vehicle-button');
+const drivingHud = document.querySelector('#driving-hud');
+const drivingSpeed = document.querySelector('#driving-speed');
+const drivingGear = document.querySelector('#driving-gear');
 const mapButton = document.querySelector('#map-button');
 const mapPanel = document.querySelector('#map-panel');
 const destinations = document.querySelector('#map-destinations');
@@ -1665,8 +1672,21 @@ function updateMobileVehicleControls() {
   }
 }
 
+function updateDrivingHud() {
+  const vehicle = player.currentVehicle;
+  if (!vehicle) {
+    drivingHud.classList.remove('visible');
+    return;
+  }
+  const speed = Math.round(Math.abs(vehicle.speed || 0) * 3.6);
+  drivingSpeed.textContent = String(speed);
+  drivingGear.textContent = vehicle.speed < -0.15 ? 'R' : vehicle.speed > 0.15 ? 'D' : 'N';
+  drivingHud.classList.add('visible');
+}
+
 function updateActionButton() {
   updateMobileVehicleControls();
+  updateDrivingHud();
   if (taxiTransport.isTravelling()) {
     actionButton.textContent = '🚕 EM VIAGEM';
     return;
