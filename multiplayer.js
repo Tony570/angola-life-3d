@@ -133,6 +133,61 @@ export function createMultiplayer({ scene, player, online } = {}) {
     return assets;
   }
 
+  function showChatBubble(root, message) {
+    if (!root || !message) return;
+    const previous = root.userData.chatBubble;
+    if (previous) {
+      root.remove(previous);
+      previous.material?.map?.dispose();
+      previous.material?.dispose();
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgba(250,248,239,0.97)';
+    ctx.beginPath();
+    ctx.roundRect(8, 8, 496, 136, 28);
+    ctx.fill();
+    ctx.fillStyle = '#1d292b';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const words = String(message).slice(0, 95).split(/\s+/);
+    let line = '';
+    let y = words.length > 7 ? 54 : 78;
+    const lines = [];
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > 450 && line) {
+        lines.push(line);
+        line = word;
+      } else line = test;
+    }
+    if (line) lines.push(line);
+    const visibleLines = lines.slice(0, 2);
+    y = visibleLines.length === 1 ? 78 : 52;
+    visibleLines.forEach(value => {
+      ctx.fillText(value, 256, y, 450);
+      y += 48;
+    });
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
+    sprite.scale.set(3.3, 1.05, 1);
+    sprite.position.set(0, 3.8, 0);
+    root.add(sprite);
+    root.userData.chatBubble = sprite;
+    root.userData.chatBubbleExpires = performance.now() + 5000;
+  }
+
+  const pendingChatBubbles = new Map();
+  const onLocalChatBubble = event => {
+    const message = event.detail?.text;
+    if (message) showChatBubble(player.group, message);
+  };
+  window.addEventListener('angolaLife3D:chatBubble', onLocalChatBubble);
+
   async function addRemote(id, data = {}) {
     if (!id || id === online.getUser()?.id || remotePlayers.has(id)) return;
     if (remotePlayers.size >= MAX_VISIBLE_PLAYERS) return;
@@ -160,6 +215,10 @@ export function createMultiplayer({ scene, player, online } = {}) {
     root.position.set(Number(position.x) || 0, Number(position.y) || 0, Number(position.z) || 0);
     root.rotation.y = Number(data.rotationY) || 0;
     remotePlayers.set(id, root);
+    if (pendingChatBubbles.has(id)) {
+      showChatBubble(root, pendingChatBubbles.get(id));
+      pendingChatBubbles.delete(id);
+    }
     remoteTargets.set(id, {
       position: new THREE.Vector3(root.position.x, root.position.y, root.position.z),
       rotationY: root.rotation.y,
@@ -224,7 +283,13 @@ export function createMultiplayer({ scene, player, online } = {}) {
     loaderState.channel = channel;
     channel
       .on('presence', { event: 'sync' }, syncPresence)
-      .on('broadcast', { event: 'player-position' }, ({ payload }) => receivePosition(payload));
+      .on('broadcast', { event: 'player-position' }, ({ payload }) => receivePosition(payload))
+      .on('broadcast', { event: 'public-chat' }, ({ payload }) => {
+        if (!payload?.from || payload.from === loaderState.userId) return;
+        const root = remotePlayers.get(payload.from);
+        if (root) showChatBubble(root, payload.text);
+        else pendingChatBubbles.set(payload.from, payload.text);
+      });
     loaderState.ready = await new Promise(resolve => {
       channel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
@@ -287,7 +352,21 @@ export function createMultiplayer({ scene, player, online } = {}) {
       sendPosition().catch(() => {});
     }
     const local = localPosition();
+    if (player.group.userData.chatBubble && performance.now() > player.group.userData.chatBubbleExpires) {
+      const bubble = player.group.userData.chatBubble;
+      player.group.remove(bubble);
+      bubble.material?.map?.dispose();
+      bubble.material?.dispose();
+      delete player.group.userData.chatBubble;
+    }
     for (const [id, root] of remotePlayers) {
+      if (root.userData.chatBubble && performance.now() > root.userData.chatBubbleExpires) {
+        const bubble = root.userData.chatBubble;
+        root.remove(bubble);
+        bubble.material?.map?.dispose();
+        bubble.material?.dispose();
+        delete root.userData.chatBubble;
+      }
       const target = remoteTargets.get(id);
       if (!target) continue;
       const distance = Math.hypot(target.position.x - local.x, target.position.z - local.z);
@@ -315,6 +394,8 @@ export function createMultiplayer({ scene, player, online } = {}) {
     if (loaderState.channel) await supabase.removeChannel(loaderState.channel).catch(() => {});
     loaderState.channel = null;
     loaderState.userId = null;
+    window.removeEventListener('angolaLife3D:chatBubble', onLocalChatBubble);
+    pendingChatBubbles.clear();
     for (const id of [...remotePlayers.keys()]) removeRemote(id);
   }
 
