@@ -846,18 +846,21 @@ button:focus-visible {
    PERFIL E GUARDA-ROUPA — OPÇÃO 4
    ========================================= */
 #character-button {
-  margin-left: 8px;
-  padding: 8px 11px;
-  border: 1px solid #e9b94e77;
-  border-radius: 9px;
-  background: #755526;
+  position: fixed;
+  top: 76px;
+  right: 12px;
+  z-index: 35;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid #ffe09a;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #a9782d, #65451e);
   color: #fff;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 1000;
   white-space: nowrap;
   pointer-events: auto;
-  position: relative;
-  z-index: 6;
+  box-shadow: 0 5px 18px #0009;
 }
 #wardrobe-panel {
   position: absolute;
@@ -985,6 +988,30 @@ button:focus-visible {
 }
 .wardrobe-empty strong { color: #f1d18a; font-size: 14px; }
 .wardrobe-empty span { color: #c5d2ca; font-size: 12px; line-height: 1.55; }
+.wardrobe-shirt-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 145px;
+  margin: 8px 0 12px;
+  padding: 14px;
+  border: 1px solid #e9b94e55;
+  border-radius: 13px;
+  background: linear-gradient(120deg, #263c32, #172720);
+}
+.wardrobe-shirt-art {
+  display: grid;
+  place-items: center;
+  flex: 0 0 118px;
+  height: 116px;
+  border-radius: 11px;
+  background: radial-gradient(circle, #607b68, #20352b 72%);
+}
+.wardrobe-shirt-art svg { display: block; width: 108px; height: 100px; filter: drop-shadow(0 7px 5px #0008); }
+.wardrobe-shirt-preview > div:last-child { display: grid; gap: 7px; }
+.wardrobe-shirt-preview strong { color: #fff; font-size: 15px; letter-spacing: 1px; }
+.wardrobe-shirt-preview span { color: #c8d6ce; font-size: 11px; line-height: 1.4; }
+.wardrobe-shirt-preview small { color: #f0c66a; font-size: 9px; font-weight: 1000; letter-spacing: 1px; }
 .wardrobe-future-note { margin-top: 12px; }
 .owned-clothing,.personal-kit {
   display: flex;
@@ -1023,7 +1050,7 @@ button:focus-visible {
 #wardrobe-status { min-height: 18px; margin-top: 10px; color: #aee0b5; font-size: 11px; line-height: 1.5; }
 @media(max-width: 700px) {
   #topbar { gap: 4px; }
-  #character-button { margin-left: 2px; padding: 7px 8px; font-size: 9px; }
+  #character-button { top: 68px; right: 9px; min-height: 39px; padding: 9px 11px; font-size: 10px; }
   #wardrobe-panel { padding: 8px; align-items: flex-start; }
   .wardrobe-window { width: 100%; max-height: 98vh; padding: 13px; border-radius: 14px; }
   .wardrobe-header h2 { font-size: 18px; }
@@ -1036,7 +1063,10 @@ button:focus-visible {
   .wardrobe-profile-note { font-size: 10px; }
 }
 @media(max-width: 390px) {
-  #character-button { font-size: 8px; padding: 7px 6px; }
+  #character-button { top: 66px; right: 8px; font-size: 9px; padding: 8px 9px; }
+  .wardrobe-shirt-preview { gap: 10px; padding: 10px; }
+  .wardrobe-shirt-art { flex-basis: 96px; height: 104px; }
+  .wardrobe-shirt-art svg { width: 90px; height: 88px; }
   .brand { font-size: 11px; }
   .money { font-size: 9px; padding: 7px 6px; }
   .wardrobe-tabs button { font-size: 9px; padding: 8px 5px; }
