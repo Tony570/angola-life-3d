@@ -362,7 +362,7 @@ export function createPlayerPhone({ game, online, services, player } = {}) {
     if (!payload?.text) return;
     const host = $('#phone-chat-messages');
     const line = document.createElement('div');
-    line.className = 'phone-chat-line';
+    line.className = 'phone-chat-line ' + (payload.from === currentUser()?.id ? 'mine' : 'other');
     const name = document.createElement('strong');
     name.textContent = (payload.nickname || 'Jogador') + ': ';
     const text = document.createElement('span');
