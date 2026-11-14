@@ -121,6 +121,8 @@ export function createMultiplayer({ scene, player, online } = {}) {
   let lastAppearanceSignature = '';
   let assets = null;
   let loadingAssets = null;
+  let chatChannel = null;
+  let chatChannelReady = null;
 
   const localPosition = () => player.currentVehicle
     ? player.currentVehicle.group.position
@@ -268,6 +270,26 @@ export function createMultiplayer({ scene, player, online } = {}) {
     }
   }
 
+  async function connectChatChannel() {
+    if (chatChannel) return chatChannelReady;
+    chatChannel = supabase.channel('angola-life-3d-luanda-live', {
+      config: { broadcast: { self: false } }
+    });
+    chatChannel.on('broadcast', { event: 'public-chat' }, ({ payload }) => {
+      if (!payload?.from || payload.from === loaderState.userId) return;
+      const root = remotePlayers.get(payload.from);
+      if (root) showChatBubble(root, payload.text);
+      else pendingChatBubbles.set(payload.from, payload.text);
+    });
+    chatChannelReady = new Promise(resolve => {
+      chatChannel.subscribe(status => {
+        if (status === 'SUBSCRIBED') resolve(true);
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') resolve(false);
+      });
+    });
+    return chatChannelReady;
+  }
+
   async function connect() {
     const user = online?.getUser?.();
     if (!user?.id || !scene || !player) return false;
@@ -277,19 +299,14 @@ export function createMultiplayer({ scene, player, online } = {}) {
       loaderState.channel = null;
     }
     loaderState.userId = user.id;
+    connectChatChannel().catch(() => {});
     const channel = supabase.channel('angola-life-3d-luanda-players', {
       config: { presence: { key: user.id }, broadcast: { self: false } }
     });
     loaderState.channel = channel;
     channel
       .on('presence', { event: 'sync' }, syncPresence)
-      .on('broadcast', { event: 'player-position' }, ({ payload }) => receivePosition(payload))
-      .on('broadcast', { event: 'public-chat' }, ({ payload }) => {
-        if (!payload?.from || payload.from === loaderState.userId) return;
-        const root = remotePlayers.get(payload.from);
-        if (root) showChatBubble(root, payload.text);
-        else pendingChatBubbles.set(payload.from, payload.text);
-      });
+      .on('broadcast', { event: 'player-position' }, ({ payload }) => receivePosition(payload));
     loaderState.ready = await new Promise(resolve => {
       channel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
@@ -392,7 +409,10 @@ export function createMultiplayer({ scene, player, online } = {}) {
   async function disconnect() {
     loaderState.ready = false;
     if (loaderState.channel) await supabase.removeChannel(loaderState.channel).catch(() => {});
+    if (chatChannel) await supabase.removeChannel(chatChannel).catch(() => {});
     loaderState.channel = null;
+    chatChannel = null;
+    chatChannelReady = null;
     loaderState.userId = null;
     pendingChatBubbles.clear();
     for (const id of [...remotePlayers.keys()]) removeRemote(id);
