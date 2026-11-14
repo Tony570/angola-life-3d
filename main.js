@@ -3,6 +3,8 @@ import { Player } from './player.js';
 import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
+import { createKilambaDistrict } from './kilamba.js';
+import { createHouseSystem } from './houses.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -18,14 +20,14 @@ app.innerHTML = `
   <div id="welcome" class="screen">
     <div class="welcome-content">
       <div class="logo">ANGOLA LIFE 3D</div>
-      <p>O teu personagem está pronto.</p>
-      <button id="start-game" type="button">ENTRAR NO MUNDO</button>
+      <p>Explora o bairro Kilamba. Dez blocos residenciais com casas habitáveis.</p>
+      <button id="start-game" type="button">ENTRAR NO KILAMBA</button>
     </div>
   </div>
 
   <div id="hud">
-    <div class="location">🧍 SÓ O TEU PERSONAGEM</div>
-    <button id="interact-button" type="button">💳 CONTA E TRANSFERÊNCIAS</button>
+    <div class="location" id="district-location">🏙️ KILAMBA · BAIRRO RESIDENCIAL</div>
+    <button id="interact-button" type="button">🏠 ENTRAR EM CASA</button>
   </div>
 
   <div id="mobile-controls" aria-label="Controlos do personagem">
@@ -74,19 +76,12 @@ const sun = new THREE.DirectionalLight('#fff3dc', 1.85);
 sun.position.set(-40, 70, 35);
 scene.add(sun);
 
-// Mundo temporariamente vazio: não são criados edifícios, ruas, objetos,
-// árvores, veículos, NPCs ou personagens secundários.
-const world = {
-  vehicles: [],
-  trafficVehicles: [],
-  npcs: [],
-  buildings: [],
-  destinations: [],
-  updateTraffic() {}
-};
+// Bairro Kilamba: ruas, passeios, jardins e exatamente dez blocos habitáveis.
+const world = createKilambaDistrict(scene);
+const houses = createHouseSystem(scene, world);
 
 const player = new Player(scene, camera, world.vehicles);
-player.setColliders([]);
+player.setColliders(world.colliders);
 
 const moneyDisplay = document.querySelector('.money');
 let services = null;
@@ -141,8 +136,53 @@ function openBank() {
 }
 
 bankButton.addEventListener('click', openBank);
-interactButton.addEventListener('click', openBank);
-player.onInteract = openBank;
+
+let activeHouse = null;
+const districtLocation = document.querySelector('#district-location');
+function nearestHouse() {
+  if (activeHouse) return activeHouse;
+  let nearest = null, distance = Infinity;
+  for (const house of houses) {
+    const d = Math.hypot(player.group.position.x-house.entranceX,player.group.position.z-house.entranceZ);
+    if (d < distance) { distance=d; nearest=house; }
+  }
+  return distance <= 5.5 ? nearest : null;
+}
+function enterHouse(house) {
+  house.ensureInterior(); house.interior.visible=true;
+  if(house.interiorRoof) house.interiorRoof.visible=false;
+  activeHouse=house; player.setIndoor(true); player.setColliders(house.colliders);
+  player.teleport(house.interiorX,6.2);
+  interactButton.textContent='🚪 SAIR DE CASA';
+  districtLocation.textContent='🏠 KILAMBA · '+house.name.toUpperCase();
+}
+function leaveHouse() {
+  if(!activeHouse) return;
+  const house=activeHouse; house.interior.visible=false;
+  if(house.interiorRoof) house.interiorRoof.visible=true;
+  activeHouse=null; player.setIndoor(false); player.setColliders(world.colliders);
+  player.teleport(house.entranceX,house.entranceZ+(house.entranceZ>house.z?1.2:-1.2));
+  interactButton.textContent='🏠 ENTRAR EM CASA';
+  districtLocation.textContent='🏙️ KILAMBA · BAIRRO RESIDENCIAL';
+}
+function interactWithHouse() {
+  if(services.isOpen()) return;
+  if(activeHouse) { leaveHouse(); return; }
+  const house=nearestHouse();
+  if(house) enterHouse(house);
+  else {
+    interactButton.textContent='🏠 APROXIMA-TE DE UM BLOCO';
+    window.setTimeout(()=>{if(!activeHouse) interactButton.textContent='🏠 ENTRAR EM CASA';},1500);
+  }
+}
+interactButton.addEventListener('click',interactWithHouse);
+player.onInteract=interactWithHouse;
+function updateHousePrompt() {
+  if(activeHouse || services.isOpen()) return;
+  const house=nearestHouse();
+  if(house) { interactButton.textContent='🏠 ENTRAR · '+house.name.toUpperCase(); districtLocation.textContent='🏢 KILAMBA · '+house.name.toUpperCase(); }
+  else { interactButton.textContent='🏠 ENTRAR EM CASA'; districtLocation.textContent='🏙️ KILAMBA · BAIRRO RESIDENCIAL'; }
+}
 
 startButton.addEventListener('click', () => {
   started = true;
@@ -176,6 +216,7 @@ function animate() {
 
   if (started && !services.isOpen()) {
     player.update(delta);
+    updateHousePrompt();
   }
 
   renderer.render(scene, camera);
