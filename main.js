@@ -56,19 +56,24 @@ const camera = new THREE.PerspectiveCamera(
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const renderer = new THREE.WebGLRenderer({
-  antialias: false,
+  antialias: true,
   powerPreference: 'high-performance',
   alpha: false,
   stencil: false,
-  depth: true
+  depth: true,
+  precision: 'highp'
 });
 
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 0.85 : 1.25));
+// A resolução reduzida anterior (0.85 no telemóvel) tornava toda a cidade desfocada.
+function updateRenderQuality() {
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 1.75));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
-renderer.shadowMap.enabled = false;
+renderer.shadowMap.enabled = true;\nrenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 game.prepend(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight('#f4f8ff', '#78634e', 2.25));
@@ -279,8 +284,7 @@ renderer.setAnimationLoop(animate);
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 0.85 : 1.25));
+  updateRenderQuality();
 });
 
 
