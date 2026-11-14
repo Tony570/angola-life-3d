@@ -4,7 +4,6 @@ import { createPeople } from './people.js';
 
 // ============================================
 // ANGOLA LIFE 3D — CIDADE DE LUANDA
-// EDIFÍCIOS COM ESTRUTURA ABERTA E INTERIORES
 // ============================================
 
 export function createWorld(scene) {
@@ -84,6 +83,175 @@ export function createWorld(scene) {
   }
 
   // ============================================
+  // TEXTURAS DAS RUAS E DOS PASSEIOS
+  // ============================================
+
+  function makeSurfaceTexture(base, seed = 1) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, 256, 256);
+
+    let state = seed >>> 0;
+
+    const random = () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+
+    for (let i = 0; i < 11000; i++) {
+      const shade = Math.floor(random() * 42) + 75;
+
+      ctx.fillStyle =
+        'rgba(' + shade + ',' + shade + ',' + shade + ',' +
+        (0.035 + random() * 0.12) + ')';
+
+      const size = 0.4 + random() * 2.2;
+
+      ctx.fillRect(
+        random() * 256,
+        random() * 256,
+        size,
+        size
+      );
+    }
+
+    if (base === '#303236') {
+      ctx.strokeStyle = 'rgba(12,13,14,0.22)';
+      ctx.lineWidth = 1.2;
+
+      for (let i = 0; i < 9; i++) {
+        const x = random() * 256;
+        const y = random() * 256;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+
+        ctx.lineTo(
+          x + (random() - 0.5) * 24,
+          y + 4 + random() * 18
+        );
+
+        ctx.lineTo(
+          x + (random() - 0.5) * 35,
+          y + 20 + random() * 22
+        );
+
+        ctx.stroke();
+      }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 14);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 2;
+
+    return texture;
+  }
+
+  const asphaltSurface = new THREE.MeshStandardMaterial({
+    map: makeSurfaceTexture('#303236', 17),
+    roughness: 0.98,
+    metalness: 0
+  });
+
+  const sidewalkSurface = new THREE.MeshStandardMaterial({
+    map: makeSurfaceTexture('#aaa397', 31),
+    roughness: 1
+  });
+
+  function makeRoadPlane(x, z, width, length, horizontal, material, y) {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(
+        horizontal ? length : width,
+        horizontal ? width : length
+      ),
+      material
+    );
+
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, y, z);
+    mesh.receiveShadow = false;
+
+    scene.add(mesh);
+  }
+
+  function makeRoadMarks(x, z, width, length, horizontal) {
+    const dashCount = Math.max(1, Math.floor((length - 12) / 12));
+
+    const dash = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(
+        horizontal ? 4.2 : 0.14,
+        0.018,
+        horizontal ? 0.14 : 4.2
+      ),
+      mat.yellow,
+      dashCount
+    );
+
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < dashCount; i++) {
+      const p = -length / 2 + 7 + i * 12;
+
+      dummy.position.set(
+        horizontal ? x + p : x,
+        0.025,
+        horizontal ? z : z + p
+      );
+
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      dash.setMatrixAt(i, dummy.matrix);
+    }
+
+    dash.instanceMatrix.needsUpdate = true;
+    dash.castShadow = false;
+    dash.receiveShadow = false;
+
+    scene.add(dash);
+
+    if (width >= 12) {
+      const edges = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(
+          horizontal ? length : 0.1,
+          0.014,
+          horizontal ? 0.1 : length
+        ),
+        mat.white,
+        2
+      );
+
+      for (let i = 0; i < 2; i++) {
+        const side = i === 0 ? -1 : 1;
+
+        dummy.position.set(
+          horizontal ? x : x + side * (width / 2 - 0.8),
+          0.022,
+          horizontal ? z + side * (width / 2 - 0.8) : z
+        );
+
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+
+        edges.setMatrixAt(i, dummy.matrix);
+      }
+
+      edges.instanceMatrix.needsUpdate = true;
+      edges.castShadow = false;
+      edges.receiveShadow = false;
+
+      scene.add(edges);
+    }
+  }
+
+  // ============================================
   // TERRENO
   // ============================================
 
@@ -93,6 +261,7 @@ export function createWorld(scene) {
     for (let i = 0; i < 28; i++) {
       const x = -115 + (i * 37) % 230;
       const z = -110 + (i * 61) % 220;
+
       box(scene, x, -0.12, z, 12, 0.12, 12, mat.grass2);
     }
   }
@@ -102,134 +271,85 @@ export function createWorld(scene) {
   // ============================================
 
   function makeRoad(x, z, width, length, horizontal = true) {
-    const road = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        horizontal ? length : width, 0.12,
-        horizontal ? width : length
-      ),
-      mat.asphalt
+    makeRoadPlane(
+      x, z, width, length, horizontal,
+      asphaltSurface, 0.018
     );
-    road.position.set(x, -0.05, z);
-    road.receiveShadow = true;
-    scene.add(road);
 
-    const sw = 2.4;
+    const sidewalkWidth = 2.4;
+    const offset = width / 2 + sidewalkWidth / 2;
+    const curbOffset = width / 2 + 0.16;
 
     for (const side of [-1, 1]) {
-      const offset = width / 2 + sw / 2;
-
-      const pavement = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          horizontal ? length : sw, 0.22,
-          horizontal ? sw : length
-        ),
-        mat.sidewalk
-      );
-      pavement.position.set(
+      makeRoadPlane(
         horizontal ? x : x + side * offset,
-        0.045,
-        horizontal ? z + side * offset : z
+        horizontal ? z + side * offset : z,
+        horizontal ? length : sidewalkWidth,
+        horizontal ? sidewalkWidth : length,
+        horizontal,
+        sidewalkSurface,
+        0.042
       );
-      pavement.receiveShadow = true;
-      scene.add(pavement);
 
       const curb = new THREE.Mesh(
         new THREE.BoxGeometry(
-          horizontal ? length : 0.32, 0.22,
-          horizontal ? 0.32 : length
+          horizontal ? length : 0.22,
+          0.16,
+          horizontal ? 0.22 : length
         ),
         mat.sidewalkDark
       );
-      curb.position.set(
-        horizontal ? x : x + side * (width / 2 + 0.16),
-        0.12,
-        horizontal ? z + side * (width / 2 + 0.16) : z
-      );
-      scene.add(curb);
 
-      for (let p = -length / 2 + 6; p < length / 2; p += 6) {
-        const joint = new THREE.Mesh(
-          new THREE.BoxGeometry(
-            horizontal ? 0.055 : sw, 0.012,
-            horizontal ? sw : 0.055
-          ),
-          mat.sidewalkDark
-        );
-        joint.position.set(
-          horizontal ? x + p : x + side * offset,
-          0.16,
-          horizontal ? z + side * offset : z + p
-        );
-        scene.add(joint);
-      }
+      curb.position.set(
+        horizontal ? x : x + side * curbOffset,
+        0.08,
+        horizontal ? z + side * curbOffset : z
+      );
+
+      curb.castShadow = false;
+      curb.receiveShadow = false;
+
+      scene.add(curb);
     }
 
     if (width >= 12) {
-      for (const side of [-1, 1]) {
-        const edge = new THREE.Mesh(
-          new THREE.BoxGeometry(
-            horizontal ? length : 0.1, 0.018,
-            horizontal ? 0.1 : length
-          ),
-          mat.white
-        );
-        edge.position.set(
-          horizontal ? x : x + side * (width / 2 - 0.8),
-          0.018,
-          horizontal ? z + side * (width / 2 - 0.8) : z
-        );
-        scene.add(edge);
-      }
-
-      for (let p = -length / 2 + 5; p < length / 2 - 3; p += 12) {
-        const dash = new THREE.Mesh(
-          new THREE.BoxGeometry(
-            horizontal ? 4.2 : 0.14, 0.022,
-            horizontal ? 0.14 : 4.2
-          ),
-          mat.yellow
-        );
-        dash.position.set(horizontal ? x + p : x, 0.022, horizontal ? z : z + p);
-        scene.add(dash);
-      }
-    }
-
-    for (let i = 0; i < 5; i++) {
-      const p = -length / 2 + 16 + i * (length / 5.5);
-      const lateral = (variation(x + i * 7, z, 13) - 0.5) * width * 0.42;
-      const patch = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          horizontal ? 2.2 + (i % 2) * 1.1 : 1.5, 0.012,
-          horizontal ? 1.2 : 2.2 + (i % 2) * 1.1
-        ),
-        mat.asphaltOld
-      );
-      patch.position.set(
-        horizontal ? x + p : x + lateral,
-        0.016,
-        horizontal ? z + lateral : z + p
-      );
-      patch.rotation.y = (variation(x, z + i, 9) - 0.5) * 0.12;
-      scene.add(patch);
+      makeRoadMarks(x, z, width, length, horizontal);
     }
   }
 
   function makeCrosswalk(x, z, horizontal = true) {
-    for (let i = -3; i <= 3; i++) {
-      const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          horizontal ? 1.35 : 0.42, 0.035,
-          horizontal ? 0.42 : 1.35
-        ),
-        mat.white
-      );
-      stripe.position.set(
-        x + (horizontal ? i * 1.65 : 0),
+    const stripes = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(
+        horizontal ? 1.35 : 0.42,
+        0.025,
+        horizontal ? 0.42 : 1.35
+      ),
+      mat.white,
+      7
+    );
+
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < 7; i++) {
+      const offset = (i - 3) * 1.65;
+
+      dummy.position.set(
+        x + (horizontal ? offset : 0),
         0.045,
-        z + (horizontal ? 0 : i * 1.65)
+        z + (horizontal ? 0 : offset)
       );
-      scene.add(stripe);
+
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+
+      stripes.setMatrixAt(i, dummy.matrix);
     }
+
+    stripes.instanceMatrix.needsUpdate = true;
+    stripes.castShadow = false;
+    stripes.receiveShadow = false;
+
+    scene.add(stripes);
   }
 
   function buildRoadNetwork() {
@@ -255,6 +375,7 @@ export function createWorld(scene) {
 
   function addWindow(group, x, y, z, width, height) {
     const frame = new THREE.MeshStandardMaterial({ color: 0xd8d0bd });
+
     box(group, x, y, z, width, height, 0.09, mat.windowDark);
     box(group, x, y + 0.08, z + 0.06, width - 0.16, height - 0.16, 0.035, mat.glass);
 
@@ -266,7 +387,9 @@ export function createWorld(scene) {
 
   function addBalcony(group, x, y, z, width) {
     const railing = new THREE.MeshStandardMaterial({
-      color: 0x555b5d, metalness: 0.6, roughness: 0.55
+      color: 0x555b5d,
+      metalness: 0.6,
+      roughness: 0.55
     });
 
     box(group, x, y, z + 0.75, width + 0.35, 0.15, 1.3, mat.concrete);
@@ -275,6 +398,7 @@ export function createWorld(scene) {
     box(group, x + width / 2, y + 0.42, z + 0.75, 0.08, 0.85, 1.2, railing);
 
     const bars = Math.max(3, Math.floor(width / 0.45));
+
     for (let i = 0; i <= bars; i++) {
       const bx = x - width / 2 + (i / bars) * width;
       box(group, bx, y + 0.08, z + 1.35, 0.045, 0.75, 0.045, railing);
@@ -288,6 +412,7 @@ export function createWorld(scene) {
 
   function addRoofDetails(group, width, depth, height, seed) {
     const parapet = new THREE.MeshStandardMaterial({ color: 0xb8ad9a });
+
     box(group, 0, height, depth / 2 - 0.12, width, 0.55, 0.2, parapet);
     box(group, 0, height, -depth / 2 + 0.12, width, 0.55, 0.2, parapet);
     box(group, width / 2 - 0.12, height, 0, 0.2, 0.55, depth, parapet);
@@ -299,9 +424,7 @@ export function createWorld(scene) {
   }
 
   // ============================================
-  // CONSTRUÇÃO DE EDIFÍCIOS
-  // Fachada principal virada para +Z.
-  // Entrada central aberta no piso térreo.
+  // EDIFÍCIOS
   // ============================================
 
   function makeBuilding(x, z, width, depth, floors, type = 'house') {
@@ -328,36 +451,31 @@ export function createWorld(scene) {
     const doorHeight = 2.5;
     const frontZ = depth / 2;
 
-    // Pavimento térreo: deixa a entrada livre.
     box(group, 0, 0, 0, width, 0.28, depth, mat.concrete);
 
-    // Paredes laterais e traseira.
     box(group, -width / 2 + wall / 2, 0.28, 0, wall, height - 0.28, depth, wallMaterial);
     box(group, width / 2 - wall / 2, 0.28, 0, wall, height - 0.28, depth, wallMaterial);
     box(group, 0, 0.28, -depth / 2 + wall / 2, width, height - 0.28, wall, wallMaterial);
 
-    // Fachada frontal dividida em duas partes.
     const sideWidth = (width - doorWidth) / 2;
+
     box(group, -width / 2 + sideWidth / 2, 0.28, frontZ, sideWidth, height - 0.28, wall, wallMaterial);
     box(group, width / 2 - sideWidth / 2, 0.28, frontZ, sideWidth, height - 0.28, wall, wallMaterial);
 
-    // Parte superior da porta.
     box(group, 0, doorHeight + 0.28, frontZ, doorWidth, height - doorHeight - 0.28, wall, wallMaterial);
 
-    // Lajes dos pisos superiores.
     for (let floor = 1; floor < floors; floor++) {
       const y = floor * 3.2;
+
       box(group, 0, y - 0.16, 0, width, 0.28, depth, mat.concrete);
       box(group, 0, y + 0.08, 0, width - 0.7, 0.08, depth - 0.7, wallMaterial);
       box(group, 0, y - 0.1, frontZ + 0.08, width, 0.12, 0.12, trim);
     }
 
-    // Colunas estruturais nas extremidades da fachada.
     for (const side of [-1, 1]) {
       box(group, side * (width / 2 - 0.25), 0.28, frontZ + 0.03, 0.28, height - 0.28, 0.35, trim);
     }
 
-    // Janelas nos pisos superiores.
     const columns = Math.max(2, Math.floor(width / 3));
 
     for (let floor = 0; floor < floors; floor++) {
@@ -367,10 +485,8 @@ export function createWorld(scene) {
         const wx = -width / 2 + (col + 0.5) * width / columns;
         const ww = Math.min(1.3, width / columns * 0.55);
 
-        // No rés-do-chão, não colocar janela sobre a entrada.
         if (floor === 0 && Math.abs(wx) < doorWidth / 2 + ww / 2 + 0.4) continue;
 
-        // Janela como detalhe exterior.
         box(group, wx, y, frontZ + 0.19, ww + 0.15, 1.55, 0.07, mat.windowDark);
         box(group, wx, y + 0.08, frontZ + 0.24, ww, 1.35, 0.035, mat.glass);
 
@@ -387,42 +503,38 @@ export function createWorld(scene) {
       }
     }
 
-    // Porta recuada: a passagem fica realmente aberta.
     const doorFrame = new THREE.MeshStandardMaterial({ color: 0x69432e });
+
     box(group, -doorWidth / 2 - 0.08, 0.28, frontZ + 0.08, 0.12, doorHeight, 0.18, doorFrame);
     box(group, doorWidth / 2 + 0.08, 0.28, frontZ + 0.08, 0.12, doorHeight, 0.18, doorFrame);
     box(group, 0, doorHeight + 0.2, frontZ + 0.08, doorWidth + 0.28, 0.16, 0.18, doorFrame);
 
-    // Degrau de acesso.
     box(group, 0, 0.02, frontZ + 0.65, doorWidth + 1.2, 0.16, 1.1, mat.concrete);
 
-    // Loja: montra e letreiro.
     if (type === 'shop') {
       const sign = new THREE.MeshStandardMaterial({
-        color: signColors[seed % signColors.length], roughness: 0.7
+        color: signColors[seed % signColors.length],
+        roughness: 0.7
       });
 
       box(group, 0, 2.75, frontZ + 0.22, width * 0.78, 0.65, 0.2, sign);
       box(group, 0, 2.38, frontZ + 0.25, width * 0.8, 0.08, 0.22, mat.yellow);
 
-      // Montras laterais sem tapar a entrada.
       for (const side of [-1, 1]) {
         const sx = side * (doorWidth / 2 + sideWidth / 4);
         box(group, sx, 0.65, frontZ + 0.19, sideWidth * 0.72, 1.6, 0.08, mat.glass);
       }
     }
 
-    // Interior básico visível pela entrada.
     const interiorFloor = new THREE.MeshStandardMaterial({ color: 0xb8a991 });
+
     box(group, 0, 0.29, 0, width - 0.8, 0.04, depth - 0.8, interiorFloor);
 
-    // Divisórias baixas no interior para dar profundidade.
     if (type === 'house') {
       box(group, -width * 0.22, 0.3, -depth * 0.12, 0.16, 2.4, depth * 0.55, wallMaterial);
       box(group, width * 0.18, 0.3, -depth * 0.2, width * 0.36, 2.4, 0.16, wallMaterial);
     }
 
-    // Cobertura superior.
     box(group, 0, height, 0, width + 0.5, 0.35, depth + 0.5, roofMaterial);
     addRoofDetails(group, width, depth, height + 0.35, seed);
 
@@ -445,8 +557,11 @@ export function createWorld(scene) {
   function makeWallAndGate(x, z, width, rotation = 0) {
     const group = new THREE.Group();
     const wall = new THREE.MeshStandardMaterial({ color: 0xbcae98 });
+
     const gate = new THREE.MeshStandardMaterial({
-      color: 0x42494b, metalness: 0.55, roughness: 0.65
+      color: 0x42494b,
+      metalness: 0.55,
+      roughness: 0.65
     });
 
     box(group, -width * 0.3, 0, 0, width * 0.4, 1.8, 0.35, wall);
@@ -458,8 +573,10 @@ export function createWorld(scene) {
     }
 
     box(group, 0, 1.7, 0, width, 0.15, 0.4, wall);
+
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
+
     scene.add(group);
   }
 
@@ -478,7 +595,14 @@ export function createWorld(scene) {
           ? 'apartment'
           : (xi + zi) % 3 === 0 ? 'shop' : 'house';
 
-        makeBuilding(bx, bz, type === 'shop' ? 12 : 14, 12, floors, type);
+        makeBuilding(
+          bx,
+          bz,
+          type === 'shop' ? 12 : 14,
+          12,
+          floors,
+          type
+        );
 
         if ((xi + zi) % 3 === 0) {
           makeWallAndGate(bx + 10, bz + 5, 7, Math.PI / 2);
@@ -498,8 +622,10 @@ export function createWorld(scene) {
 
   function makePark() {
     const park = new THREE.Mesh(
-      new THREE.BoxGeometry(25, 0.25, 25), mat.grass2
+      new THREE.BoxGeometry(25, 0.25, 25),
+      mat.grass2
     );
+
     park.position.set(0, 0.08, 0);
     scene.add(park);
 
@@ -510,9 +636,16 @@ export function createWorld(scene) {
     for (let i = 0; i < 4; i++) {
       const angle = i * Math.PI / 2;
       const bench = new THREE.Group();
+
       box(bench, 0, 0.65, 0, 3, 0.2, 0.8, mat.trunk);
       box(bench, 0, 0.9, -0.3, 3, 0.9, 0.15, mat.trunk);
-      bench.position.set(Math.cos(angle) * 8, 0, Math.sin(angle) * 8);
+
+      bench.position.set(
+        Math.cos(angle) * 8,
+        0,
+        Math.sin(angle) * 8
+      );
+
       bench.rotation.y = -angle;
       scene.add(bench);
     }
@@ -526,7 +659,8 @@ export function createWorld(scene) {
     const group = new THREE.Group();
 
     cylinder(
-      group, 0, 0, 0,
+      group,
+      0, 0, 0,
       palm ? 0.2 : 0.3,
       palm ? 0.35 : 0.4,
       palm ? 5 : 2.5,
@@ -538,24 +672,31 @@ export function createWorld(scene) {
 
       for (let i = 0; i < 8; i++) {
         const leaf = new THREE.Mesh(
-          new THREE.ConeGeometry(0.32, 3.5, 5), leaves
+          new THREE.ConeGeometry(0.32, 3.5, 5),
+          leaves
         );
+
         leaf.position.set(
           Math.cos(i * Math.PI / 4) * 1.15,
           4.9,
           Math.sin(i * Math.PI / 4) * 1.15
         );
+
         leaf.rotation.z = Math.cos(i * Math.PI / 4) * 1.1;
         leaf.rotation.x = Math.sin(i * Math.PI / 4) * 1.1;
+
         group.add(leaf);
       }
     } else {
       const crown = new THREE.Mesh(
-        new THREE.SphereGeometry(1.7, 8, 7), mat.leaf
+        new THREE.SphereGeometry(1.7, 8, 7),
+        mat.leaf
       );
+
       crown.position.y = 3.2;
       crown.scale.set(1, 1.2, 1);
       crown.castShadow = true;
+
       group.add(crown);
     }
 
@@ -574,7 +715,9 @@ export function createWorld(scene) {
     for (let i = 0; i < 22; i++) {
       const x = -95 + (i * 29) % 190;
       const z = -95 + (i * 47) % 190;
+
       if (Math.abs(x) < 20 || Math.abs(z) < 20) continue;
+
       makeTree(x, z, i % 3 === 0);
     }
   }
@@ -585,17 +728,22 @@ export function createWorld(scene) {
 
   function makeStreetLamp(x, z) {
     const group = new THREE.Group();
+
     cylinder(group, 0, 0, 0, 0.08, 0.13, 5, mat.black, 8);
     box(group, 0.35, 4.8, 0, 0.9, 0.1, 0.12, mat.black);
 
     const lamp = new THREE.Mesh(
       new THREE.BoxGeometry(0.65, 0.18, 0.35),
       new THREE.MeshStandardMaterial({
-        color: 0xffedb1, emissive: 0xffc75a, emissiveIntensity: 0.45
+        color: 0xffedb1,
+        emissive: 0xffc75a,
+        emissiveIntensity: 0.45
       })
     );
+
     lamp.position.set(0.75, 4.75, 0);
     group.add(lamp);
+
     group.position.set(x, 0, z);
     scene.add(group);
   }
@@ -615,8 +763,11 @@ export function createWorld(scene) {
 
   function makeCar(x, z, color, rotation = 0) {
     const group = new THREE.Group();
+
     const body = new THREE.MeshStandardMaterial({
-      color, metalness: 0.25, roughness: 0.45
+      color,
+      metalness: 0.25,
+      roughness: 0.45
     });
 
     box(group, 0, 0.35, 0, 2.2, 0.65, 4.2, body);
@@ -628,25 +779,37 @@ export function createWorld(scene) {
     for (const wx of [-1.05, 1.05]) {
       for (const wz of [-1.35, 1.35]) {
         const wheel = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.43, 0.43, 0.25, 12), wheels
+          new THREE.CylinderGeometry(0.43, 0.43, 0.25, 12),
+          wheels
         );
+
         wheel.rotation.z = Math.PI / 2;
         wheel.position.set(wx, 0.4, wz);
+
         group.add(wheel);
       }
     }
 
     const light = new THREE.MeshStandardMaterial({
-      color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.25
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.25
     });
+
     box(group, -0.7, 0.55, 2.12, 0.4, 0.22, 0.08, light);
     box(group, 0.7, 0.55, 2.12, 0.4, 0.22, 0.08, light);
 
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
+
     scene.add(group);
 
-    world.vehicles.push({ group, speed: 0, occupied: false });
+    world.vehicles.push({
+      group,
+      speed: 0,
+      occupied: false
+    });
+
     return group;
   }
 
@@ -659,6 +822,7 @@ export function createWorld(scene) {
 
     for (let i = 0; i < 4; i++) {
       const x = (i - 1.5) * 3.5;
+
       box(group, x, 0, 0, 3, 2.4, 2.8, mat.yellow);
       box(group, x, 2.4, 0, 3.4, 0.2, 3.2, mat.white);
 
@@ -666,8 +830,10 @@ export function createWorld(scene) {
         new THREE.ConeGeometry(2.1, 1.1, 4),
         new THREE.MeshStandardMaterial({ color: 0xb33d2c })
       );
+
       roof.position.set(x, 3.05, 0);
       roof.rotation.y = Math.PI / 4;
+
       group.add(roof);
 
       box(group, x, 0.8, 1.5, 2.6, 0.12, 0.3, mat.wood);
@@ -696,7 +862,18 @@ export function createWorld(scene) {
     for (let i = -1; i <= 1; i++) {
       box(group, i * 4, 0.3, 0, 1.1, 1.6, 0.8, mat.white);
       box(group, i * 4, 1.9, 0, 0.8, 0.4, 0.12, mat.black);
-      cylinder(group, i * 4 + 0.5, 0.8, 0.5, 0.035, 0.035, 0.8, mat.black, 6);
+
+      cylinder(
+        group,
+        i * 4 + 0.5,
+        0.8,
+        0.5,
+        0.035,
+        0.035,
+        0.8,
+        mat.black,
+        6
+      );
     }
 
     group.position.set(78, 0, -35);
