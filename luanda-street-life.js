@@ -239,6 +239,44 @@ export function createLuandaStreetLife(scene, world) {
     palm(x, z, 0.72);
   });
 
+  // Parque da Cidade: relvado, caminhos, bancos, palmeiras e fonte central.
+  const park = new THREE.Group();
+  const lawn = mat(0x477b43, 0.96);
+  const path = mat(0xd0c5ad, 0.92);
+  const water = new THREE.MeshStandardMaterial({ color: 0x38a7bb, roughness: 0.22, metalness: 0.12 });
+  addBox(park, 0, 0.02, 0, 54, 0.12, 42, lawn);
+  addBox(park, 0, 0.09, 0, 3.4, 0.08, 42, path);
+  addBox(park, 0, 0.09, 0, 54, 0.08, 3.4, path);
+  const fountainBase = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.6, 0.42, 24), concrete);
+  fountainBase.position.set(0, 0.25, 0);
+  park.add(fountainBase);
+  const fountainWater = new THREE.Mesh(new THREE.CylinderGeometry(3.75, 3.75, 0.12, 24), water);
+  fountainWater.position.set(0, 0.52, 0);
+  park.add(fountainWater);
+  addCylinder(park, 0, 0.58, 0, 0.35, 0.55, 2.2, concrete, 12);
+  for (const [x,z] of [[-21,-15],[21,-15],[-21,15],[21,15],[-12,0],[12,0]]) {
+    bench(x,z,0);
+    palm(x + 3.2,z + 1.8,0.72);
+  }
+  park.position.set(205, 0, 305);
+  scene.add(park);
+  world.destinations.push({ name:'Parque da Cidade', x:205, z:305, category:'lazer' });
+
+  // Passeio da Marginal da Ilha: calçadão, guarda-corpos e iluminação costeira.
+  const waterfront = new THREE.Group();
+  const promenade = mat(0xd4c9b5, 0.92);
+  addBox(waterfront, 0, 0.04, 0, 110, 0.18, 13, promenade);
+  addBox(waterfront, 0, 0.28, -6.2, 110, 0.48, 0.18, metal);
+  for (let x = -50; x <= 50; x += 10) {
+    addBox(waterfront, x, 0.18, -6.2, 0.12, 0.9, 0.12, metal);
+    bench(x, 2.5, 0);
+    streetLamp(x, 5.5, Math.PI);
+  }
+  waterfront.position.set(-430, 0, -20);
+  scene.add(waterfront);
+  world.destinations.push({ name:'Marginal da Ilha de Luanda', x:-430, z:-20, category:'lazer' });
+
   world.streetLife = true;
+  world.publicSpaces = ['Parque da Cidade', 'Marginal da Ilha de Luanda'];
   return world;
 }
