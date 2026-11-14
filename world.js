@@ -261,6 +261,28 @@ export function createWorld(scene) {
       box(group, 0, 3.7, front + 0.3, 0.4, 1.8, 0.2, M.red);
     }
 
+    if (kind === 'boutique') {
+      // Montra de vidro, toldo e moldura colorida própria da loja de roupa.
+      box(group, 0, 1.55, front + 0.24, width * 0.72, 2.5, 0.12, M.glass);
+      box(group, 0, 3.05, front + 0.55, width * 0.82, 0.28, 1.0, M.red);
+      for (let stripe = -4; stripe <= 4; stripe++) {
+        box(group, stripe * 1.55, 3.05, front + 1.08, 0.12, 0.28, 0.08, M.white);
+      }
+    } else if (kind === 'car-dealer') {
+      box(group, 0, 1.7, front + 0.22, width * 0.82, 2.9, 0.12, M.glass);
+      box(group, 0, 0.25, front + 1.0, width * 0.9, 0.18, 2.0, M.concrete);
+    } else if (kind === 'hotel') {
+      for (const px of [-width * 0.34, width * 0.34]) {
+        box(group, px, 0.2, front + 0.9, 0.28, 2.8, 0.28, M.gold);
+      }
+      box(group, 0, 3.0, front + 0.75, width * 0.9, 0.2, 1.6, M.blue);
+    } else if (kind === 'bank') {
+      for (const px of [-width * 0.36, width * 0.36]) {
+        box(group, px, 0.25, front + 0.65, 0.48, 3.1, 0.48, M.white);
+      }
+      box(group, 0, 0.2, front + 1.2, width * 0.82, 0.18, 2.3, M.gold);
+    }
+
     textSign(group, name, subtitle, color, width, depth);
 
     group.position.set(x, 0, z);
@@ -310,12 +332,30 @@ export function createWorld(scene) {
 
     box(group, 0, height, 0, width + 0.5, 0.3, depth + 0.5, M.concrete);
 
-    // Varandas em edifícios de apartamentos
+    // Varandas e fachadas com acabamento próprio por tipo de edifício.
     if (floors >= 3) {
       for (let floor = 1; floor < floors; floor++) {
         box(group, 0, floor * 3.2 + 0.25, depth / 2 + 0.8, width * 0.75, 0.12, 1.2, M.concrete);
         box(group, 0, floor * 3.2 + 0.8, depth / 2 + 1.35, width * 0.75, 0.85, 0.08, M.metal);
       }
+      box(group, -width / 2 + 0.45, 0.3, depth / 2 + 0.22, 0.28, height, 0.18, index % 2 ? M.gold : M.blue);
+      const tank = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 1.5, 12), M.white);
+      tank.position.set(width / 2 - 2, height + 1.05, -depth / 2 + 2);
+      group.add(tank);
+    } else if (type === 'house') {
+      const roofColor = index % 2 ? M.roof : M.red;
+      box(group, 0, height + 0.24, 0, width + 0.9, 0.28, depth + 0.9, roofColor);
+      box(group, 0, 2.75, depth / 2 + 0.8, width * 0.55, 0.16, 1.5, M.white);
+      for (const px of [-width * 0.25, width * 0.25]) {
+        box(group, px, 0.2, depth / 2 + 0.8, 0.16, 2.55, 0.16, M.white);
+      }
+      box(group, -width / 2 - 1.0, 0.25, depth / 2 + 2.0, 0.16, 0.9, 2.4, M.white);
+      box(group, width / 2 + 1.0, 0.25, depth / 2 + 2.0, 0.16, 0.9, 2.4, M.white);
+      box(group, 0, 0.55, depth / 2 + 3.15, width * 0.45, 0.08, 0.08, M.metal);
+    } else {
+      // Escritórios com entrada envidraçada e friso de identificação.
+      box(group, 0, 1.45, depth / 2 + 0.24, width * 0.68, 2.1, 0.1, M.glass);
+      box(group, 0, height - 0.2, depth / 2 + 0.22, width * 0.9, 0.22, 0.18, M.blue);
     }
 
     group.position.set(x, 0, z);
