@@ -67,11 +67,11 @@ const renderer = new THREE.WebGLRenderer({
 // Perfil leve para telemóveis: evita renderização em excesso e mantém a imagem nítida.
 function updateRenderQuality() {
   const deviceRatio = window.devicePixelRatio || 1;
-  const cap = isMobile ? 1.0 : 1.35;
+  const cap = isMobile ? 0.72 : 1.2;
   renderer.setPixelRatio(Math.min(deviceRatio, cap));
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.35));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 0.72 : 1.2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -212,8 +212,22 @@ elevatorPanel.addEventListener('click', event => {
   const button = event.target.closest('[data-floor]');
   if (button) goToFloor(button.dataset.floor);
 });
+function ensureHouseResidents(house) {
+  if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
+  house.residentsCreated = true;
+  house.residents = [
+    player.createResident(house.interior, -3.75, 0.16, 2.05, Math.PI),
+    player.createResident(house.interior, 2.1, 0.16, 4.65, -Math.PI / 2)
+  ].filter(Boolean);
+}
+
+player.onModelReady = () => {
+  if (activeHouse) ensureHouseResidents(activeHouse);
+};
+
 function enterHouse(house) {
   house.ensureInterior();
+  ensureHouseResidents(house);
   if (!house.interactables) {
     house.interactables = [];
     house.interior.traverse(object => {
@@ -226,6 +240,8 @@ function enterHouse(house) {
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
+  player.cameraDistance = 2.75;
+  player.cameraHeightAngle = 0.30;
   player.setIndoorFloor(0.16);
   player.setColliders(house.colliders.filter(item => !item._houseDoor || (item.floor === 0 && item.door.userData.houseDoorCollider.active)));
   player.teleport(house.interiorX, house.interiorZ + 6.2);
@@ -246,6 +262,7 @@ function leaveHouse() {
   decorMode = false;
   decorCatalog.hidden = true;
   player.setIndoor(false);
+  player.cameraHeightAngle = 0.42;
   player.setColliders(world.colliders);
   player.teleport(house.entranceX, house.entranceZ + 1.5);
   player.cameraDistance = 7;
@@ -287,6 +304,13 @@ interactButton.addEventListener('click', interactWithHouse);
 player.onInteract = interactWithHouse;
 function updateHousePrompt() {
   if (services.isOpen()) return;
+  if (!activeHouse) {
+    const doorwayHouse = nearestHouse();
+    if (doorwayHouse && Math.hypot(player.group.position.x - doorwayHouse.entranceX, player.group.position.z - doorwayHouse.entranceZ) <= 1.65) {
+      enterHouse(doorwayHouse);
+      return;
+    }
+  }
   if (activeHouse) {
     if (player.sitting) {
       activeInteractable = null;
@@ -357,6 +381,9 @@ function animate() {
 
   if (started && !services.isOpen()) {
     player.update(delta);
+    if (activeHouse?.residents) {
+      for (const resident of activeHouse.residents) resident.mixer?.update(delta);
+    }
     promptAccumulator += delta;
     if (promptAccumulator >= 0.2) {
       updateHousePrompt();
