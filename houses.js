@@ -565,6 +565,20 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
           box(g, x, 0.42, z - 0.55, 0.12, 0.85, 0.12, dark);
         }
       }
+    } else if (kind === 'fuel-station') {
+      // Loja de conveniência, balcão e bombas de combustível dentro do posto.
+      box(g, 0, 0.08, -5.6, 11.5, 0.16, 4.4, mat.concrete);
+      box(g, 0, 0.2, -7.2, 10.5, 2.6, 0.18, wall);
+      box(g, 0, 1.55, -7.05, 4.8, 0.9, 0.12, glass, false);
+      box(g, 0, 0.75, -5.95, 5.6, 0.9, 1.0, wood);
+      for (const x of [-5.2, -1.8, 1.8, 5.2]) {
+        box(g, x, 0.12, 1.6, 1.15, 0.18, 1.15, dark);
+        box(g, x, 0.3, 1.6, 0.72, 1.65, 0.72, material(0xe7e7e2, 0.42));
+        box(g, x, 1.45, 1.6, 0.58, 0.38, 0.12, material(0x202b30, 0.3));
+        box(g, x + 0.43, 0.65, 1.6, 0.08, 1.05, 0.08, dark);
+        cylinder(g, x + 0.46, 0.3, 1.6, 0.045, 0.045, 1.1, dark, 8);
+      }
+      box(g, 0, 0.12, 4.6, 15.5, 0.2, 3.0, mat.concrete);
     } else if (kind === 'market') {
       for (const x of [-6, -2, 2, 6]) {
         box(g, x, 0.65, -1.5, 2.6, 1.3, 2.4, wood);
