@@ -174,8 +174,8 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     roofSign.position.set(0, 2.08, -0.2);
     group.add(roofSign);
 
-    group.position.set(stop.x + 5.2, 0, stop.z + 4.5);
-    group.rotation.y = Math.atan2(-5.2, -4.5);
+    group.position.set(stop.x + 4.2, 0, stop.z + 3.2);
+    group.rotation.y = Math.atan2(-4.2, -3.2);
     scene.add(group);
 
     const taxi = {
@@ -231,7 +231,7 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     label.position.set(0, 2.0, 1.31);
     group.add(label);
 
-    group.position.set(stop.x - 5.2, 0, stop.z - 4.5);
+    group.position.set(stop.x - 2.0, 0, stop.z + 3.2);
     scene.add(group);
   }
 
