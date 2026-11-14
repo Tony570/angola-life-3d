@@ -410,18 +410,22 @@ export class Player {
 
   setIndoor(value) {
     this.indoor = Boolean(value);
-
     if (!this.indoor) {
       this.groundY = 0;
-    } else if (this.group.position.x > 400) {
-      this.groundY = 0.16;
-    } else if (this.group.position.x < -40) {
-      this.groundY = 0.3825;
+      this.cameraDistance = 7;
     } else {
       this.groundY = 0.16;
+      this.cameraDistance = 3.8;
     }
-
     this.group.position.y = this.groundY;
+    this.updateCamera();
+  }
+
+  setIndoorFloor(height = 0.16) {
+    this.indoor = true;
+    this.groundY = Math.max(0.16, Number(height) || 0.16);
+    this.group.position.y = this.groundY;
+    this.cameraDistance = 3.8;
     this.updateCamera();
   }
 
@@ -622,6 +626,7 @@ export class Player {
     );
 
     this.camera.updateMatrixWorld(true);
+    this.groundPlane.constant = -this.groundY;
     this.raycaster.setFromCamera(mouse, this.camera);
 
     const destination = new THREE.Vector3();
@@ -1012,10 +1017,10 @@ export class Player {
 
     this.moveTarget = null;
 
-    if (this.indoor) {
-      this.groundY = x > 400 ? 0.16 : x < -40 ? 0.3825 : 0.16;
-    } else {
+    if (!this.indoor) {
       this.groundY = 0;
+    } else if (!Number.isFinite(this.groundY)) {
+      this.groundY = 0.16;
     }
 
     this.group.position.set(x, this.groundY, z);
