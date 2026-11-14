@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // ANGOLA LIFE 3D — CASAS E INTERIORES
 
-export function createHouseSystem(scene) {
+export function createHouseSystem(scene, world = { buildings: [] }) {
   const houses = [];
 
   const material = (color, roughness = 0.85, metalness = 0) =>
@@ -443,29 +443,43 @@ export function createHouseSystem(scene) {
     };
   }
 
-  const locations = [
-    { name: 'Casa Familiar', x: 108, z: -45 },
-    { name: 'Casa Moderna', x: 108, z: -15 },
-    { name: 'Casa do Bairro', x: 108, z: 15 },
-    { name: 'Casa Grande', x: 108, z: 45 }
-  ];
+  // Todas as moradias e apartamentos criados na cidade passam a ter interior.
+  // Os interiores são carregados apenas quando o jogador entra, para poupar memória
+  // nos telemóveis e computadores mais modestos.
+  const locations = (world.buildings || [])
+    .filter(building =>
+      (building.type === 'house' || building.type === 'apartment') &&
+      building.forSale !== false
+    )
+    .map(building => ({
+      name: building.propertyType || building.facility || 'Casa',
+      x: building.x,
+      z: building.z,
+      width: building.width,
+      depth: building.depth,
+      district: building.district || 'Luanda',
+      propertyType: building.propertyType || (building.type === 'apartment' ? 'apartamento' : 'casa'),
+      salePrice: Number(building.salePrice || 0),
+      entranceX: Number(building.entranceX ?? building.x),
+      entranceZ: Number(building.entranceZ ?? (building.z + building.depth / 2 + 2)),
+      exterior: building.group
+    }));
 
   locations.forEach((location, index) => {
-    const outside = createExterior(location, index % 3);
-    const inside = createInterior(index);
+    const house = { ...location, colliders: [], interior: null, interiorRoof: null };
 
-    houses.push({
-      ...location,
-      exterior: outside.exterior,
-      exteriorRoof: outside.roof,
-      exteriorColliders: outside.colliders,
-      doorPivot: outside.doorPivot,
-      interior: inside.group,
-      interiorRoof: inside.roof,
-      interiorX: inside.interiorX,
-      interiorZ: inside.interiorZ,
-      colliders: inside.colliders
-    });
+    house.ensureInterior = () => {
+      if (house.interior) return house;
+      const inside = createInterior(index);
+      house.interior = inside.group;
+      house.interiorRoof = inside.roof;
+      house.interiorX = inside.interiorX;
+      house.interiorZ = inside.interiorZ;
+      house.colliders = inside.colliders;
+      return house;
+    };
+
+    houses.push(house);
   });
 
   return houses;
