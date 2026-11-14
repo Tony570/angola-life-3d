@@ -160,7 +160,8 @@ const houses = createHouseSystem(scene, world);
 
 const player = new Player(scene, camera, world.vehicles);
 player.setColliders(world.colliders);
-// A câmara fica livre para mostrar a cidade; não bloquear a vista com fachadas dos edifícios.
+// As fachadas dos dez blocos são obstáculos visuais: a câmara não pode mostrar através dos prédios.
+player.setCameraOccluders(world.buildings.map(building => building.group));
 
 const moneyDisplay = document.querySelector('.money');
 let services = null;
@@ -577,8 +578,8 @@ function leaveHouse() {
   if (house.interiorRoof) house.interiorRoof.visible = true;
   if (house.exterior) house.exterior.visible = true;
   activeHouse = null;
-  // Fora do hotel, a câmara volta a ficar livre para mostrar a cidade.
-  player.setCameraOccluders([]);
+  // Ao sair, voltar a bloquear a câmara nas fachadas dos prédios da cidade.
+  player.setCameraOccluders(world.buildings.map(building => building.group));
   elevatorPanel.hidden = true;
   homePanel.hidden = true;
   decorMode = false;
