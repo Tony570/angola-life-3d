@@ -14,12 +14,21 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     gold:mat(0xc29a58,.35,.4), green:mat(0x477b4d), red:mat(0x9d5146),
     glass:new THREE.MeshPhysicalMaterial({color:0x8fc4d3,transparent:true,opacity:.38,roughness:.18})
   };
+  const geometryCache = new Map();
+  function cachedGeometry(key, create) {
+    if (!geometryCache.has(key)) geometryCache.set(key, create());
+    return geometryCache.get(key);
+  }
   function box(parent,x,y,z,w,h,d,material,cast=true) {
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    const key = `b:${w}:${h}:${d}`;
+    const geometry = cachedGeometry(key, () => new THREE.BoxGeometry(w,h,d));
+    const mesh=new THREE.Mesh(geometry,material);
     mesh.position.set(x,y+h/2,z); mesh.castShadow=cast; mesh.receiveShadow=true; parent.add(mesh); return mesh;
   }
   function cylinder(parent,x,y,z,radius,height,material) {
-    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,height,14),material);
+    const key = `c:${radius}:${height}:14`;
+    const geometry = cachedGeometry(key, () => new THREE.CylinderGeometry(radius,radius,height,14));
+    const mesh=new THREE.Mesh(geometry,material);
     mesh.position.set(x,y+height/2,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh); return mesh;
   }
   function plant(parent,x,z) {
@@ -186,8 +195,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
       bulb.position.set(x,2.55,z); level.add(bulb);
     }
-    const ceilingLight = new THREE.PointLight(0xffdfb0,.55,20);
-    ceilingLight.position.set(0,2.35,0);
+    const ceilingLight = new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),new THREE.MeshBasicMaterial({color:0xffdfb0}));
+    ceilingLight.position.set(0,2.55,0);
     level.add(ceilingLight);
     return level;
   }
