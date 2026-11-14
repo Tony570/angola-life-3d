@@ -178,7 +178,7 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     const roofSign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.34), goldMaterial);
     roofSign.position.set(0, 1.9, -0.2);
     group.add(roofSign);
-    attachRealCar(group, { width: 2.3, length: 4.5, height: 1.65 });
+    attachRealCar(group, { width: 2.3, length: 4.5, height: 1.65, paintColor: 0x15945f });
 
     const taxi = {
       group,
