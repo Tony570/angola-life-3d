@@ -410,7 +410,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     // Colisão dos funcionários alinhada com as posições visuais reais (sem escala extra).
     for (const x of [-4.9,-2.6]) colliders.push({
       minX:building.x+x-.38,maxX:building.x+x+.38,
-      minZ:building.z+2.05-.38,maxZ:building.z+2.05+.38,
+      minZ:building.z+4.45-.38,maxZ:building.z+4.45+.38,
       floor:0
     });
     for (const door of doors) {
