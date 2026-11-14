@@ -68,7 +68,13 @@ export function createKilambaDistrict(scene) {
     const g=new THREE.Group(), facade=index%3===0?M.cream:index%3===1?M.sand:M.white;
     const accent=index%2===0?M.terracotta:M.red, w=15.5,d=12.5,floors=5,fh=3.05,h=floors*fh+.9;
     const front=facing*d/2;
-    box(g,0,0,0,w,h,d,facade);
+    // Estrutura arquitetónica com vãos reais, em vez de um volume maciço.
+    box(g,-w/2+.18,0,0,.36,h,d,facade);
+    box(g,w/2-.18,0,0,.36,h,d,facade);
+    box(g,0,0,-d/2+.18,w,h,.36,facade);
+    box(g,0,0,0,w,.28,d,M.concrete);
+    for(let floor=1;floor<floors;floor++) box(g,0,floor*fh-.12,0,w+.2,.24,d+.2,M.white);
+    for(const px of [-7.35,-3.35,0,3.35,7.35]) box(g,px,0,front,.28,h,.42,facade);
     box(g,-w/2+.28,0,front+facing*.12,.42,h,.3,accent);
     box(g,w/2-.28,0,front+facing*.12,.42,h,.3,accent);
     box(g,0,0,front+facing*.2,w+.25,.32,.38,M.white);
