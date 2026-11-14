@@ -71,18 +71,19 @@ function updateRenderQuality() {
   renderer.setPixelRatio(Math.min(deviceRatio, cap));
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.35));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
 // Sombras dinâmicas são dispendiosas em telemóveis e não são essenciais nesta fase.
 renderer.shadowMap.enabled = false;
-sun.castShadow = false;
 game.prepend(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight('#f4f8ff', '#78634e', 2.25));
 const sun = new THREE.DirectionalLight('#fff3dc', 1.85);
 sun.position.set(-40, 70, 35);
+sun.castShadow = false;
 scene.add(sun);
 
 // Bairro Kilamba: ruas, passeios, jardins e exatamente dez blocos habitáveis.
@@ -168,6 +169,16 @@ elevatorPanel.innerHTML = `
 `;
 game.appendChild(elevatorPanel);
 const elevatorLabel = elevatorPanel.querySelector('#elevator-current-floor');
+const homePanel = document.createElement('section');
+homePanel.id = 'home-tools'; homePanel.hidden = true;
+homePanel.innerHTML = ['<div class="home-tools-heading"><strong>CASA</strong><button type="button" id="close-home-tools">✕</button></div>','<button type="button" id="toggle-decor-mode">🪴 MODO DECORAÇÃO</button>','<div id="decor-catalog" hidden><small>ESCOLHE UM OBJETO</small><div class="decor-items"><button type="button" data-decor="plant">🌿 Planta</button><button type="button" data-decor="table">🪑 Mesa</button><button type="button" data-decor="chair">🛋️ Cadeira</button></div><div class="decor-actions"><button type="button" id="rotate-decor">↻ Rodar</button><button type="button" id="remove-decor">⌫ Apagar último</button></div></div>','<small id="home-tools-help">Aproxima-te dos móveis e usa INTERAGIR.</small>'].join('');
+game.appendChild(homePanel);
+const decorCatalog = homePanel.querySelector('#decor-catalog');
+let decorMode = false, decorRotation = 0, selectedDecor = 'plant';
+const decorMaterials = {wood:new THREE.MeshStandardMaterial({color:0x805638,roughness:.82}),green:new THREE.MeshStandardMaterial({color:0x39764a,roughness:.9}),pot:new THREE.MeshStandardMaterial({color:0xa65f3d,roughness:.9}),fabric:new THREE.MeshStandardMaterial({color:0x547b89,roughness:.95})};
+function createDecorObject(type) { const group=new THREE.Group(); if(type==='plant'){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.42,10),decorMaterials.pot);pot.position.y=.21;group.add(pot);const leaves=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),decorMaterials.green);leaves.position.y=.72;leaves.scale.set(.8,1.35,.8);group.add(leaves);}else if(type==='table'){const top=new THREE.Mesh(new THREE.BoxGeometry(1.15,.12,.8),decorMaterials.wood);top.position.y=.78;group.add(top);for(const x of [-.48,.48])for(const z of [-.3,.3]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.09,.75,.09),decorMaterials.wood);leg.position.set(x,.37,z);group.add(leg);}}else{const seat=new THREE.Mesh(new THREE.BoxGeometry(.8,.18,.72),decorMaterials.fabric);seat.position.y=.48;group.add(seat);const back=new THREE.Mesh(new THREE.BoxGeometry(.8,.72,.12),decorMaterials.fabric);back.position.set(0,.82,-.3);group.add(back);for(const x of [-.3,.3])for(const z of [-.25,.25]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.07,.42,.07),decorMaterials.wood);leg.position.set(x,.21,z);group.add(leg);}}group.userData.isPlayerDecoration=true;return group;}
+function placeDecoration(type=selectedDecor) {if(!activeHouse||!decorMode||player.sitting)return;const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-activeFloor*activeHouse.floorHeight)<.01);if(!level)return;const forward=new THREE.Vector3(Math.sin(player.group.rotation.y),0,Math.cos(player.group.rotation.y));const pos=player.group.position.clone().addScaledVector(forward,1.7);const x=pos.x-activeHouse.interiorX,z=pos.z-activeHouse.interiorZ;if(Math.abs(x)>7.4||Math.abs(z)>7.4)return;const item=createDecorObject(type);item.position.set(x,0,z);item.rotation.y=decorRotation;level.add(item);if(!activeHouse.decorations)activeHouse.decorations=[];activeHouse.decorations.push(item);}
+homePanel.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='close-home-tools')homePanel.hidden=true;if(button.id==='toggle-decor-mode'){decorMode=!decorMode;decorCatalog.hidden=!decorMode;button.textContent=decorMode?'✓ MODO DECORAÇÃO ATIVO':'🪴 MODO DECORAÇÃO';}if(button.dataset.decor){selectedDecor=button.dataset.decor;placeDecoration(selectedDecor);}if(button.id==='rotate-decor')decorRotation+=Math.PI/4;if(button.id==='remove-decor'&&activeHouse?.decorations?.length){const last=activeHouse.decorations.pop();last.parent?.remove(last);}});
 
 function nearestHouse() {
   if (activeHouse) return activeHouse;
@@ -214,6 +225,7 @@ function enterHouse(house) {
   player.setColliders(house.colliders);
   player.teleport(house.interiorX, house.interiorZ + 6.2);
   elevatorPanel.hidden = false;
+  homePanel.hidden = false;
   goToFloor(0);
   interactButton.textContent = '🚪 SAIR DO BLOCO';
 }
@@ -225,6 +237,9 @@ function leaveHouse() {
   if (house.exterior) house.exterior.visible = true;
   activeHouse = null;
   elevatorPanel.hidden = true;
+  homePanel.hidden = true;
+  decorMode = false;
+  decorCatalog.hidden = true;
   player.setIndoor(false);
   player.setColliders(world.colliders);
   player.teleport(house.entranceX, house.entranceZ + 1.5);
@@ -242,10 +257,16 @@ function interactWithHouse() {
       return;
     }
     if (activeInteractable) {
-      const position = new THREE.Vector3();
-      activeInteractable.getWorldPosition(position);
-      player.sitAt(position.x, position.z + 1.15, activeInteractable.userData.houseAction.rotationY || 0);
-      return;
+      const action=activeInteractable.userData.houseAction;
+      const position=activeInteractable.getWorldPosition(new THREE.Vector3());
+      const showHomeMessage=message=>{districtLocation.textContent=message;window.setTimeout(()=>{if(activeHouse)districtLocation.textContent='🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(activeFloor);},1800);};
+      if(action.type==='sit'||action.type==='bed'||action.type==='toilet'){player.sitAt(position.x,position.z+(action.offsetZ||1),action.rotationY||0);return;}
+      if(action.type==='door'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.userData.houseDoorHinge.rotation.y=activeInteractable.userData.houseDoorBaseRotation+(open?action.openRotation:0);activeInteractable.userData.houseDoorCollider.active=!open;activeHouse.colliders=activeHouse.colliders.filter(item=>!item._houseDoor);activeHouse.interior.traverse(object=>{const c=object.userData?.houseDoorCollider;if(c?.active)activeHouse.colliders.push({minX:activeHouse.interiorX+c.x-c.w/2,maxX:activeHouse.interiorX+c.x+c.w/2,minZ:activeHouse.interiorZ+c.z-c.d/2,maxZ:activeHouse.interiorZ+c.z+c.d/2,_houseDoor:true});});player.setColliders(activeHouse.colliders);showHomeMessage(open?'🚪 PORTA ABERTA':'🚪 PORTA FECHADA');return;}
+      if(action.type==='stove'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.emissive.setHex(on?0xff4b08:0x000000);activeInteractable.material.emissiveIntensity=on ? .8 : 0;showHomeMessage(on?'🔥 FOGÃO LIGADO':'Fogão desligado');return;}
+      if(action.type==='fridge'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.rotation.y=open ? .85 : 0;showHomeMessage(open?'🧊 FRIGORÍFICO ABERTO':'Frigorífico fechado');return;}
+      if(action.type==='shower'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.opacity=on ? .68 : .38;showHomeMessage(on?'🚿 DUCHE LIGADO':'Duche desligado');return;}
+      if(action.type==='sink'){showHomeMessage('🚰 A LAVAR AS MÃOS');return;}
+      if(action.type==='wardrobe'){showHomeMessage('👕 GUARDA-ROUPA · A LOJA DE ROUPA SERÁ INTEGRADA AQUI');return;}
     }
     leaveHouse();
     return;
@@ -280,7 +301,7 @@ function updateHousePrompt() {
     }
     activeInteractable = nearest;
     interactButton.textContent = nearest
-      ? '🪑 ' + nearest.userData.houseAction.label
+      ? 'E · ' + nearest.userData.houseAction.label
       : '🚪 SAIR DO BLOCO';
     return;
   }
