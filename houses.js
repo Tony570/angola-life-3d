@@ -538,9 +538,55 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       for (const x of [-5, 0, 5]) {
         box(g, x, 0.05, -3, 3.8, 0.12, 6.0, gold);
       }
+    } else if (kind === 'police') {
+      box(g, 0, 0.55, 5.7, 10, 1.1, 1.0, dark);
+      box(g, 0, 1.15, 5.7, 10.2, 0.12, 1.2, gold);
+      for (const x of [-5, 0, 5]) {
+        box(g, x, 0.35, -2.8, 2.0, 0.75, 1.0, wood);
+        box(g, x, 1.15, -2.8, 2.0, 0.9, 0.12, glass, false);
+      }
+    } else if (kind === 'hospital' || kind === 'clinic') {
+      box(g, 0, 0.55, 5.7, 10, 1.1, 1.0, wall);
+      box(g, 0, 1.15, 5.7, 10.2, 0.12, 1.2, gold);
+      for (const x of [-5, 0, 5]) {
+        box(g, x, 0.15, -2.8, 2.6, 0.16, 1.0, dark);
+        box(g, x, 0.9, -2.8, 2.6, 0.12, 0.12, glass, false);
+      }
+      for (const z of [-5.5, -1.0]) {
+        box(g, -6.0, 0.35, z, 2.2, 0.65, 0.85, mat.white);
+        box(g, -6.0, 0.78, z - 0.28, 2.2, 0.12, 0.3, mat.fabric);
+      }
+    } else if (['university', 'school', 'technical-school'].includes(kind)) {
+      box(g, 0, 2.2, -8.55, 10, 2.6, 0.12, dark);
+      for (const z of [-4.5, 0, 4.5]) {
+        for (const x of [-5.2, 0, 5.2]) {
+          box(g, x, 0.85, z, 2.4, 0.12, 1.2, wood);
+          box(g, x, 0.42, z + 0.55, 0.12, 0.85, 0.12, dark);
+          box(g, x, 0.42, z - 0.55, 0.12, 0.85, 0.12, dark);
+        }
+      }
+    } else if (kind === 'market') {
+      for (const x of [-6, -2, 2, 6]) {
+        box(g, x, 0.65, -1.5, 2.6, 1.3, 2.4, wood);
+        box(g, x, 1.38, -1.5, 2.8, 0.12, 2.6, gold);
+        for (let n = 0; n < 4; n++) {
+          cylinder(g, x - 0.8 + n * 0.52, 1.5, -1.5, 0.22, 0.35, [mat.green, gold, mat.red, mat.white][n], 8);
+        }
+      }
+    } else if (kind === 'fire-station' || kind === 'transport-terminal') {
+      for (const z of [-5, -1, 3]) {
+        box(g, 0, 0.55, z, 12, 0.14, 0.8, wood);
+        for (const x of [-5, 5]) box(g, x, 0.05, z, 0.12, 0.55, 0.12, dark);
+      }
+      box(g, 0, 0.55, 6, 8, 1.1, 1.0, wall);
     } else {
-      box(g, 0, 0.5, 5.8, 8, 1.0, 1.0, wood);
+      // Recepção de serviços públicos e administração.
+      box(g, 0, 0.55, 5.8, 8, 1.0, 1.0, wood);
       box(g, 0, 1.1, 5.8, 8.2, 0.12, 1.2, gold);
+      for (const x of [-5, 5]) {
+        box(g, x, 0.2, -2.5, 2.1, 0.8, 1.0, mat.fabric);
+        box(g, x, 0.95, -2.8, 2.1, 1.2, 0.12, wall);
+      }
     }
 
     const interiorX = 500 + (index + 100) * 35;
@@ -564,7 +610,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
   const locations = (world.buildings || [])
     .filter(building =>
       ((building.type === 'house' || building.type === 'apartment') && building.forSale !== false) ||
-      (building.type === 'shop' && ['boutique', 'bank', 'hotel', 'car-dealer'].includes(building.kind))
+      building.type === 'shop'
     )
     .map(building => ({
       name: building.propertyType || building.facility || 'Casa',
