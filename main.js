@@ -468,6 +468,7 @@ let services = null;
 const online = createOnlineAccount({
   onProfile(data) {
     if (services) services.syncOnlineData(data);
+    if (data?.profile?.appearance) player.setAppearance(data.profile.appearance);
   }
 });
 
@@ -480,7 +481,7 @@ services = createServices({
   }
 });
 
-const taxiTransport = createTaxiTransport({ scene, world, player, services, game });
+const taxiTransport = createTaxiTransport({ scene, world, player, services, game });\n\nwindow.addEventListener('angolaLife3D:clothingPurchase', event => {\n  const item = event.detail?.name;\n  if (item) player.equipClothing(item);\n});
 
 function createCityBuildingColliders(buildings = []) {
   const colliders = [];
