@@ -5,7 +5,6 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 
 const HUMAN_HEIGHT = 2.5;
-
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 const URLS = {
@@ -28,7 +27,9 @@ const JOBS = [
     z: -45,
     patrol: true,
     axis: 'z',
-    outfit: 0x263b65
+    outfit: 0x263b65,
+    service: 'police',
+    serviceName: 'Esquadra de Polícia'
   },
   {
     role: 'Agente de trânsito',
@@ -61,7 +62,9 @@ const JOBS = [
     x: 76.1,
     z: 15,
     patrol: false,
-    outfit: 0x283e55
+    outfit: 0x283e55,
+    service: 'hotel',
+    serviceName: 'Hotel'
   },
   {
     role: 'Funcionário de hotel',
@@ -86,6 +89,26 @@ const JOBS = [
     z: -75,
     patrol: false,
     outfit: 0x743f83
+  },
+  {
+    role: 'Atendente do mercado',
+    gender: 'female',
+    x: -72,
+    z: -25,
+    patrol: false,
+    outfit: 0x3d704b,
+    service: 'market',
+    serviceName: 'Mercado'
+  },
+  {
+    role: 'Atendente do posto de combustível',
+    gender: 'male',
+    x: 72,
+    z: -35,
+    patrol: false,
+    outfit: 0x263b65,
+    service: 'fuel',
+    serviceName: 'Posto de Combustível'
   }
 ];
 
@@ -182,6 +205,12 @@ function makeNPC(scene, job, assets, index) {
   root.userData.role = job.role;
   root.userData.job = job.role;
 
+  if (job.service) {
+    root.userData.service = job.service;
+    root.userData.serviceName = job.serviceName || job.role;
+    root.userData.clickableService = true;
+  }
+
   scene.add(root);
 
   const mixer = new THREE.AnimationMixer(normalizedModel);
@@ -207,6 +236,7 @@ function makeNPC(scene, job, assets, index) {
     walk,
     current: idle ? 'idle' : 'walk',
     role: job.role,
+    service: job.service || null,
     patrol: Boolean(job.patrol),
     axis: job.axis || 'z',
     originX: job.x,
@@ -248,7 +278,7 @@ export function createPeople(scene, world) {
       });
 
       console.log(
-        'ANGOLA LIFE 3D: habitantes carregados:',
+        'ANGOLA LIFE 3D: habitantes e funcionários carregados:',
         world.npcs.length
       );
     })
@@ -257,10 +287,6 @@ export function createPeople(scene, world) {
     });
 }
 
-/*
- * Cria garçonetes humanas para os restaurantes.
- * A função será ligada ao sistema dos restaurantes no main.js.
- */
 export async function createRestaurantStaff(scene, restaurants = []) {
   const assets = await loadAssets();
   const staff = [];
