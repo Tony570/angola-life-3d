@@ -56,7 +56,8 @@ export function createKilambaDistrict(scene) {
   }
   function roads() {
     // Terreno urbano contínuo do bairro.
-    box(scene,0,-.32,0,190,.55,170,M.ground,false);
+    // A superfície do terreno fica abaixo das ruas e passeios; antes cobria-os por completo.
+    box(scene,0,-.55,0,190,.30,170,M.ground,false);
 
     // Avenida principal: duas faixas largas, bermas e separador ajardinado.
     box(scene,0,-.02,0,190,.12,16,M.asphalt,false);
