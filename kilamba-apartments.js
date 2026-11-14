@@ -5,8 +5,9 @@ import * as THREE from 'three';
 export function createHouseSystem(scene, world = { buildings: [] }) {
   const houses = [];
   const FLOOR_HEIGHT = 5.0;
-  const INTERIOR_SCALE_XZ = 1.5;
-  const INTERIOR_SCALE_Y = 1.35;
+  // Interior amplo: 1,70x em largura, profundidade e altura.
+  const INTERIOR_SCALE_XZ = 1.70;
+  const INTERIOR_SCALE_Y = 1.70;
   const FLOOR_COUNT = 5;
   const mat = (color, roughness=.82, metalness=0) => new THREE.MeshStandardMaterial({color,roughness,metalness});
   const M = {
@@ -316,11 +317,40 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       addReceptionLobby(level,variant);
       addHotelLobbyFurniture(level,variant);
     }
-    // Pisos superiores ficam vazios e prontos para venda/decoração pelo futuro proprietário.
     addWindowsAndBalcony(level);
     if (floorIndex > 0) {
       addDoor(level,doorList,-1.95,-5.0,2.6,floorIndex,0,1.35);
       addDoor(level,doorList,5.0,-3.7,.9,floorIndex,Math.PI/2,1.35);
+
+      // Todos os apartamentos recebem decoração completa e uma paleta própria.
+      // A divisão fica 1,70x maior; os móveis mantêm dimensões humanas realistas.
+      const furniture = new THREE.Group();
+      level.add(furniture);
+      addApartmentFurniture(furniture,variant);
+      addPremiumDetails(furniture,variant);
+      for (const object of furniture.children) object.position.multiplyScalar(INTERIOR_SCALE_XZ);
+      furniture.scale.setScalar(1 / INTERIOR_SCALE_XZ);
+
+      const apartmentPalettes = [
+        [0x3f7180,0xd6a34a,0xe6d8c4],
+        [0x8b5264,0xd4a76a,0xe8dfd2],
+        [0x4d795e,0xd8b65d,0xe8e0d0],
+        [0x59658e,0xc18a58,0xe7e1d7],
+        [0x9a6548,0x6f9a9b,0xf0e2cf],
+        [0x6c5b8b,0xc8a65d,0xe9e0d6],
+        [0x3f7772,0xc47d62,0xe8e1d4],
+        [0x8a7445,0x5d8094,0xeee4d5]
+      ];
+      const [accentColor,detailColor,lightColor] = apartmentPalettes[Math.abs(variant)%apartmentPalettes.length];
+      const accentMaterial = mat(accentColor,.72);
+      const detailMaterial = mat(detailColor,.48,.12);
+      const lightMaterial = mat(lightColor,.82);
+      // Parede de destaque, rodapé colorido e tapete para dar identidade a cada casa.
+      box(level,0,.08,-8.08,8.8,.14,.055,detailMaterial,false);
+      box(level,0,1.48,-8.08,7.2,1.45,.045,accentMaterial,false);
+      box(level,0,1.48,-8.045,6.9,1.18,.025,lightMaterial,false);
+      box(level,-4.8,.025,3.0,6.4,.035,4.7,accentMaterial,false);
+      box(level,-4.8,.047,3.0,6.1,.018,4.4,lightMaterial,false);
     }
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
