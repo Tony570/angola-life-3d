@@ -175,7 +175,7 @@ function goToFloor(floor) {
   activeFloor = next;
   activeHouse.currentFloor = next;
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
-  player.teleport(activeHouse.interiorX, 6.2);
+  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 6.2);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.floor) === next);
@@ -196,7 +196,7 @@ function enterHouse(house) {
   player.setIndoor(true);
   player.setIndoorFloor(0.16);
   player.setColliders(house.colliders);
-  player.teleport(house.interiorX, 6.2);
+  player.teleport(house.interiorX, house.interiorZ + 6.2);
   elevatorPanel.hidden = false;
   goToFloor(0);
   interactButton.textContent = '🚪 SAIR DO BLOCO';
@@ -211,7 +211,7 @@ function leaveHouse() {
   elevatorPanel.hidden = true;
   player.setIndoor(false);
   player.setColliders(world.colliders);
-  player.teleport(house.entranceX, house.entranceZ + (house.entranceZ > house.z ? 1.2 : -1.2));
+  player.teleport(house.entranceX, house.entranceZ + 1.5);
   player.cameraDistance = 7;
   player.updateCamera();
   interactButton.textContent = '🏠 ENTRAR EM CASA';
