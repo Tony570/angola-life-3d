@@ -49,7 +49,7 @@ app.innerHTML = `
       </div>
       <div class="phone-heading">
         <div>
-          <small>MAPA COMPLETO · 16 MUNICÍPIOS</small>
+          <small>10 BAIRROS · ILHA DE LUANDA</small>
           <strong>Luanda, Angola</strong>
         </div>
         <button id="close-map" aria-label="Fechar mapa">✕</button>
@@ -1266,7 +1266,7 @@ document.querySelector('#close-map').addEventListener('click', () => {
 });
 
 function mapPercent(value) {
-  return THREE.MathUtils.clamp(((value + 540) / 1080) * 100, 3, 97);
+  return THREE.MathUtils.clamp(((value + 430) / 860) * 100, 3, 97);
 }
 
 function getPlayerMapPosition() {
