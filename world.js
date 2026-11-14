@@ -320,8 +320,8 @@ export function createWorld(scene) {
     box(group, -width / 2 + 0.15, 0.3, 0, 0.3, height, depth, wall);
     box(group, width / 2 - 0.15, 0.3, 0, 0.3, height, depth, wall);
     box(group, 0, 0.3, -depth / 2 + 0.15, width, height, 0.3, wall);
-    box(group, -width * 0.36, 0.3, depth / 2, width * 0.28, height, 0.3, wall);
-    box(group, width * 0.36, 0.3, depth / 2, width * 0.28, height, 0.3, wall);
+    box(group, -width / 2 + 0.15, 0.3, depth / 2, 0.3, height, 0.3, wall);
+    box(group, width / 2 - 0.15, 0.3, depth / 2, 0.3, height, 0.3, wall);
     box(group, 0, 2.5, depth / 2, width * 0.16, Math.max(0.2, height - 2.5), 0.3, wall);
     box(group, 0, 0.3, depth / 2, width * 0.16, 0.35, 0.3, wall);
     box(group, 0, height - 0.15, depth / 2, width, 0.3, 0.3, wall);
