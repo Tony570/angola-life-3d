@@ -110,6 +110,8 @@ export class Player {
       this.group.add(visualRoot);
       this.model = model;
       this.normalizedModel = visualRoot;
+      this.applyAppearance();
+      this.applyClothing();
 
       model.traverse(object => {
         if (object.isMesh) {
@@ -171,6 +173,88 @@ export class Player {
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
     }
+  }
+
+  setAppearance(appearance = {}) {
+    this.appearance = {
+      skin: appearance.skin || '#8d5524',
+      hair: appearance.hair || '#21160f',
+      eyes: appearance.eyes || '#3b2418',
+      hairstyle: appearance.hairstyle || 'curto'
+    };
+    this.applyAppearance();
+  }
+
+  applyAppearance() {
+    if (!this.model || !this.appearance) return;
+    const colors = {
+      skin: new THREE.Color(this.appearance.skin),
+      hair: new THREE.Color(this.appearance.hair),
+      eyes: new THREE.Color(this.appearance.eyes)
+    };
+    this.model.traverse(object => {
+      if (!object.isMesh || !object.material) return;
+      const name = (object.name || '').toLowerCase();
+      let key = null;
+      if (/hair|cabelo|beard|barba/.test(name)) key = 'hair';
+      else if (/eye|iris|pupil|olho/.test(name)) key = 'eyes';
+      else if (/skin|face|head|body|arm|hand|leg|neck|pele|rosto/.test(name)) key = 'skin';
+      if (!key) return;
+      const source = Array.isArray(object.material) ? object.material : [object.material];
+      const changed = source.map(material => {
+        const clone = material.clone();
+        if (clone.color) clone.color.copy(colors[key]);
+        return clone;
+      });
+      object.material = Array.isArray(object.material) ? changed : changed[0];
+    });
+  }
+
+  equipClothing(itemName) {
+    this.clothing = { ...(this.clothing || {}), [this.clothingSlot(itemName)]: itemName };
+    this.applyClothing();
+  }
+
+  clothingSlot(itemName = '') {
+    const value = String(itemName).toLowerCase();
+    if (/calça|jeans|short|saia/.test(value)) return 'bottom';
+    if (/sapato|ténis|sapatilha|bota/.test(value)) return 'shoes';
+    if (/vestido/.test(value)) return 'outfit';
+    if (/casaco|jaqueta|blusão/.test(value)) return 'outer';
+    return 'top';
+  }
+
+  applyClothing() {
+    if (!this.model || !this.clothing) return;
+    const palette = {
+      top: 0x2877a8,
+      bottom: 0x26344c,
+      shoes: 0x202020,
+      outfit: 0x8e3154,
+      outer: 0x394c45
+    };
+    const patterns = {
+      top: /shirt|top|torso|upper|tshirt|camisa|roupa_superior/,
+      bottom: /pant|trouser|jean|short|skirt|bottom|calça/,
+      shoes: /shoe|boot|sneaker|footwear|sapato/,
+      outfit: /dress|vestido/,
+      outer: /jacket|coat|blazer|casaco/
+    };
+    this.model.traverse(object => {
+      if (!object.isMesh || !object.material) return;
+      const name = (object.name || '').toLowerCase();
+      for (const [slot, pattern] of Object.entries(patterns)) {
+        if (!this.clothing[slot] || !pattern.test(name)) continue;
+        const source = Array.isArray(object.material) ? object.material : [object.material];
+        const changed = source.map(material => {
+          const clone = material.clone();
+          if (clone.color) clone.color.setHex(palette[slot]);
+          return clone;
+        });
+        object.material = Array.isArray(object.material) ? changed : changed[0];
+        break;
+      }
+    });
   }
 
   setAnimation(name) {
