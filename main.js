@@ -380,9 +380,8 @@ function addReceptionistUniform(group, variant=0) {
   if (!group || group.userData.hotelUniformApplied) return;
   group.userData.hotelUniformApplied = true;
 
-  // O átrio tem escala arquitectónica 1,70x. Compensa-a no personagem
-  // para que a altura final continue exactamente igual à do jogador (2,5 m).
-  group.scale.setScalar(1 / 1.7);
+  // createReceptionist já compensa a escala 1,70x do interior.
+  // Não voltar a reduzir aqui: isso deixava os rececionistas com metade da altura.
 
   const looks = [
     {skin:0x875236,hair:0x17110e,eyes:0x392318,uniform:0x172b43,shirt:0xf4f1e9,trousers:0x20252c,hairstyle:1.08,head:1.025},
