@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
 const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
 const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
@@ -148,6 +149,7 @@ export class Player {
 
       if (results[0].status === 'fulfilled') {
         const clip = results[0].value.animations[0];
+        this.idleClip = clip || null;
 
         if (clip) {
           this.idleAction = this.mixer.clipAction(clip);
@@ -170,9 +172,27 @@ export class Player {
       }
 
       console.log('Personagem carregado.');
+      if (typeof this.onModelReady === 'function') this.onModelReady();
     } catch (error) {
       console.error('Erro ao carregar personagem:', error);
     }
+  }
+
+  createResident(parent, x, y, z, rotationY = 0) {
+    if (!this.normalizedModel || !parent) return null;
+    const group = new THREE.Group();
+    const visual = cloneSkeleton(this.normalizedModel);
+    group.add(visual);
+    group.position.set(x, y, z);
+    group.rotation.y = rotationY;
+    parent.add(group);
+    let mixer = null;
+    if (this.idleClip) {
+      mixer = new THREE.AnimationMixer(visual);
+      const idle = mixer.clipAction(this.idleClip);
+      idle.play();
+    }
+    return { group, mixer };
   }
 
   setAppearance(appearance = {}) {
