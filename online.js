@@ -350,6 +350,14 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     isAuthenticated: () => Boolean(session?.user?.id && profile?.id === session.user.id),
     getUser: () => session?.user || null,
     getProfile: () => profile,
+    async saveAppearance(appearance) {
+      if (!session?.user?.id) throw new Error('Inicia sessão para guardar a aparência.');
+      const { data, error } = await supabase.auth.updateUser({ data: { appearance } });
+      if (error) throw error;
+      profile = { ...(profile || {}), appearance };
+      if (data?.user) session.user = data.user;
+      return appearance;
+    },
     loadPlayerData,
     async purchaseItem(itemKey, quantity = 1) {
       const { data, error } = await supabase.rpc('purchase_game_item', {
