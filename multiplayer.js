@@ -117,6 +117,7 @@ export function createMultiplayer({ scene, player, online } = {}) {
   let sendTimer = 0;
   let pruneTimer = 0;
   let lastSent = null;
+  let lastAppearanceSignature = '';
   let assets = null;
   let loadingAssets = null;
 
@@ -226,7 +227,7 @@ export function createMultiplayer({ scene, player, online } = {}) {
           const profile = online.getProfile() || {};
           await channel.track({
             nickname: profile.nickname || user.user_metadata?.nickname || 'Jogador',
-            appearance: profile.appearance || player.appearance || {},
+            appearance,
             position: { x: localPosition().x, y: localPosition().y, z: localPosition().z },
             rotationY: player.group.rotation.y
           });
@@ -249,12 +250,16 @@ export function createMultiplayer({ scene, player, online } = {}) {
       z: Number(position.z.toFixed(2)),
       rotationY: Number((player.currentVehicle?.group.rotation.y ?? player.group.rotation.y).toFixed(2))
     };
-    if (lastSent &&
+    const profile = online.getProfile() || {};
+    const appearance = profile.appearance || player.appearance || {};
+    const appearanceSignature = JSON.stringify(appearance);
+    const appearanceChanged = appearanceSignature !== lastAppearanceSignature;
+    if (!appearanceChanged && lastSent &&
       Math.abs(current.x - lastSent.x) < 0.08 &&
       Math.abs(current.z - lastSent.z) < 0.08 &&
       Math.abs(current.rotationY - lastSent.rotationY) < 0.08) return;
     lastSent = current;
-    const profile = online.getProfile() || {};
+    lastAppearanceSignature = appearanceSignature;
     await loaderState.channel.send({
       type: 'broadcast',
       event: 'player-position',
