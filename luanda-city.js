@@ -26,6 +26,8 @@ export function expandLuandaCity(scene, world) {
     concrete: material(0xb8b4a9),
     white: material(0xf0e9dc),
     dark: material(0x30383a),
+    wood: material(0x80583b, 0.82),
+    metal: material(0x59636a, 0.48, 0.68),
     glass: new THREE.MeshPhysicalMaterial({
       color: 0x8fc5d2, roughness: 0.18, metalness: 0.08,
       transparent: true, opacity: 0.72
