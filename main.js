@@ -56,25 +56,28 @@ const camera = new THREE.PerspectiveCamera(
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const renderer = new THREE.WebGLRenderer({
-  antialias: true,
+  antialias: !isMobile,
   powerPreference: 'high-performance',
   alpha: false,
   stencil: false,
   depth: true,
-  precision: 'highp'
+  precision: 'mediump'
 });
 
-// A resolução reduzida anterior (0.85 no telemóvel) tornava toda a cidade desfocada.
+// Perfil leve para telemóveis: evita renderização em excesso e mantém a imagem nítida.
 function updateRenderQuality() {
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 1.75));
+  const deviceRatio = window.devicePixelRatio || 1;
+  const cap = isMobile ? 1.0 : 1.35;
+  renderer.setPixelRatio(Math.min(deviceRatio, cap));
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Sombras dinâmicas são dispendiosas em telemóveis e não são essenciais nesta fase.
+renderer.shadowMap.enabled = false;
+sun.castShadow = false;
 game.prepend(renderer.domElement);
 
 scene.add(new THREE.HemisphereLight('#f4f8ff', '#78634e', 2.25));
@@ -145,6 +148,7 @@ bankButton.addEventListener('click', openBank);
 
 let activeHouse = null;
 let activeFloor = 0;
+let activeInteractable = null;
 const districtLocation = document.querySelector('#district-location');
 
 // Painel de elevador: rés-do-chão e quatro pisos residenciais.
@@ -194,6 +198,12 @@ elevatorPanel.addEventListener('click', event => {
 });
 function enterHouse(house) {
   house.ensureInterior();
+  if (!house.interactables) {
+    house.interactables = [];
+    house.interior.traverse(object => {
+      if (object.userData && object.userData.houseAction) house.interactables.push(object);
+    });
+  }
   house.interior.visible = true;
   if (house.interiorRoof) house.interiorRoof.visible = false;
   if (house.exterior) house.exterior.visible = false;
@@ -225,7 +235,21 @@ function leaveHouse() {
 }
 function interactWithHouse() {
   if (services.isOpen()) return;
-  if (activeHouse) { leaveHouse(); return; }
+  if (activeHouse) {
+    if (player.sitting) {
+      player.standUp();
+      activeInteractable = null;
+      return;
+    }
+    if (activeInteractable) {
+      const position = new THREE.Vector3();
+      activeInteractable.getWorldPosition(position);
+      player.sitAt(position.x, position.z + 1.15, activeInteractable.userData.houseAction.rotationY || 0);
+      return;
+    }
+    leaveHouse();
+    return;
+  }
   const house = nearestHouse();
   if (house) enterHouse(house);
   else {
@@ -236,10 +260,41 @@ function interactWithHouse() {
 interactButton.addEventListener('click', interactWithHouse);
 player.onInteract = interactWithHouse;
 function updateHousePrompt() {
-  if (activeHouse || services.isOpen()) return;
+  if (services.isOpen()) return;
+  if (activeHouse) {
+    if (player.sitting) {
+      activeInteractable = null;
+      interactButton.textContent = '🧍 LEVANTAR';
+      return;
+    }
+    let nearest = null;
+    let nearestDistance = 2.8;
+    for (const object of activeHouse.interactables || []) {
+      if (!object.visible) continue;
+      const position = object.getWorldPosition(new THREE.Vector3());
+      const distance = Math.hypot(player.group.position.x - position.x, player.group.position.z - position.z);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = object;
+      }
+    }
+    activeInteractable = nearest;
+    interactButton.textContent = nearest
+      ? '🪑 ' + nearest.userData.houseAction.label
+      : '🚪 SAIR DO BLOCO';
+    return;
+  }
+  activeInteractable = null;
   const house = nearestHouse();
-  if (house) { interactButton.textContent = '🏠 ENTRAR · '+house.name.toUpperCase(); districtLocation.textContent = '🏢 KILAMBA · '+house.name.toUpperCase(); }
-  else { interactButton.textContent = '🏠 ENTRAR EM CASA'; districtLocation.textContent = '🏙️ KILAMBA · BAIRRO RESIDENCIAL'; }
+  if (house) {
+    const prompt = '🏠 ENTRAR · ' + house.name.toUpperCase();
+    if (interactButton.textContent !== prompt) interactButton.textContent = prompt;
+    const location = '🏢 KILAMBA · ' + house.name.toUpperCase();
+    if (districtLocation.textContent !== location) districtLocation.textContent = location;
+  } else {
+    if (interactButton.textContent !== '🏠 ENTRAR EM CASA') interactButton.textContent = '🏠 ENTRAR EM CASA';
+    if (districtLocation.textContent !== '🏙️ KILAMBA · BAIRRO RESIDENCIAL') districtLocation.textContent = '🏙️ KILAMBA · BAIRRO RESIDENCIAL';
+  }
 }
 
 startButton.addEventListener('click', () => {
@@ -269,14 +324,26 @@ mobileControls.addEventListener('pointerleave', releaseMobileControl);
 
 const clock = new THREE.Clock();
 
+let promptAccumulator = 0;
+let renderAccumulator = 0;
 function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
 
   if (started && !services.isOpen()) {
     player.update(delta);
-    updateHousePrompt();
+    promptAccumulator += delta;
+    if (promptAccumulator >= 0.2) {
+      updateHousePrompt();
+      promptAccumulator = 0;
+    }
   }
 
+  // Em dispositivos móveis limita o desenho a 30 FPS, mantendo a simulação fluida.
+  if (isMobile) {
+    renderAccumulator += delta;
+    if (renderAccumulator < 1 / 30) return;
+    renderAccumulator = 0;
+  }
   renderer.render(scene, camera);
 }
 
