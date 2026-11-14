@@ -13,6 +13,7 @@ import {
 } from './people.js';
 import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
+import { createPlayerPhone } from './player-phone.js';
 import { createTaxiTransport } from './taxi-transport.js';
 import './style.css';
 
@@ -515,6 +516,7 @@ services = createServices({
   }
 });
 
+const playerPhone = createPlayerPhone({ game, online, services, player });
 const taxiTransport = createTaxiTransport({ scene, world, player, services, game });
 
 window.addEventListener('angolaLife3D:clothingPurchase', event => {
