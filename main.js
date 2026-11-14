@@ -1390,7 +1390,8 @@ function exitRestaurant() {
   scene.fog = outsideFog;
   player.setIndoor(false);
   player.setColliders(exteriorColliders);
-  player.teleport(restaurant.x, restaurant.z + 9.2);
+  // Afasta o jogador da porta para não voltar a entrar ao interagir.
+  player.teleport(restaurant.x, restaurant.z + 13.5);
   snapCameraToPlayer();
 
   actionButton.textContent = '🍽️ ENTRAR NO RESTAURANTE';
@@ -1458,7 +1459,8 @@ function exitHouse() {
   scene.fog = outsideFog;
   player.setColliders(exteriorColliders);
   player.group.visible = true;
-  player.teleport(house.entranceX, house.entranceZ + 1.4);
+  // Coloca o jogador fora da zona de entrada para impedir reentrada imediata.
+  player.teleport(house.entranceX, house.entranceZ + 5.5);
   snapCameraToPlayer();
 
   actionButton.textContent = house.isCommercial ? '🏬 ENTRAR NO ESTABELECIMENTO' : '🏠 ENTRAR EM CASA';
