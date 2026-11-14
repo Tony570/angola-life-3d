@@ -378,8 +378,12 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(3.15,4.25,2.55,1.15,0); add(6.15,4.25,1.85,1.15,0);
     add(4.7,5.2,1.95,1.12,0); add(-.1,5.85,1.45,.72,0);
     add(-7.0,1.0,.8,.8,0); add(7.0,1.0,.8,.8,0); add(6.45,6.7,1.4,.65,0);
-    // Os rececionistas também têm volume físico e não podem ser atravessados.
-    add(-4.65,2.05,.78,.78,0); add(-2.85,2.05,.78,.78,0);
+    // Colisão dos funcionários alinhada com as posições visuais reais (sem escala extra).
+    for (const x of [-4.9,-2.6]) colliders.push({
+      minX:building.x+x-.38,maxX:building.x+x+.38,
+      minZ:building.z+2.05-.38,maxZ:building.z+2.05+.38,
+      floor:0
+    });
     for (const door of doors) {
       const c=door.userData.houseDoorCollider;
       colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
