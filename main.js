@@ -203,8 +203,12 @@ function goToFloor(floor) {
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
   // Câmara interior próxima, semelhante à experiência de entrar num café no Avakin Life.
   // Mantém o personagem e o espaço visíveis sem recuar para paredes ou áreas exteriores.
+  // Câmara fixa no interior: fica atrás do personagem, virada para a recepção.
+  player.cameraYawOffset = Math.PI;
+  player.cameraPitch = 0;
   player.cameraDistance = 3.8;
-  player.cameraHeightAngle = 0.30;
+  player.cameraHeightAngle = 0.22;
+  player.group.rotation.y = Math.PI;
   player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 7.2);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
@@ -232,11 +236,21 @@ receptionPricePanel.innerHTML=`
       <button type="button" data-reception-info="apartments">Informações dos apartamentos</button>
       <button type="button" data-reception-info="welcome">Voltar ao atendimento</button>
     </div>
+    <div id="property-floor-options" hidden>
+      <small>ESCOLHE O PISO DO TEU APARTAMENTO</small>
+      <div class="property-floor-grid">
+        <button type="button" data-buy-floor="1">1.º ANDAR</button>
+        <button type="button" data-buy-floor="2">2.º ANDAR</button>
+        <button type="button" data-buy-floor="3">3.º ANDAR</button>
+        <button type="button" data-buy-floor="4">4.º ANDAR</button>
+      </div>
+      <small>Preço por apartamento: 500.000 Kz · Compra definitiva</small>
+    </div>
     <span id="reception-extra">Escolha o assunto para receber informações do rececionista.</span>
   </div>`;
 document.body.appendChild(receptionPricePanel);
 const hotelPriceStyle=document.createElement('style');
-hotelPriceStyle.textContent=`#reception-price-panel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(5,12,16,.78);backdrop-filter:blur(5px)}#reception-price-panel[hidden]{display:none!important}.hotel-price-card{position:relative;width:min(420px,94vw);max-height:88vh;overflow:auto;padding:28px 24px;border:1px solid #d7b66f;border-radius:20px;background:linear-gradient(145deg,#f4efe4,#d8cbb5);color:#25332f;box-shadow:0 24px 70px #000b;font-family:Arial,sans-serif}.hotel-price-card small{color:#8a642c;font-size:10px;font-weight:900;letter-spacing:2px}.hotel-price-card h2{margin:10px 0 12px;font-size:23px}.hotel-price-card p{margin:8px 0 12px;color:#4d5b53;font-size:13px;line-height:1.6}.hotel-price-card span{display:block;margin-top:16px;padding-top:13px;border-top:1px solid #b9ad99;color:#62675f;font-size:11px;line-height:1.55}.hotel-price-card #close-hotel-prices{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#263e35;color:#fff;font-size:22px}.reception-dialogue-actions{display:grid;gap:8px;margin-top:18px}.reception-dialogue-actions button{min-height:44px;padding:11px 14px;border:1px solid #b69a68;border-radius:10px;background:linear-gradient(135deg,#24483a,#17372d);color:#fff;text-align:left;font-size:12px;font-weight:800}.reception-dialogue-actions button:last-child{background:#e5ddce;color:#344238}`;
+hotelPriceStyle.textContent=`#reception-price-panel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(5,12,16,.78);backdrop-filter:blur(5px)}#reception-price-panel[hidden]{display:none!important}.hotel-price-card{position:relative;width:min(420px,94vw);max-height:88vh;overflow:auto;padding:28px 24px;border:1px solid #d7b66f;border-radius:20px;background:linear-gradient(145deg,#f4efe4,#d8cbb5);color:#25332f;box-shadow:0 24px 70px #000b;font-family:Arial,sans-serif}.hotel-price-card small{color:#8a642c;font-size:10px;font-weight:900;letter-spacing:2px}.hotel-price-card h2{margin:10px 0 12px;font-size:23px}.hotel-price-card p{margin:8px 0 12px;color:#4d5b53;font-size:13px;line-height:1.6}.hotel-price-card span{display:block;margin-top:16px;padding-top:13px;border-top:1px solid #b9ad99;color:#62675f;font-size:11px;line-height:1.55}.hotel-price-card #close-hotel-prices{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#263e35;color:#fff;font-size:22px}.reception-dialogue-actions{display:grid;gap:8px;margin-top:18px}.reception-dialogue-actions button{min-height:44px;padding:11px 14px;border:1px solid #b69a68;border-radius:10px;background:linear-gradient(135deg,#24483a,#17372d);color:#fff;text-align:left;font-size:12px;font-weight:800}.reception-dialogue-actions button:last-child{background:#e5ddce;color:#344238}#property-floor-options{margin-top:14px;padding:12px;border:1px solid #b69a68;border-radius:12px;background:#eee5d6}#property-floor-options[hidden]{display:none!important}#property-floor-options>small{display:block;margin:5px 0;color:#6d5631;font-size:10px;font-weight:800;letter-spacing:.5px}.property-floor-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}.property-floor-grid button{min-height:42px;border:0;border-radius:8px;background:#24483a;color:#fff;font-size:11px;font-weight:900}.property-floor-grid button:disabled{opacity:.55}`;
 document.head.appendChild(hotelPriceStyle);
 function openReceptionConversation(index=0) {
   const greeting=receptionPricePanel.querySelector('#reception-greeting');
@@ -249,12 +263,46 @@ function openReceptionConversation(index=0) {
 }
 receptionPricePanel.querySelector('#close-hotel-prices').addEventListener('click',()=>{receptionPricePanel.hidden=true;});
 receptionPricePanel.addEventListener('click',event=>{
+  const floorButton=event.target.closest('[data-buy-floor]');
+  if(floorButton){
+    const floor=Number(floorButton.dataset.buyFloor);
+    const dialogue=receptionPricePanel.querySelector('#reception-dialogue');
+    const extra=receptionPricePanel.querySelector('#reception-extra');
+    const propertyName=(activeHouse?.name || 'Bloco A')+' · Piso '+floor;
+    if(!online.isAuthenticated()){
+      dialogue.textContent='Para concluir uma compra segura e guardar o apartamento na tua conta, primeiro tens de iniciar sessão.';
+      extra.textContent='Abre CONTA no topo do ecrã, entra na tua conta e volta à recepção.';
+      online.open();
+      return;
+    }
+    floorButton.disabled=true;
+    dialogue.textContent='A confirmar a disponibilidade e o pagamento do apartamento...';
+    extra.textContent='Não feches esta janela enquanto a compra está a ser processada.';
+    online.purchaseKilambaApartment(propertyName,'Kilamba · '+(activeHouse?.name || 'Bloco A'))
+      .then(async result=>{
+        const data=await online.loadPlayerData();
+        services.syncOnlineData(data);
+        dialogue.textContent=result?.already_owned
+          ? 'Este apartamento já pertence à tua conta.'
+          : 'Compra concluída! O apartamento agora pertence-te.';
+        extra.textContent=propertyName+' · 500.000 Kz. A propriedade ficou registada na tua conta.';
+        floorButton.textContent='✓ ADQUIRIDO';
+      })
+      .catch(error=>{
+        dialogue.textContent=error.message || 'Não foi possível concluir a compra.';
+        extra.textContent='Confirma o saldo e tenta novamente. Cada apartamento só pode ter um proprietário.';
+        floorButton.disabled=false;
+      });
+    return;
+  }
   const button=event.target.closest('[data-reception-info]');
   if(!button)return;
   const dialogue=receptionPricePanel.querySelector('#reception-dialogue');
   const extra=receptionPricePanel.querySelector('#reception-extra');
+  const floorOptions=receptionPricePanel.querySelector('#property-floor-options');
+  floorOptions.hidden=button.dataset.receptionInfo!=='buy';
   const messages={
-    buy:['Para comprar um apartamento T2, o preço é 500.000 Kz. O apartamento é destinado a quem pretende ter a sua própria habitação no bloco.','Preço de compra: 500.000 Kz. A compra ainda não é concluída por esta conversa.'],
+    buy:['Temos apartamentos disponíveis do 1.º ao 4.º andar. Escolhe o piso abaixo para verificar a disponibilidade e concluir a compra na tua conta.','Preço fixo: 500.000 Kz. O apartamento comprado fica associado à tua conta.'],
     night:['Para passar uma noite no edifício, o valor é 1.000 Kz por noite.','Hospedagem: 1.000 Kz / noite.'],
     apartments:['Temos apartamentos T2 nos pisos residenciais. Pode conhecer os espaços e circular pelos pisos através do elevador.','Se precisar de mais informações, fale connosco aqui na receção.'],
     welcome:['Seja bem-vindo ao Kilamba. Estamos disponíveis para ajudar com informações sobre compra e hospedagem.','Em que mais posso ajudar?']
@@ -312,10 +360,10 @@ function addReceptionistUniform(group, variant=0) {
 function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
   house.residentsCreated = true;
-  // Dois funcionários separados, atrás do balcão, com espaço para serem vistos.
+  // Os rececionistas ficam atrás do balcão e de frente para quem entra.
   house.residents = [
-    player.createResident(house.interior, -4.9, 0.16, 2.05, Math.PI),
-    player.createResident(house.interior, -2.6, 0.16, 2.05, Math.PI)
+    player.createResident(house.interior, -4.9, 0.16, 4.45, 0),
+    player.createResident(house.interior, -2.6, 0.16, 4.45, 0)
   ].filter(Boolean);
   house.residents.forEach((resident,index) => {
     addReceptionistUniform(resident.group,index);
@@ -348,6 +396,9 @@ function enterHouse(house) {
   house.interior.visible = true;
   if (house.interiorRoof) house.interiorRoof.visible = false;
   if (house.exterior) house.exterior.visible = false;
+  house.previousCameraYawOffset = player.cameraYawOffset;
+  house.previousCameraPitch = player.cameraPitch;
+  house.previousCameraHeightAngle = player.cameraHeightAngle;
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
@@ -373,7 +424,9 @@ function leaveHouse() {
   decorMode = false;
   decorCatalog.hidden = true;
   player.setIndoor(false);
-  player.cameraHeightAngle = 0.42;
+  player.cameraYawOffset = house.previousCameraYawOffset ?? 0;
+  player.cameraPitch = house.previousCameraPitch ?? 0;
+  player.cameraHeightAngle = house.previousCameraHeightAngle ?? 0.42;
   player.setColliders(world.colliders);
   player.teleport(house.entranceX, house.entranceZ + 1.5);
   player.cameraDistance = 7;
