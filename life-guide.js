@@ -115,8 +115,6 @@ export function createLifeGuide({ game, player, world } = {}) {
   panel.querySelector('#life-guide-close').addEventListener('click', close);
   window.addEventListener('angolaLife3D:mapOpened', () => complete(1));
   window.addEventListener('angolaLife3D:phoneOpened', () => complete(16));
-  window.addEventListener('angolaLife3D:houseEntered', () => complete(3));
-  window.addEventListener('angolaLife3D:restaurantEntered', () => complete(12));
   function update() {
     const pos = player.currentVehicle ? player.currentVehicle.group.position : player.group.position;
     const moved = Math.hypot(pos.x - lastPosition.x, pos.z - lastPosition.z);
