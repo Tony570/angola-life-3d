@@ -31,10 +31,10 @@ app.innerHTML = `
   </div>
 
   <div id="mobile-controls" aria-label="Controlos do personagem">
-    <button data-key="w" aria-label="Avançar">▲</button>
+    <button data-key="s" aria-label="Recuar">▼</button>
     <div>
       <button data-key="a" aria-label="Esquerda">◀</button>
-      <button data-key="s" aria-label="Recuar">▼</button>
+      <button data-key="w" aria-label="Avançar">▲</button>
       <button data-key="d" aria-label="Direita">▶</button>
     </div>
   </div>
