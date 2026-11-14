@@ -840,3 +840,204 @@ button:focus-visible {
   #driving-hud { top: 112px; }
   #mobile-controls[data-mode="driving"] { right: 10px; bottom: 24px; }
 }
+
+
+/* =========================================
+   PERFIL E GUARDA-ROUPA — OPÇÃO 4
+   ========================================= */
+#character-button {
+  margin-left: 8px;
+  padding: 8px 11px;
+  border: 1px solid #e9b94e77;
+  border-radius: 9px;
+  background: #755526;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  pointer-events: auto;
+  position: relative;
+  z-index: 6;
+}
+#wardrobe-panel {
+  position: absolute;
+  z-index: 90;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  overflow: auto;
+  background: rgba(3, 9, 13, .88);
+  backdrop-filter: blur(8px);
+}
+#wardrobe-panel.visible { display: flex; }
+.wardrobe-window {
+  width: min(1100px, 96vw);
+  max-height: 94vh;
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid #e9b94e55;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #142923, #0b171b 72%);
+  color: #fff;
+  box-shadow: 0 22px 80px #000c;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.wardrobe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #ffffff20;
+}
+.wardrobe-header small,.wardrobe-player-info small,.wardrobe-section-heading small {
+  color: #e9b94e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+.wardrobe-header h2 { margin-top: 5px; font-size: 22px; letter-spacing: .8px; }
+#close-wardrobe {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: #803e32;
+  color: white;
+  font-size: 18px;
+}
+.wardrobe-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, .82fr) minmax(0, 1.5fr);
+  gap: 18px;
+  padding-top: 18px;
+}
+.wardrobe-profile,.wardrobe-content {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #ffffff1b;
+  border-radius: 15px;
+  background: #ffffff08;
+}
+.wardrobe-avatar-stage {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid #e9b94e33;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 42%, #496b51, #14251f 72%);
+  text-align: center;
+}
+.wardrobe-avatar-icon { font-size: 86px; line-height: 1.2; filter: drop-shadow(0 8px 8px #0008); }
+.wardrobe-avatar-stage span { color: #f1ca70; font-size: 10px; font-weight: 900; letter-spacing: 1px; }
+.wardrobe-avatar-stage small { max-width: 210px; color: #c4d4ca; font-size: 10px; line-height: 1.4; }
+.wardrobe-player-info { display: grid; gap: 6px; padding: 16px 3px 10px; }
+.wardrobe-player-info strong { font-size: 22px; overflow-wrap: anywhere; }
+.wardrobe-player-info span { color: #d4e0d8; font-size: 12px; }
+#wardrobe-account-status { color: #91d7a4; }
+.wardrobe-profile-note,.wardrobe-future-note {
+  padding: 11px;
+  border-radius: 9px;
+  background: #ffffff0a;
+  color: #bdccc4;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.wardrobe-tabs { display: flex; gap: 8px; margin-bottom: 17px; }
+.wardrobe-tabs button {
+  flex: 1;
+  min-height: 40px;
+  padding: 9px;
+  border: 1px solid #ffffff24;
+  border-radius: 9px;
+  background: #1c342b;
+  color: #dce8e0;
+  font-size: 10px;
+  font-weight: 900;
+}
+.wardrobe-tabs button.active { border-color: #e9b94e; background: #705426; color: #fff2cc; }
+.wardrobe-section[hidden] { display: none !important; }
+.wardrobe-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+.wardrobe-section-heading h3 { margin-top: 4px; font-size: 19px; }
+.wardrobe-section-heading > span { color: #b6c9be; font-size: 10px; text-align: right; }
+.wardrobe-empty {
+  min-height: 125px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed #d8bd7855;
+  border-radius: 12px;
+  background: #ffffff06;
+  text-align: center;
+}
+.wardrobe-empty strong { color: #f1d18a; font-size: 14px; }
+.wardrobe-empty span { color: #c5d2ca; font-size: 12px; line-height: 1.55; }
+.wardrobe-future-note { margin-top: 12px; }
+.owned-clothing,.personal-kit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #ffffff1b;
+  border-radius: 10px;
+  background: #ffffff08;
+}
+.owned-clothing span,.personal-kit strong { font-size: 13px; overflow-wrap: anywhere; }
+.owned-clothing small,.personal-kit small { display: block; margin-top: 4px; color: #b9c9c0; font-size: 10px; }
+.personal-kit-actions { display: flex; flex: 0 0 auto; gap: 6px; }
+.personal-kit-actions button {
+  padding: 8px 9px;
+  border-radius: 7px;
+  background: #28634d;
+  color: white;
+  font-size: 9px;
+}
+.personal-kit-actions button[data-kit-delete] { background: #793e36; }
+#save-personal-kit {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid #ffe09a;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f0c66a, #bd862e);
+  color: #1a241e;
+  font-size: 11px;
+  font-weight: 1000;
+}
+#save-personal-kit:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.5); }
+#wardrobe-status { min-height: 18px; margin-top: 10px; color: #aee0b5; font-size: 11px; line-height: 1.5; }
+@media(max-width: 700px) {
+  #topbar { gap: 4px; }
+  #character-button { margin-left: 2px; padding: 7px 8px; font-size: 9px; }
+  #wardrobe-panel { padding: 8px; align-items: flex-start; }
+  .wardrobe-window { width: 100%; max-height: 98vh; padding: 13px; border-radius: 14px; }
+  .wardrobe-header h2 { font-size: 18px; }
+  .wardrobe-layout { grid-template-columns: 1fr; gap: 10px; padding-top: 10px; }
+  .wardrobe-profile,.wardrobe-content { padding: 11px; }
+  .wardrobe-avatar-stage { min-height: 125px; }
+  .wardrobe-avatar-icon { font-size: 58px; }
+  .wardrobe-player-info { padding: 10px 2px 6px; }
+  .wardrobe-player-info strong { font-size: 18px; }
+  .wardrobe-profile-note { font-size: 10px; }
+}
+@media(max-width: 390px) {
+  #character-button { font-size: 8px; padding: 7px 6px; }
+  .brand { font-size: 11px; }
+  .money { font-size: 9px; padding: 7px 6px; }
+  .wardrobe-tabs button { font-size: 9px; padding: 8px 5px; }
+}
