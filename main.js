@@ -201,7 +201,7 @@ function goToFloor(floor) {
   activeHouse.currentFloor = next;
   setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
-  player.cameraDistance = 6.2;
+  player.cameraDistance = 8.0;
   player.cameraHeightAngle = 0.34;
   player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 7.2);
   elevatorLabel.textContent = floorName(next);
@@ -349,7 +349,7 @@ function enterHouse(house) {
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
-  player.cameraDistance = 6.2;
+  player.cameraDistance = 8.0;
   player.cameraHeightAngle = 0.38;
   player.setIndoorFloor(0.16);
   player.setColliders(house.colliders.filter(item => (item.floor === undefined || item.floor === 0) && (!item._houseDoor || item.door.userData.houseDoorCollider.active)));
