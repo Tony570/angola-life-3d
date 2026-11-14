@@ -138,6 +138,8 @@ const startButton = document.querySelector('#start-game');
 const bankButton = document.querySelector('#bank-button');
 const interactButton = document.querySelector('#interact-button');
 const mobileControls = document.querySelector('#mobile-controls');
+// Os controlos direcionais ficam visíveis em telemóveis; o canvas é reservado à câmara.
+if (isMobile) mobileControls.style.display = 'flex';
 let started = false;
 
 function openBank() {
@@ -583,6 +585,7 @@ mobileControls.addEventListener('pointerdown', event => {
   const button = event.target.closest('[data-key]');
   if (!button) return;
   event.preventDefault();
+  try { button.setPointerCapture(event.pointerId); } catch (_) {}
   player.keys[button.dataset.key] = true;
   button.classList.add('pressed');
 });
@@ -596,7 +599,6 @@ function releaseMobileControl(event) {
 
 mobileControls.addEventListener('pointerup', releaseMobileControl);
 mobileControls.addEventListener('pointercancel', releaseMobileControl);
-mobileControls.addEventListener('pointerleave', releaseMobileControl);
 
 const clock = new THREE.Clock();
 
