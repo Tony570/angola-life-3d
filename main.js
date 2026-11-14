@@ -1550,6 +1550,7 @@ function tryAutoEnterHouse() {
 
 function interact() {
   if (!started) return;
+  if (taxiTransport.isTravelling()) return;
 
   if (taxiTransport.isOpen()) {
     taxiTransport.close();
@@ -1635,6 +1636,11 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 function updateActionButton() {
+  if (taxiTransport.isTravelling()) {
+    actionButton.textContent = '🚕 EM VIAGEM';
+    return;
+  }
+
   if (taxiTransport.isOpen()) {
     actionButton.textContent = '✕ FECHAR TÁXIS';
     return;
@@ -1699,7 +1705,7 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
 
   if (started) {
-    if (!services.isOpen() && !taxiTransport.isOpen() && !restaurantPanel.classList.contains('visible')) {
+    if (!taxiTransport.isTravelling() && !services.isOpen() && !taxiTransport.isOpen() && !restaurantPanel.classList.contains('visible')) {
       player.update(delta);
       tryAutoEnterHouse();
     }
