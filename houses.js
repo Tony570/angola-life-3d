@@ -467,13 +467,104 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     };
   }
 
+  function createCommercialInterior(index, kind = 'boutique', title = 'Loja') {
+    const g = new THREE.Group();
+    const wall = material(0xe9e5dc, 0.92);
+    const floor = material(kind === 'hotel' ? 0x9b8876 : 0xb7b1a6, 0.82);
+    const dark = material(0x202b30, 0.55);
+    const glass = new THREE.MeshPhysicalMaterial({
+      color: 0x91c8d5, roughness: 0.18, transparent: true, opacity: 0.55
+    });
+    const gold = material(0xc89a4c, 0.38, 0.35);
+    const wood = material(0x80583d, 0.78);
+    box(g, 0, -0.16, 0, 18, 0.32, 18, floor);
+    box(g, -9, 0, 0, 0.3, 4.4, 18, wall);
+    box(g, 9, 0, 0, 0.3, 4.4, 18, wall);
+    box(g, 0, 0, -9, 18, 4.4, 0.3, wall);
+    box(g, -6.5, 0, 9, 5, 4.4, 0.3, wall);
+    box(g, 6.5, 0, 9, 5, 4.4, 0.3, wall);
+    box(g, 0, 4.25, 0, 18, 0.2, 18, wall, false);
+    box(g, 0, 2.0, 8.82, 4.0, 2.5, 0.12, glass, false);
+
+    if (kind === 'boutique') {
+      // Boutique com provadores, espelhos, balcão e expositores de roupa.
+      box(g, 0, 0.0, -7.4, 5.8, 2.6, 2.8, wall);
+      box(g, 0, 2.55, -7.4, 6.0, 0.12, 2.9, wood);
+      for (const x of [-6.2, -2.4, 2.4, 6.2]) {
+        cylinder(g, x, 0.1, -2.8, 0.07, 2.8, gold, 10);
+        box(g, x, 2.75, -2.8, 0.12, 0.12, 5.0, dark);
+        for (let n = 0; n < 4; n++) {
+          const garment = material([0x2f5c89, 0x8f3444, 0x32704e, 0xd2a34d, 0xe8e2d5][(n + Math.round(x)) % 5 < 0 ? 0 : (n + Math.round(x)) % 5]);
+          const hangerX = x - 1.4 + n * 0.9;
+          const shape = new THREE.Shape();
+          shape.moveTo(-0.38, 0.55);
+          shape.lineTo(-0.18, 0.72);
+          shape.lineTo(0, 0.62);
+          shape.lineTo(0.18, 0.72);
+          shape.lineTo(0.38, 0.55);
+          shape.lineTo(0.27, 0.25);
+          shape.lineTo(0.22, -0.5);
+          shape.lineTo(-0.22, -0.5);
+          shape.lineTo(-0.27, 0.25);
+          shape.closePath();
+          const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), garment);
+          mesh.position.set(hangerX, 1.75, -2.72);
+          mesh.castShadow = false;
+          g.add(mesh);
+          box(g, hangerX, 2.5, -2.8, 0.035, 0.35, 0.035, gold, false);
+        }
+      }
+      box(g, 0, 0.55, 5.8, 5.6, 1.1, 1.2, wood);
+      box(g, 0, 1.15, 5.8, 5.8, 0.12, 1.3, gold);
+      for (const x of [-7.5, 7.5]) {
+        box(g, x, 0.2, 4.5, 1.0, 2.8, 0.12, glass, false);
+      }
+    } else if (kind === 'bank') {
+      box(g, 0, 0.6, 5.6, 13, 1.2, 1.2, wood);
+      box(g, 0, 1.25, 5.55, 13.2, 0.12, 1.35, gold);
+      for (const x of [-4.2, 0, 4.2]) {
+        box(g, x, 1.4, 5.0, 2.4, 1.2, 0.12, glass, false);
+        box(g, x, 0.3, -2.8, 2.8, 0.9, 1.1, wood);
+      }
+    } else if (kind === 'hotel') {
+      box(g, 0, 0.55, 5.8, 7.5, 1.1, 1.2, wood);
+      box(g, 0, 1.15, 5.8, 7.7, 0.12, 1.3, gold);
+      for (const x of [-5.5, 5.5]) {
+        box(g, x, 0.2, -1.5, 2.2, 0.8, 1.0, mat.green);
+        box(g, x, 0.95, -2.0, 2.2, 1.2, 0.16, mat.fabric);
+      }
+    } else if (kind === 'car-dealer') {
+      box(g, 0, 0.05, 0, 14, 0.08, 12, mat.tile, false);
+      for (const x of [-5, 0, 5]) {
+        box(g, x, 0.05, -3, 3.8, 0.12, 6.0, gold);
+      }
+    } else {
+      box(g, 0, 0.5, 5.8, 8, 1.0, 1.0, wood);
+      box(g, 0, 1.1, 5.8, 8.2, 0.12, 1.2, gold);
+    }
+
+    const interiorX = 500 + (index + 100) * 35;
+    const interiorZ = 0;
+    g.position.set(interiorX, 0, interiorZ);
+    g.visible = false;
+    scene.add(g);
+    const colliders = [
+      { minX: interiorX - 9.3, maxX: interiorX - 8.7, minZ: -9, maxZ: 9 },
+      { minX: interiorX + 8.7, maxX: interiorX + 9.3, minZ: -9, maxZ: 9 },
+      { minX: interiorX - 9, maxX: interiorX + 9, minZ: -9.3, maxZ: -8.7 },
+      { minX: interiorX - 9, maxX: interiorX - 4, minZ: 8.7, maxZ: 9.3 },
+      { minX: interiorX + 4, maxX: interiorX + 9, minZ: 8.7, maxZ: 9.3 }
+    ];
+    return { group: g, roof: null, interiorX, interiorZ, colliders };
+  }
+
   // Todas as moradias e apartamentos criados na cidade passam a ter interior.
   // Os interiores são carregados apenas quando o jogador entra, para poupar memória
   // nos telemóveis e computadores mais modestos.
   const locations = (world.buildings || [])
     .filter(building =>
-      (building.type === 'house' || building.type === 'apartment') &&
-      building.forSale !== false
+      ((building.type === 'house' || building.type === 'apartment') && building.forSale !== false) ||
+      (building.type === 'shop' && ['boutique', 'bank', 'hotel', 'car-dealer'].includes(building.kind))
     )
     .map(building => ({
       name: building.propertyType || building.facility || 'Casa',
@@ -482,7 +573,9 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       width: building.width,
       depth: building.depth,
       district: building.district || 'Luanda',
-      propertyType: building.propertyType || (building.type === 'apartment' ? 'apartamento' : 'casa'),
+      propertyType: building.propertyType || (building.type === 'shop' ? building.facility || building.kind : building.type === 'apartment' ? 'apartamento' : 'casa'),
+      commercialKind: building.kind || null,
+      isCommercial: building.type === 'shop',
       salePrice: Number(building.salePrice || 0),
       entranceX: Number(building.entranceX ?? building.x),
       entranceZ: Number(building.entranceZ ?? (building.z + building.depth / 2 + 2)),
@@ -494,7 +587,9 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
 
     house.ensureInterior = () => {
       if (house.interior) return house;
-      const inside = createInterior(index, house.propertyType);
+      const inside = house.isCommercial
+        ? createCommercialInterior(index, house.commercialKind, house.name)
+        : createInterior(index, house.propertyType);
       house.interior = inside.group;
       house.interiorRoof = inside.roof;
       house.interiorX = inside.interiorX;
