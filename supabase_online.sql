@@ -7,7 +7,20 @@ drop policy if exists profiles_insert on public.profiles;
 drop policy if exists profiles_update on public.profiles;
 drop policy if exists profiles_insert_own on public.profiles;
 drop policy if exists profiles_read_authenticated on public.profiles;
--- A política profiles_read já existente continua a permitir a leitura autenticada.
+
+do $
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'profiles'
+      and cmd = 'SELECT'
+  ) then
+    create policy profiles_read_authenticated
+      on public.profiles for select
+      to authenticated using (true);
+  end if;
+end $;
 
 revoke insert, update, delete on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
