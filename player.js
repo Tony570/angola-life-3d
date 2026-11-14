@@ -44,6 +44,9 @@ export class Player {
     this.currentAnimation = '';
     this.walkPhase = 0;
 
+    this.proceduralEuler = new THREE.Euler(0, 0, 0);
+    this.proceduralQuaternion = new THREE.Quaternion();
+
     this.proceduralBones = {
       leftLeg: [],
       rightLeg: [],
@@ -190,11 +193,9 @@ export class Player {
 
     const apply = (entries, angle) => {
       for (const entry of entries) {
-        const offset = new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(angle, 0, 0)
-        );
-
-        entry.bone.quaternion.copy(entry.rest).multiply(offset);
+        this.proceduralEuler.set(angle, 0, 0);
+        this.proceduralQuaternion.setFromEuler(this.proceduralEuler);
+        entry.bone.quaternion.copy(entry.rest).multiply(this.proceduralQuaternion);
       }
     };
 
@@ -282,26 +283,67 @@ export class Player {
   }
 
   setColliders(colliders = []) {
-    this.colliders = colliders;
+    this.colliders = Array.isArray(colliders) ? colliders : [];
+    this.colliderCellSize = 12;
+    this.colliderGrid = new Map();
+
+    for (const wall of this.colliders) {
+      const minCellX = Math.floor(wall.minX / this.colliderCellSize);
+      const maxCellX = Math.floor(wall.maxX / this.colliderCellSize);
+      const minCellZ = Math.floor(wall.minZ / this.colliderCellSize);
+      const maxCellZ = Math.floor(wall.maxZ / this.colliderCellSize);
+
+      for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+        for (let cellZ = minCellZ; cellZ <= maxCellZ; cellZ++) {
+          const key = cellX + ',' + cellZ;
+          let bucket = this.colliderGrid.get(key);
+
+          if (!bucket) {
+            bucket = [];
+            this.colliderGrid.set(key, bucket);
+          }
+
+          bucket.push(wall);
+        }
+      }
+    }
   }
 
-  setIndoor(value) {
-    this.indoor = value;
-
-    if (value) {
-      this.cameraDistance = THREE.MathUtils.clamp(
-        this.cameraDistance, 3, 5
-      );
+  getNearbyColliders(x, z, padding = this.radius) {
+    if (!this.colliderGrid || this.colliderGrid.size === 0) {
+      return this.colliders;
     }
 
-    this.updateCamera();
+    const size = this.colliderCellSize;
+    const minCellX = Math.floor((x - padding) / size);
+    const maxCellX = Math.floor((x + padding) / size);
+    const minCellZ = Math.floor((z - padding) / size);
+    const maxCellZ = Math.floor((z + padding) / size);
+    const nearby = [];
+    const seen = new Set();
+
+    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+      for (let cellZ = minCellZ; cellZ <= maxCellZ; cellZ++) {
+        const bucket = this.colliderGrid.get(cellX + ',' + cellZ);
+        if (!bucket) continue;
+
+        for (const wall of bucket) {
+          if (seen.has(wall)) continue;
+          seen.add(wall);
+          nearby.push(wall);
+        }
+      }
+    }
+
+    return nearby;
   }
 
   isBlocked(x, z) {
-    for (const wall of this.colliders) {
+    const nearby = this.getNearbyColliders(x, z);
+
+    for (const wall of nearby) {
       const closestX = THREE.MathUtils.clamp(x, wall.minX, wall.maxX);
       const closestZ = THREE.MathUtils.clamp(z, wall.minZ, wall.maxZ);
-
       const dx = x - closestX;
       const dz = z - closestZ;
 
@@ -316,13 +358,13 @@ export class Player {
   resolveCollisionOverlap() {
     const p = this.group.position;
 
-    for (let pass = 0; pass < 5; pass++) {
+    for (let pass = 0; pass < 3; pass++) {
       let corrected = false;
+      const nearby = this.getNearbyColliders(p.x, p.z, this.radius + 0.05);
 
-      for (const wall of this.colliders) {
+      for (const wall of nearby) {
         const closestX = THREE.MathUtils.clamp(p.x, wall.minX, wall.maxX);
         const closestZ = THREE.MathUtils.clamp(p.z, wall.minZ, wall.maxZ);
-
         const dx = p.x - closestX;
         const dz = p.z - closestZ;
         const distanceSq = dx * dx + dz * dz;
@@ -332,7 +374,6 @@ export class Player {
         if (distanceSq > 0.000001) {
           const distance = Math.sqrt(distanceSq);
           const push = this.radius - distance + 0.012;
-
           p.x += (dx / distance) * push;
           p.z += (dz / distance) * push;
         } else {
@@ -342,15 +383,10 @@ export class Player {
           const front = Math.abs(wall.maxZ - p.z);
           const nearest = Math.min(left, right, back, front);
 
-          if (nearest === left) {
-            p.x = wall.minX - this.radius - 0.012;
-          } else if (nearest === right) {
-            p.x = wall.maxX + this.radius + 0.012;
-          } else if (nearest === back) {
-            p.z = wall.minZ - this.radius - 0.012;
-          } else {
-            p.z = wall.maxZ + this.radius + 0.012;
-          }
+          if (nearest === left) p.x = wall.minX - this.radius - 0.012;
+          else if (nearest === right) p.x = wall.maxX + this.radius + 0.012;
+          else if (nearest === back) p.z = wall.minZ - this.radius - 0.012;
+          else p.z = wall.maxZ + this.radius + 0.012;
         }
 
         corrected = true;
@@ -363,12 +399,12 @@ export class Player {
   }
 
   moveWithCollision(dx, dz) {
-    this.resolveCollisionOverlap();
-
     const distance = Math.hypot(dx, dz);
     if (distance < 0.00001) return;
 
-    const maxStep = 0.12;
+    this.resolveCollisionOverlap();
+
+    const maxStep = 0.22;
     const steps = Math.max(1, Math.ceil(distance / maxStep));
     const stepX = dx / steps;
     const stepZ = dz / steps;
