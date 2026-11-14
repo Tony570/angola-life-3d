@@ -6,6 +6,7 @@ import { createPeople } from './people.js';
 export function createWorld(scene) {
   const world = {
     vehicles: [],
+    trafficVehicles: [],
     npcs: [],
     buildings: [],
     destinations: [
@@ -667,6 +668,43 @@ export function createWorld(scene) {
     return group;
   }
 
+  function makeTrafficCar(x, z, color, pathIndex = 0) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    scene.add(group);
+    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6, paintColor: color });
+    const vehicle = {
+      group,
+      speed: 0,
+      traffic: true,
+      pathIndex,
+      path: [
+        new THREE.Vector3(-70, 0, -35),
+        new THREE.Vector3(70, 0, -35),
+        new THREE.Vector3(70, 0, 35),
+        new THREE.Vector3(-70, 0, 35)
+      ]
+    };
+    world.trafficVehicles.push(vehicle);
+  }
+
+  function updateWorldTraffic(delta) {
+    for (const vehicle of world.trafficVehicles) {
+      const target = vehicle.path[vehicle.pathIndex];
+      const dx = target.x - vehicle.group.position.x;
+      const dz = target.z - vehicle.group.position.z;
+      const distance = Math.hypot(dx, dz);
+      const step = Math.min(distance, 7.5 * delta);
+      if (distance < 0.8) {
+        vehicle.pathIndex = (vehicle.pathIndex + 1) % vehicle.path.length;
+        continue;
+      }
+      vehicle.group.position.x += (dx / distance) * step;
+      vehicle.group.position.z += (dz / distance) * step;
+      vehicle.group.rotation.y = Math.atan2(-dx, -dz);
+    }
+  }
+
   function buildCity() {
     const facilities = [
       {
@@ -789,11 +827,18 @@ export function createWorld(scene) {
   // Habitantes
   createPeople(scene, world);
 
-  // Viaturas estacionadas
+  // Viaturas estacionadas para os jogadores conduzirem.
   makeCar(5, 25, 0xc62828, 0);
   makeCar(-42, 35, 0xeeeeee, Math.PI / 2);
   makeCar(55, -70, 0x2255aa, Math.PI / 2);
   makeCar(-72, 70, 0x252525, 0);
 
+  // Trânsito autónomo: os carros circulam pelas estradas principais.
+  makeTrafficCar(-70, -35, 0xc62828, 0);
+  makeTrafficCar(70, -35, 0xeeeeee, 1);
+  makeTrafficCar(70, 35, 0x2255aa, 2);
+  makeTrafficCar(-70, 35, 0x202020, 3);
+
+  world.updateTraffic = updateWorldTraffic;
   return world;
 }
