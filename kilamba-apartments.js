@@ -11,7 +11,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     new THREE.MeshStandardMaterial({ color, roughness, metalness });
   const M = {
     wall: mat(0xeee9df), wallAlt: mat(0xd8d0c2), floor: mat(0xb8a58d),
-    tile: mat(0xc9d0ce), wood: mat(0x795239), woodLight: mat(0xa8794f),
+    tile: mat(0xc9d0ce), concrete: mat(0xb7b4ac), wood: mat(0x795239), woodLight: mat(0xa8794f),
     white: mat(0xf4f1e9), sofa: mat(0x3f6475), fabric: mat(0xd9cbb6),
     dark: mat(0x252b30), metal: mat(0x8e999d, .38, .58),
     gold: mat(0xc29a58, .35, .4), glass: new THREE.MeshPhysicalMaterial({
