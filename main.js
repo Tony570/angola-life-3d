@@ -190,6 +190,7 @@ function enterHouse(house) {
   house.ensureInterior();
   house.interior.visible = true;
   if (house.interiorRoof) house.interiorRoof.visible = false;
+  if (house.exterior) house.exterior.visible = false;
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
@@ -205,6 +206,7 @@ function leaveHouse() {
   const house = activeHouse;
   house.interior.visible = false;
   if (house.interiorRoof) house.interiorRoof.visible = true;
+  if (house.exterior) house.exterior.visible = true;
   activeHouse = null;
   elevatorPanel.hidden = true;
   player.setIndoor(false);
