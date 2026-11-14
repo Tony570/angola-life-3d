@@ -253,7 +253,7 @@ export class Player {
     const patterns = {
       top: /shirt|top|torso|upper|tshirt|camisa|roupa_superior/,
       bottom: /pant|trouser|jean|short|skirt|bottom|calça/,
-      shoes: /shoe|boot|sneaker|footwear|sapato/,
+      shoes: /shoe|boot|sneaker|footwear|feet|sapato/,
       outfit: /dress|vestido/,
       outer: /jacket|coat|blazer|casaco/
     };
