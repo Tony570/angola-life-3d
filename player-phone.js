@@ -1,6 +1,6 @@
 import { supabase } from './online.js';
 
-const CHANNEL_NAME = 'angola-life-3d-luanda-players';
+const CHANNEL_NAME = 'angola-life-3d-luanda-live';
 const FINE_AMOUNT = 5000;
 export function createPlayerPhone({ game, online, services, player } = {}) {
   const topbar = game?.querySelector('#topbar');
