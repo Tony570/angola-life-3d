@@ -30,26 +30,10 @@ const JOBS = [
     serviceName: 'Esquadra de Polícia'
   },
   {
-    role: 'Funcionária de restaurante',
-    gender: 'female',
-    x: -76.1,
-    z: -20,
-    patrol: false,
-    outfit: 0x9b2940
-  },
-  {
-    role: 'Funcionário de restaurante',
-    gender: 'male',
-    x: -76.1,
-    z: -55,
-    patrol: false,
-    outfit: 0xeeeeee
-  },
-  {
     role: 'Rececionista de hotel',
     gender: 'female',
-    x: 76.1,
-    z: 15,
+    x: 89,
+    z: 25,
     patrol: false,
     outfit: 0x283e55,
     service: 'hotel',
@@ -58,24 +42,24 @@ const JOBS = [
   {
     role: 'Funcionário de hotel',
     gender: 'male',
-    x: 76.1,
-    z: 55,
+    x: 93,
+    z: 25,
     patrol: false,
     outfit: 0x70452e
   },
   {
     role: 'Trabalhador de escritório',
     gender: 'male',
-    x: 41.1,
-    z: 75,
+    x: 25,
+    z: -25,
     patrol: false,
     outfit: 0x526b45
   },
   {
     role: 'Trabalhadora de escritório',
     gender: 'female',
-    x: -41.1,
-    z: -75,
+    x: -25,
+    z: -25,
     patrol: false,
     outfit: 0x743f83
   },
