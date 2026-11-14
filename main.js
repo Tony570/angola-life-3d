@@ -192,7 +192,7 @@ function nearestHouse() {
 function floorName(floor) { return floor === 0 ? 'RÉS-DO-CHÃO' : 'PISO '+floor; }
 function setActiveHouseColliders() {
   if (!activeHouse) return;
-  player.setColliders(activeHouse.colliders.filter(item => !item._houseDoor || (item.floor === activeFloor && item.door.userData.houseDoorCollider.active)));
+  player.setColliders(activeHouse.colliders.filter(item => (item.floor === undefined || item.floor === activeFloor) && (!item._houseDoor || item.door.userData.houseDoorCollider.active)));
 }
 function goToFloor(floor) {
   if (!activeHouse) return;
@@ -214,9 +214,27 @@ elevatorPanel.addEventListener('click', event => {
   const button = event.target.closest('[data-floor]');
   if (button) goToFloor(button.dataset.floor);
 });
+
+const receptionPricePanel=document.createElement('section');
+receptionPricePanel.id='reception-price-panel';
+receptionPricePanel.hidden=true;
+receptionPricePanel.innerHTML=`<div class="hotel-price-card"><button type="button" id="close-hotel-prices" aria-label="Fechar">×</button><small>RECEÇÃO · KILAMBA</small><h2>Quartos disponíveis</h2><p>Apartamento T2 · compra</p><strong>45.000.000 Kz</strong><p>Passar uma noite</p><strong>45.000 Kz / noite</strong><span>Consulte o rececionista para conhecer a disponibilidade.</span></div>`;
+document.body.appendChild(receptionPricePanel);
+const hotelPriceStyle=document.createElement('style');
+hotelPriceStyle.textContent=`#reception-price-panel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(5,12,16,.78);backdrop-filter:blur(5px)}#reception-price-panel[hidden]{display:none!important}.hotel-price-card{position:relative;width:min(390px,94vw);padding:28px 24px;border:1px solid #d7b66f;border-radius:20px;background:linear-gradient(145deg,#f4efe4,#d8cbb5);color:#25332f;box-shadow:0 24px 70px #000b;font-family:Arial,sans-serif}.hotel-price-card small{color:#8a642c;font-size:10px;font-weight:900;letter-spacing:2px}.hotel-price-card h2{margin:8px 0 22px;font-size:24px}.hotel-price-card p{margin:13px 0 5px;color:#5d6259;font-size:12px;font-weight:700}.hotel-price-card strong{display:block;color:#173e32;font-size:23px}.hotel-price-card span{display:block;margin-top:20px;padding-top:14px;border-top:1px solid #b9ad99;color:#62675f;font-size:11px;line-height:1.5}.hotel-price-card #close-hotel-prices{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#263e35;color:#fff;font-size:22px}`;
+document.head.appendChild(hotelPriceStyle);
+receptionPricePanel.querySelector('#close-hotel-prices').addEventListener('click',()=>{receptionPricePanel.hidden=true;});
 function addReceptionistUniform(group, variant=0) {
   if (!group || group.userData.hotelUniformApplied) return;
   group.userData.hotelUniformApplied = true;
+  group.visible = true;
+  group.traverse(object => {
+    if (!object.isMesh) return;
+    object.visible = true;
+    object.frustumCulled = false;
+    const materials = Array.isArray(object.material) ? object.material : [object.material];
+    materials.forEach(material => { if (material) { material.visible = true; material.transparent = false; material.opacity = 1; material.depthWrite = true; } });
+  });
   const jacketColors=[0x172b43,0x29323c,0x233c38,0x202b40];
   const jacket=new THREE.MeshStandardMaterial({color:jacketColors[variant%jacketColors.length],roughness:.72});
   const shirt=new THREE.MeshStandardMaterial({color:0xf4f1e9,roughness:.82});
@@ -258,8 +276,8 @@ function ensureHouseResidents(house) {
   house.residentsCreated = true;
   // Dois recepcionistas alinhados atrás do balcão, virados para a entrada.
   house.residents = [
-    player.createResident(house.interior, -4.65, 0.16, 2.15, 0),
-    player.createResident(house.interior, -2.85, 0.16, 2.15, 0)
+    player.createResident(house.interior, -4.65, 0.16, 2.05, Math.PI),
+    player.createResident(house.interior, -2.85, 0.16, 2.05, Math.PI)
   ].filter(Boolean);
   house.residents.forEach((resident,index) => addReceptionistUniform(resident.group,index));
 }
@@ -286,7 +304,7 @@ function enterHouse(house) {
   player.cameraDistance = 6.2;
   player.cameraHeightAngle = 0.38;
   player.setIndoorFloor(0.16);
-  player.setColliders(house.colliders.filter(item => !item._houseDoor || (item.floor === 0 && item.door.userData.houseDoorCollider.active)));
+  player.setColliders(house.colliders.filter(item => (item.floor === undefined || item.floor === 0) && (!item._houseDoor || item.door.userData.houseDoorCollider.active)));
   player.teleport(house.interiorX, house.interiorZ + 6.95);
   elevatorPanel.hidden = false;
   homePanel.hidden = false;
@@ -325,6 +343,7 @@ function interactWithHouse() {
       const action=activeInteractable.userData.houseAction;
       const position=activeInteractable.getWorldPosition(new THREE.Vector3());
       const showHomeMessage=message=>{districtLocation.textContent=message;window.setTimeout(()=>{if(activeHouse)districtLocation.textContent='🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(activeFloor);},1800);};
+      if(action.type==='reception'){receptionPricePanel.hidden=false;return;}
       if(action.type==='sit'||action.type==='bed'||action.type==='toilet'){player.sitAt(position.x,position.z+(action.offsetZ||1),action.rotationY||0);return;}
       if(action.type==='door'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.userData.houseDoorHinge.rotation.y=activeInteractable.userData.houseDoorBaseRotation+(open?action.openRotation:0);activeInteractable.userData.houseDoorCollider.active=!open;setActiveHouseColliders();showHomeMessage(open?'🚪 PORTA ABERTA':'🚪 PORTA FECHADA');return;}
       if(action.type==='stove'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.emissive.setHex(on?0xff4b08:0x000000);activeInteractable.material.emissiveIntensity=on ? .8 : 0;showHomeMessage(on?'🔥 FOGÃO LIGADO':'Fogão desligado');return;}
