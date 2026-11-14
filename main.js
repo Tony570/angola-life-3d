@@ -5,6 +5,7 @@ import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
 import { createKilambaDistrict } from './kilamba.js';
 import { createHouseSystem } from './kilamba-apartments.js';
+import { createReceptionist } from './people.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -428,26 +429,44 @@ function addReceptionistUniform(group, variant=0) {
   });
 }
 function ensureHouseResidents(house) {
-  if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
+  if (!house || !house.interior || house.residentsCreated) return;
   house.residentsCreated = true;
-  // Os rececionistas ficam atrás do balcão e de frente para quem entra.
   const lobbyFloor = house.interior.children.find(child => child.userData?.houseFloor === 0) || house.interior;
-  house.residents = [
-    player.createResident(lobbyFloor, -4.9, 0.16, 4.45, 0),
-    player.createResident(lobbyFloor, -2.6, 0.16, 4.45, 0)
-  ].filter(Boolean);
-  house.residents.forEach((resident,index) => {
-    addReceptionistUniform(resident.group,index);
-    resident.group.userData.houseAction = {
-      label: 'FALAR COM O RECECIONISTA',
-      type: 'reception-agent',
-      receptionistIndex: index
-    };
-    resident.group.userData.receptionist = true;
-    // Se o modelo carregar depois de entrar no edifício, regista também o NPC na lista de interação.
-    if (Array.isArray(house.interactables) && !house.interactables.includes(resident.group)) {
-      house.interactables.push(resident.group);
-    }
+
+  // Recepção com duas pessoas diferentes: modelos masculino e feminino,
+  // ambos normalizados para a mesma altura do personagem do jogador.
+  Promise.all([
+    createReceptionist(lobbyFloor, {
+      role: 'Rececionista',
+      gender: 'male',
+      x: -4.9, y: 0.16, z: 4.45,
+      rotationY: 0,
+      outfit: 0x172b43
+    }, 0),
+    createReceptionist(lobbyFloor, {
+      role: 'Rececionista',
+      gender: 'female',
+      x: -2.6, y: 0.16, z: 4.45,
+      rotationY: 0,
+      outfit: 0x29483e
+    }, 1)
+  ]).then(created => {
+    house.residents = created.map(npc => ({group:npc.root,mixer:npc.mixer}));
+    house.residents.forEach((resident,index) => {
+      addReceptionistUniform(resident.group,index);
+      resident.group.userData.houseAction = {
+        label: 'FALAR COM O RECECIONISTA',
+        type: 'reception-agent',
+        receptionistIndex: index
+      };
+      resident.group.userData.receptionist = true;
+      if (Array.isArray(house.interactables) && !house.interactables.includes(resident.group)) {
+        house.interactables.push(resident.group);
+      }
+    });
+  }).catch(error => {
+    house.residentsCreated = false;
+    console.error('Não foi possível carregar a equipa da receção:', error);
   });
 }
 
