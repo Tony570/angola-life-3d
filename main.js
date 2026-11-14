@@ -398,9 +398,9 @@ document.head.appendChild(styles);
 
 const game = document.querySelector('#game');
 const scene = new THREE.Scene();
-const outsideFog = new THREE.Fog('#9ac7df', 300, 900);
+const outsideFog = new THREE.Fog('#b8d5e6', 520, 1450);
 
-scene.background = new THREE.Color('#9ac7df');
+scene.background = new THREE.Color('#b8d5e6');
 scene.fog = outsideFog;
 
 const camera = new THREE.PerspectiveCamera(
@@ -425,13 +425,16 @@ renderer.setPixelRatio(
   Math.min(window.devicePixelRatio || 1, isMobile ? 0.85 : 1.25)
 );
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.autoUpdate = false;
 game.prepend(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight('#ffffff', '#76634b', 2));
+scene.add(new THREE.HemisphereLight('#f4f8ff', '#78634e', 2.25));
 
-const sun = new THREE.DirectionalLight('#fff0d2', 1.5);
+const sun = new THREE.DirectionalLight('#fff3dc', 1.85);
 sun.position.set(-40, 70, 35);
 sun.castShadow = false;
 scene.add(sun);
