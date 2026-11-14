@@ -395,16 +395,20 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(shaft,-7.05,0,1.42,1.25,FLOOR_HEIGHT*FLOOR_COUNT,.14,M.dark);
     for(let floor=0;floor<FLOOR_COUNT;floor++) {
       const y=floor*FLOOR_HEIGHT;
-      box(shaft,-7.05,y+.08,.34,1.1,2.45,.08,M.metal);
-      box(shaft,-7.05,y+.22,.40,.42,1.95,.04,M.dark);
-      box(shaft,-6.5,y+.82,.56,.08,.38,.08,M.gold);
-      // Stair landing and visible ascending steps.
-      box(shaft,6.95,y,0,2.0,.16,3.8,M.tile);
+      const shaftFloor=new THREE.Group();
+      shaftFloor.userData.houseFloor=floor;
+      shaftFloor.position.y=y;
+      shaft.add(shaftFloor);
+      box(shaftFloor,-7.05,.08,.34,1.1,2.45,.08,M.metal);
+      box(shaftFloor,-7.05,.22,.40,.42,1.95,.04,M.dark);
+      box(shaftFloor,-6.5,.82,.56,.08,.38,.08,M.gold);
+      // Apenas o patamar e as escadas do piso activo ficam visíveis.
+      box(shaftFloor,6.95,0,0,2.0,.16,3.8,M.tile);
       for(let step=0;step<9;step++) {
-        const stair=box(shaft,6.35+(step%2)*.55,y+.18+step*.15,-1.65+step*.39,1.0,.16,.46,M.concrete);
+        const stair=box(shaftFloor,6.35+(step%2)*.55,.18+step*.15,-1.65+step*.39,1.0,.16,.46,M.concrete);
         stair.rotation.z=0;
       }
-      for(const z of [-1.7,1.8]) box(shaft,7.88,y+.15,z,.08,1.0,.08,M.metal);
+      for(const z of [-1.7,1.8]) box(shaftFloor,7.88,.15,z,.08,1.0,.08,M.metal);
     }
     const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,28.8,.3,28.8,M.wall,false);
     const colliders=[];
