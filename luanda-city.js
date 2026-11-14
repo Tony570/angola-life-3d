@@ -1,23 +1,18 @@
 import * as THREE from 'three';
 
 const DISTRICTS = [
-  { name: 'Cacuaco', x: -300, z: -410, style: 'musseque', subtitle: 'Zona costeira e bairros populares' },
-  { name: 'Mulenvos', x: -105, z: -390, style: 'popular', subtitle: 'Bairros residenciais em expansão' },
-  { name: 'Sambizanga', x: -115, z: -195, style: 'musseque', subtitle: 'Bairros tradicionais de Luanda' },
   { name: 'Ingombota', x: 0, z: 0, style: 'apartments', subtitle: 'Centro histórico e zona comercial' },
-  { name: 'Rangel', x: 105, z: -125, style: 'popular', subtitle: 'Zona urbana e comércio local' },
-  { name: 'Maianga', x: 155, z: 35, style: 'apartments', subtitle: 'Residências e serviços urbanos' },
-  { name: 'Cazenga', x: 265, z: -235, style: 'musseque', subtitle: 'Bairros populares e oficinas' },
-  { name: 'Hoji ya Henda', x: 355, z: -95, style: 'popular', subtitle: 'Zona residencial e comercial' },
-  { name: 'Viana', x: 390, z: 165, style: 'popular', subtitle: 'Indústria, comércio e habitação' },
-  { name: 'Kilamba Kiaxi', x: 225, z: 285, style: 'apartments', subtitle: 'Golfe e Nova Vida' },
-  { name: 'Camama', x: 405, z: 365, style: 'modern', subtitle: 'Urbanizações e novas moradias' },
-  { name: 'Talatona', x: -115, z: 350, style: 'luxury', subtitle: 'Condomínios e zona empresarial' },
-  { name: 'Belas', x: -330, z: 385, style: 'modern', subtitle: 'Benfica e zonas residenciais' },
-  { name: 'Mussulo', x: -465, z: 185, style: 'coastal', subtitle: 'Ilha, praia e turismo' },
-  { name: 'Samba', x: 5, z: 235, style: 'popular', subtitle: 'Zona costeira e residencial' },
-  { name: 'Kilamba', x: -65, z: 515, style: 'apartments', subtitle: 'Centralidade e prédios residenciais' }
+  { name: 'Maianga', x: 145, z: 55, style: 'apartments', subtitle: 'Residências e serviços urbanos' },
+  { name: 'Maculusso', x: -125, z: 35, style: 'modern', subtitle: 'Zona residencial central' },
+  { name: 'Miramar', x: -255, z: -105, style: 'luxury', subtitle: 'Moradias e embaixadas' },
+  { name: 'Alvalade', x: 245, z: -115, style: 'modern', subtitle: 'Bairro residencial e comércio' },
+  { name: 'Prenda', x: 155, z: 195, style: 'popular', subtitle: 'Bairro tradicional e familiar' },
+  { name: 'Samba', x: 20, z: 320, style: 'coastal', subtitle: 'Zona costeira de Luanda' },
+  { name: 'Bairro Azul', x: -155, z: 190, style: 'apartments', subtitle: 'Residências e serviços' },
+  { name: 'Cruzeiro', x: -285, z: 65, style: 'popular', subtitle: 'Zona urbana e residencial' },
+  { name: 'Sambizanga', x: -105, z: -220, style: 'musseque', subtitle: 'Bairro tradicional de Luanda' }
 ];
+const ILHA_DE_LUANDA = { name: 'Ilha de Luanda', x: -390, z: -20, style: 'coastal', subtitle: 'Marginal, restaurantes e lazer' };
 
 export function expandLuandaCity(scene, world) {
   const material = (color, roughness = 0.88, metalness = 0) =>
@@ -51,7 +46,7 @@ export function expandLuandaCity(scene, world) {
   };
 
   const addGround = () => {
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(1120, 1160), M.ground);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 850), M.ground);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, -0.68, 35);
     ground.receiveShadow = false;
@@ -311,34 +306,20 @@ export function expandLuandaCity(scene, world) {
 
   // Eixos rodoviários que ligam as zonas do norte, centro, leste e sul.
   const arterial = [
-    [-300, -410, -115, -195],
-    [-115, -195, 0, 0],
-    [0, 0, 155, 35],
-    [155, 35, 225, 285],
-    [225, 285, 405, 365],
-    [0, 0, 5, 235],
-    [5, 235, -115, 350],
-    [-115, 350, -330, 385],
-    [-330, 385, -465, 185],
-    [0, 0, 105, -125],
-    [105, -125, 265, -235],
-    [265, -235, 355, -95],
-    [355, -95, 390, 165],
-    [390, 165, 405, 365],
-    [-105, -390, -300, -410],
-    [-65, 515, -115, 350]
+    [0, 0, -125, 35], [0, 0, 145, 55],
+    [0, 0, -105, -220], [0, 0, 245, -115],
+    [0, 0, 155, 195], [0, 0, 20, 320],
+    [-125, 35, -255, -105], [-125, 35, -155, 190],
+    [-255, -105, -285, 65], [-105, -220, -255, -105],
+    [145, 55, 245, -115], [145, 55, 155, 195],
+    [155, 195, 20, 320], [-155, 190, -285, 65],
+    [-285, 65, -390, -20], [-390, -20, -125, 35]
   ];
   arterial.forEach(([x1, z1, x2, z2]) => addRoad(x1, z1, x2, z2, 13));
 
-  // Vias de ligação entre os principais bairros.
-  addRoad(-430, -300, 430, -300, 10, false);
-  addRoad(-430, -80, 430, -80, 10, false);
-  addRoad(-430, 150, 430, 150, 10, false);
-  addRoad(-430, 390, 430, 390, 10, false);
-  addRoad(-300, -500, -300, 500, 10, false);
-  addRoad(-100, -500, -100, 530, 10, false);
-  addRoad(150, -500, 150, 500, 10, false);
-  addRoad(390, -430, 390, 450, 10, false);
+  // Ruas locais em grelha curta, com ligações entre os dez bairros.
+  for (const z of [-220, -105, 35, 190, 320]) addRoad(-420, z, 300, z, 9, false);
+  for (const x of [-285, -155, 0, 155, 245]) addRoad(x, -270, x, 360, 9, false);
 
   DISTRICTS.forEach((district, index) => {
     world.destinations.push({
@@ -378,16 +359,27 @@ export function expandLuandaCity(scene, world) {
   });
 
   // Serviços públicos distribuídos pelas diferentes zonas da cidade.
-  makePublic('Administração Municipal', 'Atendimento ao cidadão', -20, -120, 'administration', 0x285b77);
-  makePublic('Universidade de Luanda', 'Ensino superior', 185, -360, 'university', 0x315d83);
-  makePublic('Escola Pública', 'Ensino geral', -280, -340, 'school', 0x39704d);
-  makePublic('Hospital Geral', 'Urgência e consultas', 320, 30, 'hospital', 0x9d3030);
-  makePublic('Quartel dos Bombeiros', 'Proteção e emergência', -190, 70, 'fire-station', 0xb4472f);
-  makePublic('Esquadra de Polícia', 'Polícia Nacional', 75, -185, 'police', 0x24466f);
-  makePublic('Instituto Técnico', 'Formação profissional', 285, 300, 'technical-school', 0x4e6c85);
-  makePublic('Terminal de Transportes', 'Táxis e autocarros', 395, 215, 'transport-terminal', 0x8a652b);
-  makePublic('Mercado Municipal', 'Comércio e abastecimento', -345, -120, 'market', 0x39704d);
-  makePublic('Centro de Saúde', 'Cuidados primários', -80, 420, 'clinic', 0x9d3030);
+  makePublic('Administração Municipal', 'Atendimento ao cidadão', 0, -115, 'administration', 0x285b77);
+  makePublic('Universidade de Luanda', 'Ensino superior', 175, -285, 'university', 0x315d83);
+  makePublic('Escola Pública', 'Ensino geral', -260, -250, 'school', 0x39704d);
+  makePublic('Hospital Geral', 'Urgência e consultas', 260, 20, 'hospital', 0x9d3030);
+  makePublic('Quartel dos Bombeiros', 'Proteção e emergência', -190, 85, 'fire-station', 0xb4472f);
+  makePublic('Esquadra de Polícia', 'Polícia Nacional', 80, -185, 'police', 0x24466f);
+  makePublic('Instituto Técnico', 'Formação profissional', 260, 270, 'technical-school', 0x4e6c85);
+  makePublic('Terminal de Transportes', 'Táxis e autocarros', 345, 180, 'transport-terminal', 0x8a652b);
+  makePublic('Mercado Municipal', 'Comércio e abastecimento', -325, -80, 'market', 0x39704d);
+  makePublic('Centro de Saúde', 'Cuidados primários', -80, 360, 'clinic', 0x9d3030);
+
+  // A Ilha de Luanda é uma zona própria, além dos dez bairros principais.
+  world.destinations.push({ name: ILHA_DE_LUANDA.name, x: ILHA_DE_LUANDA.x, z: ILHA_DE_LUANDA.z, category: 'ilha' });
+  addSign(ILHA_DE_LUANDA.name, ILHA_DE_LUANDA.subtitle, ILHA_DE_LUANDA.x, ILHA_DE_LUANDA.z - 20);
+  [-1, 0, 1, 2].forEach((offset, index) => {
+    makeHome(ILHA_DE_LUANDA.x + offset * 22, ILHA_DE_LUANDA.z + 35 + (index % 2) * 24, 'coastal', index + 30, ILHA_DE_LUANDA.name);
+  });
+
+  // Rua da Direita, no centro de Ingombota.
+  world.destinations.push({ name: 'Rua da Direita', x: 0, z: -32, category: 'rua' });
+  addSign('Rua da Direita', 'Centro de Ingombota', 0, -55);
 
   return world;
 }
