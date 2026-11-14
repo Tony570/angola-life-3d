@@ -2,24 +2,19 @@ import * as THREE from 'three';
 import { attachRealCar } from './vehicle-models.js';
 
 const DISTRICTS = [
-  { name: 'Cacuaco', x: -300, z: -410 },
-  { name: 'Mulenvos', x: -105, z: -390 },
-  { name: 'Sambizanga', x: -115, z: -195 },
   { name: 'Ingombota', x: 0, z: 0 },
-  { name: 'Rangel', x: 105, z: -125 },
-  { name: 'Maianga', x: 155, z: 35 },
-  { name: 'Cazenga', x: 265, z: -235 },
-  { name: 'Hoji ya Henda', x: 355, z: -95 },
-  { name: 'Viana', x: 390, z: 165 },
-  { name: 'Kilamba Kiaxi', x: 225, z: 285 },
-  { name: 'Camama', x: 405, z: 365 },
-  { name: 'Talatona', x: -115, z: 350 },
-  { name: 'Belas', x: -330, z: 385 },
-  { name: 'Mussulo', x: -465, z: 185 },
-  { name: 'Samba', x: 5, z: 235 },
-  { name: 'Kilamba', x: -65, z: 515 }
+  { name: 'Maianga', x: 145, z: 55 },
+  { name: 'Maculusso', x: -125, z: 35 },
+  { name: 'Miramar', x: -255, z: -105 },
+  { name: 'Alvalade', x: 245, z: -115 },
+  { name: 'Prenda', x: 155, z: 195 },
+  { name: 'Samba', x: 20, z: 320 },
+  { name: 'Bairro Azul', x: -155, z: 190 },
+  { name: 'Cruzeiro', x: -285, z: 65 },
+  { name: 'Sambizanga', x: -105, z: -220 },
+  { name: 'Ilha de Luanda', x: -390, z: -20 },
+  { name: 'Rua da Direita', x: 0, z: -32 }
 ];
-
 const STOPS = DISTRICTS.flatMap((district, index) => [
   {
     name: `${district.name} · Centro`,
@@ -38,14 +33,13 @@ const STOPS = DISTRICTS.flatMap((district, index) => [
 ]);
 
 const ARTERIAL = [
-  [-300, -410, -115, -195], [-115, -195, 0, 0],
-  [0, 0, 155, 35], [155, 35, 225, 285],
-  [225, 285, 405, 365], [0, 0, 5, 235],
-  [5, 235, -115, 350], [-115, 350, -330, 385],
-  [-330, 385, -465, 185], [0, 0, 105, -125],
-  [105, -125, 265, -235], [265, -235, 355, -95],
-  [355, -95, 390, 165], [390, 165, 405, 365],
-  [-105, -390, -300, -410], [-65, 515, -115, 350]
+  [0, 0, -125, 35], [0, 0, 145, 55], [0, 0, -105, -220],
+  [0, 0, 245, -115], [0, 0, 155, 195], [0, 0, 20, 320],
+  [-125, 35, -255, -105], [-125, 35, -155, 190],
+  [-255, -105, -285, 65], [-105, -220, -255, -105],
+  [145, 55, 245, -115], [145, 55, 155, 195],
+  [155, 195, 20, 320], [-155, 190, -285, 65],
+  [-285, 65, -390, -20], [-390, -20, -125, 35]
 ];
 
 const money = value => `${Math.round(value).toLocaleString('pt-PT')} Kz`;
@@ -85,15 +79,15 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
   }
 
   function buildRoadGraph() {
-    const xs = [-430, -300, -100, 150, 390, 430];
-    const zs = [-500, -300, -80, 150, 390, 530];
+    const xs = [-420, -285, -155, 0, 155, 245, 300];
+    const zs = [-270, -220, -105, 35, 190, 320, 360];
 
-    for (const z of [-300, -80, 150, 390]) {
+    for (const z of [-220, -105, 35, 190, 320]) {
       const row = xs.map(x => addRoadNode(x, z));
       for (let i = 0; i < row.length - 1; i++) connect(row[i], row[i + 1]);
     }
 
-    for (const x of [-300, -100, 150, 390]) {
+    for (const x of [-285, -155, 0, 155, 245]) {
       const column = zs.map(z => addRoadNode(x, z));
       for (let i = 0; i < column.length - 1; i++) connect(column[i], column[i + 1]);
     }
