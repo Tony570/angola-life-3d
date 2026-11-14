@@ -1,6 +1,7 @@
 
 import * as THREE from 'three';
 import { createWorld } from './world.js';
+import { expandLuandaCity } from './luanda-city.js';
 import { createHouseSystem } from './houses.js';
 import { Player } from './player.js';
 import {
@@ -43,7 +44,7 @@ app.innerHTML = `
       </div>
       <div class="phone-heading">
         <div>
-          <small>MAPA DA CIDADE</small>
+          <small>MAPA COMPLETO · 16 MUNICÍPIOS</small>
           <strong>Luanda, Angola</strong>
         </div>
         <button id="close-map" aria-label="Fechar mapa">✕</button>
@@ -392,7 +393,7 @@ document.head.appendChild(styles);
 
 const game = document.querySelector('#game');
 const scene = new THREE.Scene();
-const outsideFog = new THREE.Fog('#9ac7df', 100, 230);
+const outsideFog = new THREE.Fog('#9ac7df', 300, 900);
 
 scene.background = new THREE.Color('#9ac7df');
 scene.fog = outsideFog;
@@ -431,6 +432,7 @@ sun.castShadow = false;
 scene.add(sun);
 
 const world = createWorld(scene);
+expandLuandaCity(scene, world);
 
 const restaurantSites = [
   { x: -55, z: -20 },
@@ -1185,7 +1187,7 @@ document.querySelector('#close-map').addEventListener('click', () => {
 });
 
 function mapPercent(value) {
-  return THREE.MathUtils.clamp(((value + 120) / 240) * 100, 3, 97);
+  return THREE.MathUtils.clamp(((value + 540) / 1080) * 100, 3, 97);
 }
 
 function getPlayerMapPosition() {
