@@ -1,3 +1,4 @@
+
 import * as THREE from 'three';
 import { createPeople } from './people.js';
 
@@ -8,6 +9,17 @@ export function createWorld(scene) {
     buildings: [],
     destinations: [
       { name: 'Praça da Cidade', x: 0, z: 0 },
+      { name: 'Banco Nacional', x: -50, z: 58 },
+      { name: 'Boutique Central', x: -50, z: 29 },
+      { name: 'Concessionária de Automóveis', x: 50, z: 58 },
+      { name: 'Hotel Central', x: 91, z: 29 },
+      { name: 'Esquadra de Polícia', x: 50, z: -42 },
+      { name: 'Hospital Municipal', x: 91, z: 101 },
+      { name: 'Mercado', x: -78, z: -18 },
+      { name: 'Posto de Combustível', x: 78, z: -28 },
+      { name: 'Sabor de Luanda', x: -55, z: -12 },
+      { name: 'Cantinho da Ilha', x: -55, z: -35 },
+      { name: 'Paladar Angolano', x: -55, z: -58 },
       { name: 'Centro de Luanda', x: 35, z: -35 },
       { name: 'Zona Comercial', x: -40, z: -35 },
       { name: 'Bairro Residencial', x: 40, z: 40 },
@@ -404,6 +416,113 @@ export function createWorld(scene) {
     return group;
   }
 
+  function makeFacilitySign(group, title, subtitle, color, width, depth) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#101b25';
+    ctx.fillRect(0, 0, 1024, 256);
+    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+    ctx.fillRect(0, 0, 24, 256);
+    ctx.strokeStyle = '#f4d37a';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(12, 12, 1000, 232);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 78px Arial, sans-serif';
+    ctx.fillText(title.toUpperCase(), 530, 105, 900);
+    ctx.fillStyle = '#f4d37a';
+    ctx.font = 'bold 32px Arial, sans-serif';
+    ctx.fillText(subtitle.toUpperCase(), 530, 190, 900);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.min(width * 0.82, 14), 1.35),
+      new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+    );
+    sign.position.set(0, 3.55, depth / 2 + 0.28);
+    group.add(sign);
+
+    const canopy = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+    box(group, 0, 2.55, depth / 2 + 0.48, Math.min(width * 0.9, 15), 0.22, 1.35, canopy);
+    box(group, 0, 2.34, depth / 2 + 0.48, Math.min(width * 0.9, 15), 0.08, 1.35, mat.white);
+
+    const record = world.buildings[world.buildings.length - 1];
+    if (record && record.group === group) {
+      record.facility = title;
+      record.serviceType = subtitle;
+    }
+  }
+
+  function addFacilityInterior(group, kind, width, depth) {
+    if (kind === 'bank') {
+      for (const x of [-4.5, 4.5]) {
+        box(group, x, 0.3, depth / 2 - 2.2, 0.28, 2.9, 0.28, mat.concrete);
+      }
+      box(group, 0, 0.85, 0.2, width * 0.55, 1.1, 0.65, mat.wood);
+      box(group, 0, 1.95, 0.2, width * 0.55, 0.12, 0.7, mat.yellow);
+    } else if (kind === 'boutique') {
+      for (const x of [-4, 0, 4]) {
+        box(group, x, 0.45, -1.5, 0.12, 2.1, 0.12, mat.metal);
+        box(group, x, 2.45, -1.5, 2.2, 0.12, 0.12, mat.metal);
+        for (let i = 0; i < 4; i++) {
+          const clothes = [mat.red, mat.blue, mat.yellow, mat.green][i];
+          box(group, x - 0.72 + i * 0.48, 0.75, -1.42, 0.38, 1.05, 0.12, clothes);
+        }
+      }
+      box(group, 0, 0.45, 2.1, 5.5, 0.9, 0.85, mat.wood);
+    } else if (kind === 'car-dealer') {
+      [0xc62828, 0xeeeeee, 0x2255aa].forEach((paint, index) => {
+        const x = (index - 1) * 4.8;
+        const body = new THREE.MeshStandardMaterial({ color: paint, metalness: 0.3, roughness: 0.4 });
+        box(group, x, 0.42, -1.1, 2.05, 0.62, 3.6, body);
+        box(group, x, 1.02, -1.25, 1.55, 0.65, 1.75, mat.glass);
+        for (const wx of [-0.92, 0.92]) {
+          for (const wz of [-2.2, 0.05]) {
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.2, 12), mat.black);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(x + wx, 0.38, -1.1 + wz);
+            group.add(wheel);
+          }
+        }
+      });
+    } else if (kind === 'hotel') {
+      for (const x of [-5.2, 5.2]) {
+        cylinder(group, x, 0.25, depth / 2 + 0.3, 0.28, 0.34, 2.55, mat.white, 12);
+      }
+      box(group, 0, 0.3, depth / 2 - 2.1, width * 0.55, 0.95, 0.42, mat.wood);
+      box(group, 0, 1.28, depth / 2 - 2.1, width * 0.55, 0.12, 0.48, mat.yellow);
+    } else if (kind === 'police') {
+      box(group, 0, 0.3, depth / 2 + 0.12, width * 0.78, 0.28, 0.16, mat.blue);
+      box(group, 0, 0.58, depth / 2 + 0.12, width * 0.78, 0.1, 0.16, mat.white);
+      box(group, 0, 0.68, depth / 2 + 0.12, width * 0.78, 0.12, 0.16, mat.blue);
+      const badge = new THREE.Mesh(new THREE.CircleGeometry(0.62, 8), new THREE.MeshStandardMaterial({ color: 0xd9b64e, metalness: 0.35 }));
+      badge.position.set(0, 1.55, depth / 2 + 0.22);
+      group.add(badge);
+    } else if (kind === 'hospital') {
+      box(group, 0, 4.7, depth / 2 + 0.18, 1.8, 0.42, 0.2, mat.red);
+      box(group, 0, 3.95, depth / 2 + 0.18, 0.42, 1.9, 0.2, mat.red);
+    }
+  }
+
+  function makeNamedFacility(config) {
+    const group = makeBuilding(config.x, config.z, config.width, config.depth, config.floors, config.buildingType || 'shop');
+    makeFacilitySign(group, config.name, config.subtitle, config.color, config.width, config.depth);
+    addFacilityInterior(group, config.kind, config.width, config.depth);
+    const record = world.buildings[world.buildings.length - 1];
+    if (record) {
+      record.facility = config.name;
+      record.kind = config.kind;
+      record.entranceX = config.x;
+      record.entranceZ = config.z + config.depth / 2 + 1.5;
+    }
+    return group;
+  }
+
   function makeWallAndGate(x, z, width, rotation = 0) {
     const group = new THREE.Group();
     const wall = new THREE.MeshStandardMaterial({ color: 0xbcae98 });
@@ -420,17 +539,34 @@ export function createWorld(scene) {
 
   function buildCityBlocks() {
     const positions = [-88, -53, -18, 18, 53, 88];
+    const facilities = [
+      { x: -50, z: 50, name: 'Banco Nacional', subtitle: 'Serviços bancários', kind: 'bank', width: 18, depth: 14, floors: 3, color: 0x245b83 },
+      { x: -50, z: 21, name: 'Boutique Central', subtitle: 'Moda e vestuário', kind: 'boutique', width: 16, depth: 14, floors: 2, color: 0x8d315c },
+      { x: 50, z: 50, name: 'Concessionária de Automóveis', subtitle: 'Venda de viaturas', kind: 'car-dealer', width: 20, depth: 16, floors: 2, color: 0x315f83 },
+      { x: 91, z: 21, name: 'Hotel Central', subtitle: 'Alojamento e recepção', kind: 'hotel', width: 18, depth: 16, floors: 4, color: 0x9b762d, buildingType: 'office' },
+      { x: 50, z: -50, name: 'Esquadra de Polícia', subtitle: 'Polícia nacional', kind: 'police', width: 16, depth: 14, floors: 2, color: 0x24466f, buildingType: 'office' },
+      { x: 91, z: 91, name: 'Hospital Municipal', subtitle: 'Urgência e consultas', kind: 'hospital', width: 20, depth: 18, floors: 3, color: 0x9d3030, buildingType: 'office' }
+    ];
+    const facilityKeys = new Set(facilities.map(item => item.x + ',' + item.z));
+
     positions.forEach((x, xi) => {
       positions.forEach((z, zi) => {
         if (Math.abs(x) < 20 && Math.abs(z) < 20) return;
         const bx = x + (xi % 2 ? 3 : -3);
         const bz = z + (zi % 2 ? 3 : -3);
+        if (facilityKeys.has(bx + ',' + bz)) return;
+
         const floors = 1 + ((xi * 3 + zi * 5) % 5);
         const type = floors >= 4 ? 'apartment' : (xi + zi) % 3 === 0 ? 'shop' : 'house';
-        makeBuilding(bx, bz, type === 'shop' ? 12 : 14, 12, floors, type);
+        const building = makeBuilding(bx, bz, type === 'shop' ? 12 : 14, 12, floors, type);
+        if (type === 'shop') {
+          makeFacilitySign(building, 'Loja Comercial', 'Comércio local', 0x347342, 12, 12);
+        }
         if ((xi + zi) % 3 === 0) makeWallAndGate(bx + 10, bz + 5, 7, Math.PI / 2);
       });
     });
+
+    facilities.forEach(makeNamedFacility);
     makeBuilding(-25, -25, 18, 18, 9, 'office');
     makeBuilding(25, -25, 18, 18, 11, 'office');
     makeBuilding(-25, 25, 18, 18, 7, 'apartment');
@@ -555,6 +691,29 @@ export function createWorld(scene) {
     }
     group.position.set(-78, 0, -25);
     scene.add(group);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 768;
+    canvas.height = 192;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#23633d';
+    ctx.fillRect(0, 0, 768, 192);
+    ctx.strokeStyle = '#f4d37a';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(8, 8, 752, 176);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 76px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('MERCADO', 384, 96);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const board = new THREE.Mesh(
+      new THREE.PlaneGeometry(9, 2.25),
+      new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+    );
+    board.position.set(-78, 4.2, -22.9);
+    scene.add(board);
   }
 
   function makeFuelStation() {
@@ -571,6 +730,29 @@ export function createWorld(scene) {
     }
     group.position.set(78, 0, -35);
     scene.add(group);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 768;
+    canvas.height = 192;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#d8a323';
+    ctx.fillRect(0, 0, 768, 192);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(8, 8, 752, 176);
+    ctx.fillStyle = '#17242a';
+    ctx.font = 'bold 72px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('POSTO DE COMBUSTÍVEL', 384, 96);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const board = new THREE.Mesh(
+      new THREE.PlaneGeometry(12, 2.6),
+      new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+    );
+    board.position.set(78, 5.5, -28.7);
+    scene.add(board);
   }
 
   function makeCoast() {
