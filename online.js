@@ -377,6 +377,14 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
       if (error) throw error;
       return data || [];
     },
+    async saveKilambaFurniture(propertyId, furniture) {
+      const { data, error } = await supabase.rpc('save_kilamba_apartment_furniture', {
+        p_property_id: propertyId,
+        p_furniture: furniture
+      });
+      if (error) throw error;
+      return data;
+    },
     async purchaseItem(itemKey, quantity = 1) {
       const { data, error } = await supabase.rpc('purchase_game_item', {
         p_item_key: itemKey,
