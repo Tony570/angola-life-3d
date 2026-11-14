@@ -222,26 +222,17 @@ export function createWorld(scene) {
     }
 
     if (kind === 'car-dealer') {
-      const paints = [0xc62828, 0xeeeeee, 0x2255aa];
-
-      paints.forEach((paint, index) => {
-        const px = (index - 1) * 4.5;
-        const body = mat(paint, 0.35, 0.25);
-
-        box(group, px, 0.4, -1, 2.1, 0.65, 3.6, body);
-        box(group, px, 1.05, -1.2, 1.6, 0.65, 1.8, M.glass);
-
-        for (const wx of [-0.9, 0.9]) {
-          for (const wz of [-2, 0.1]) {
-            const wheel = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.32, 0.32, 0.2, 16),
-              M.dark
-            );
-            wheel.rotation.z = Math.PI / 2;
-            wheel.position.set(px + wx, 0.4, -1 + wz);
-            group.add(wheel);
-          }
-        }
+      // Exposição com modelos 3D reais, sem carroçarias montadas com cubos.
+      [-4.5, 0, 4.5].forEach((px, index) => {
+        const displayCar = new THREE.Group();
+        displayCar.position.set(px, 0.35, -1);
+        displayCar.rotation.y = index === 1 ? Math.PI : 0;
+        group.add(displayCar);
+        attachRealCar(displayCar, {
+          width: 2.25,
+          length: 4.1,
+          height: 1.55
+        });
       });
     }
 
