@@ -177,8 +177,40 @@ const decorCatalog = homePanel.querySelector('#decor-catalog');
 let decorMode = false, decorRotation = 0, selectedDecor = 'plant';
 const decorMaterials = {wood:new THREE.MeshStandardMaterial({color:0x805638,roughness:.82}),green:new THREE.MeshStandardMaterial({color:0x39764a,roughness:.9}),pot:new THREE.MeshStandardMaterial({color:0xa65f3d,roughness:.9}),fabric:new THREE.MeshStandardMaterial({color:0x547b89,roughness:.95})};
 function createDecorObject(type) { const group=new THREE.Group(); if(type==='plant'){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.42,10),decorMaterials.pot);pot.position.y=.21;group.add(pot);const leaves=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),decorMaterials.green);leaves.position.y=.72;leaves.scale.set(.8,1.35,.8);group.add(leaves);}else if(type==='table'){const top=new THREE.Mesh(new THREE.BoxGeometry(1.15,.12,.8),decorMaterials.wood);top.position.y=.78;group.add(top);for(const x of [-.48,.48])for(const z of [-.3,.3]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.09,.75,.09),decorMaterials.wood);leg.position.set(x,.37,z);group.add(leg);}}else{const seat=new THREE.Mesh(new THREE.BoxGeometry(.8,.18,.72),decorMaterials.fabric);seat.position.y=.48;group.add(seat);const back=new THREE.Mesh(new THREE.BoxGeometry(.8,.72,.12),decorMaterials.fabric);back.position.set(0,.82,-.3);group.add(back);for(const x of [-.3,.3])for(const z of [-.25,.25]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.07,.42,.07),decorMaterials.wood);leg.position.set(x,.21,z);group.add(leg);}}group.userData.isPlayerDecoration=true;return group;}
-function placeDecoration(type=selectedDecor) {if(!activeHouse||!decorMode||player.sitting)return;const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-activeFloor*activeHouse.floorHeight)<.01);if(!level)return;const forward=new THREE.Vector3(Math.sin(player.group.rotation.y),0,Math.cos(player.group.rotation.y));const pos=player.group.position.clone().addScaledVector(forward,1.7);const x=pos.x-activeHouse.interiorX,z=pos.z-activeHouse.interiorZ;if(Math.abs(x)>12.5||Math.abs(z)>12.5)return;const item=createDecorObject(type);item.position.set(x/1.5,0,z/1.5);item.rotation.y=decorRotation;level.add(item);if(!activeHouse.decorations)activeHouse.decorations=[];activeHouse.decorations.push(item);}
-homePanel.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='close-home-tools')homePanel.hidden=true;if(button.id==='toggle-decor-mode'){decorMode=!decorMode;decorCatalog.hidden=!decorMode;button.textContent=decorMode?'✓ MODO DECORAÇÃO ATIVO':'🪴 MODO DECORAÇÃO';}if(button.dataset.decor){selectedDecor=button.dataset.decor;placeDecoration(selectedDecor);}if(button.id==='rotate-decor')decorRotation+=Math.PI/4;if(button.id==='remove-decor'&&activeHouse?.decorations?.length){const last=activeHouse.decorations.pop();last.parent?.remove(last);}});
+async function placeDecoration(type=selectedDecor) {
+  if(!activeHouse||!decorMode||player.sitting)return;
+  if(!online.isAuthenticated()) { homePanel.querySelector('#home-tools-help').textContent='Inicia sessão para comprar e guardar móveis.'; return; }
+  const property=activeHouse.currentProperty;
+  if(!property) { homePanel.querySelector('#home-tools-help').textContent='Este apartamento ainda não te pertence. Compra-o na recepção para o mobilar.'; return; }
+  const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-activeFloor*activeHouse.floorHeight)<.01);
+  if(!level)return;
+  const catalog={plant:'furniture:Planta decorativa',table:'furniture:Mesa de jantar',chair:'furniture:Cadeira'};
+  const itemKey=catalog[type];
+  if(!itemKey)return;
+  const forward=new THREE.Vector3(Math.sin(player.group.rotation.y),0,Math.cos(player.group.rotation.y));
+  const pos=player.group.position.clone().addScaledVector(forward,1.7);
+  const x=pos.x-activeHouse.interiorX,z=pos.z-activeHouse.interiorZ;
+  if(Math.abs(x)>12.5||Math.abs(z)>12.5)return;
+  const record={type,x:x/1.7,z:z/1.7,rotation:decorRotation};
+  const previous=Array.isArray(property.interior_data?.furniture)?property.interior_data.furniture:[];
+  if(previous.length>=100){homePanel.querySelector('#home-tools-help').textContent='Já atingiste o limite de 100 móveis neste apartamento.';return;}
+  try {
+    homePanel.querySelector('#home-tools-help').textContent='A comprar o móvel e a guardar no teu apartamento...';
+    await online.purchaseItem(itemKey,1);
+    await online.saveKilambaFurniture(property.id,[...previous,record]);
+    property.interior_data={...(property.interior_data||{}),furniture:[...previous,record]};
+    const item=createDecorObject(type);
+    item.position.set(record.x,0,record.z);item.rotation.y=record.rotation;item.userData.furnitureRecord=record;
+    level.add(item);
+    if(!activeHouse.decorations)activeHouse.decorations=[];
+    activeHouse.decorations.push(item);
+    const data=await online.loadPlayerData();services.syncOnlineData(data);
+    homePanel.querySelector('#home-tools-help').textContent='Móvel comprado e colocado. O teu apartamento ficou guardado online.';
+  } catch(error) {
+    homePanel.querySelector('#home-tools-help').textContent=error.message||'Não foi possível comprar ou guardar o móvel.';
+  }
+}
+homePanel.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='close-home-tools')homePanel.hidden=true;if(button.id==='toggle-decor-mode'){decorMode=!decorMode;decorCatalog.hidden=!decorMode;button.textContent=decorMode?'✓ MODO DECORAÇÃO ATIVO':'🪴 MODO DECORAÇÃO';}if(button.dataset.decor){selectedDecor=button.dataset.decor;placeDecoration(selectedDecor);}if(button.id==='rotate-decor')decorRotation+=Math.PI/4;if(button.id==='remove-decor'&&activeHouse?.decorations?.length){const last=activeHouse.decorations.pop();last.parent?.remove(last);const property=activeHouse.currentProperty;if(property&&last.userData.furnitureRecord){const remaining=(property.interior_data?.furniture||[]).filter(item=>item!==last.userData.furnitureRecord);online.saveKilambaFurniture(property.id,remaining).then(()=>{property.interior_data.furniture=remaining;homePanel.querySelector('#home-tools-help').textContent='Último móvel removido e alterações guardadas.';}).catch(error=>{homePanel.querySelector('#home-tools-help').textContent=error.message||'Não foi possível guardar a remoção.';});}}});
 
 function nearestHouse() {
   if (activeHouse) return activeHouse;
@@ -215,6 +247,28 @@ function goToFloor(floor) {
     button.classList.toggle('active', Number(button.dataset.floor) === next);
   });
   districtLocation.textContent = '🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(next);
+  homePanel.hidden = next === 0;
+  activeHouse.currentProperty = null;
+  if(next>0 && online.isAuthenticated()) {
+    const expectedName=activeHouse.name+' · Piso '+next;
+    online.getOwnedProperties().then(properties=>{
+      if(!activeHouse || activeFloor!==next)return;
+      const property=properties.find(item=>item.property_name===expectedName);
+      activeHouse.currentProperty=property||null;
+      const help=homePanel.querySelector('#home-tools-help');
+      help.textContent=property?'Apartamento teu. Compra os móveis e coloca-os onde quiseres.':'Apartamento disponível para compra. Visita a recepção para o adquirir.';
+      if(!property)return;
+      const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-next*activeHouse.floorHeight)<.01);
+      if(!level || level.userData.furniturePropertyId===property.id)return;
+      level.userData.furniturePropertyId=property.id;
+      const placed=Array.isArray(property.interior_data?.furniture)?property.interior_data.furniture:[];
+      for(const record of placed){
+        if(!['plant','table','chair'].includes(record.type))continue;
+        const item=createDecorObject(record.type);item.position.set(Number(record.x)||0,0,Number(record.z)||0);item.rotation.y=Number(record.rotation)||0;item.userData.furnitureRecord=record;level.add(item);
+        if(!activeHouse.decorations)activeHouse.decorations=[];activeHouse.decorations.push(item);
+      }
+    }).catch(error=>{homePanel.querySelector('#home-tools-help').textContent=error.message||'Não foi possível consultar a propriedade.';});
+  }
 }
 elevatorPanel.addEventListener('click', event => {
   const button = event.target.closest('[data-floor]');
