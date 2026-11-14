@@ -323,6 +323,10 @@ function ensureHouseResidents(house) {
       receptionistIndex: index
     };
     resident.group.userData.receptionist = true;
+    // Se o modelo carregar depois de entrar no edifício, regista também o NPC na lista de interação.
+    if (Array.isArray(house.interactables) && !house.interactables.includes(resident.group)) {
+      house.interactables.push(resident.group);
+    }
   });
 }
 
