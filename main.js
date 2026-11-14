@@ -93,7 +93,9 @@ let services = null;
 
 const online = createOnlineAccount({
   onProfile(data) {
+    currentPlayerData = data;
     if (services) services.syncOnlineData(data);
+    if (wardrobePanel) renderWardrobeProfile();
     if (data?.profile?.appearance) {
       player.setAppearance(data.profile.appearance);
     }
