@@ -231,11 +231,11 @@ function goToFloor(floor) {
   const next = Math.max(0, Math.min(activeHouse.floorCount - 1, Number(floor) || 0));
   activeFloor = next;
   activeHouse.currentFloor = next;
-  for(const child of activeHouse.interior.children) {
+  activeHouse.interior.traverse(child => {
     if(child.userData && Number.isInteger(child.userData.houseFloor)) {
       child.visible = child.userData.houseFloor === next;
     }
-  }
+  });
   setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
   // Câmara próxima, mas livre: o jogador pode rodar e aproximar/afastar a vista.
