@@ -1,68 +1,83 @@
 
 import * as THREE from 'three';
 
-// ANGOLA LIFE 3D — SISTEMA DE HABITAÇÕES
-// Mantém a API de casas compatível com main.js.
+// ANGOLA LIFE 3D — CASAS E INTERIORES
 
 export function createHouseSystem(scene) {
   const houses = [];
 
+  const material = (color, roughness = 0.85, metalness = 0) =>
+    new THREE.MeshStandardMaterial({ color, roughness, metalness });
+
   const mat = {
-    wall: new THREE.MeshStandardMaterial({ color: 0xe8ddca, roughness: 0.95 }),
-    wallAlt: new THREE.MeshStandardMaterial({ color: 0xd4c0a3, roughness: 0.95 }),
-    plaster: new THREE.MeshStandardMaterial({ color: 0xf0e9dc, roughness: 0.9 }),
-    roof: new THREE.MeshStandardMaterial({ color: 0x754333, roughness: 0.95 }),
-    roofDark: new THREE.MeshStandardMaterial({ color: 0x4d3932, roughness: 1 }),
-    wood: new THREE.MeshStandardMaterial({ color: 0x70452e, roughness: 0.85 }),
-    woodLight: new THREE.MeshStandardMaterial({ color: 0xa9794f, roughness: 0.85 }),
-    tile: new THREE.MeshStandardMaterial({ color: 0xcbd3d2, roughness: 0.8 }),
-    floor: new THREE.MeshStandardMaterial({ color: 0x9b704c, roughness: 0.9 }),
-    white: new THREE.MeshStandardMaterial({ color: 0xf2eee5, roughness: 0.8 }),
-    sofa: new THREE.MeshStandardMaterial({ color: 0x426779, roughness: 1 }),
-    fabric: new THREE.MeshStandardMaterial({ color: 0xd9c9ad, roughness: 1 }),
-    red: new THREE.MeshStandardMaterial({ color: 0x984a3c, roughness: 1 }),
-    dark: new THREE.MeshStandardMaterial({ color: 0x25292b, roughness: 0.6 }),
-    metal: new THREE.MeshStandardMaterial({ color: 0x929a9b, metalness: 0.5, roughness: 0.4 }),
-    glass: new THREE.MeshStandardMaterial({ color: 0x75b9d0, transparent: true, opacity: 0.42, roughness: 0.2 }),
-    green: new THREE.MeshStandardMaterial({ color: 0x397343, roughness: 1 }),
-    leaf: new THREE.MeshStandardMaterial({ color: 0x64954d, roughness: 1 }),
-    concrete: new THREE.MeshStandardMaterial({ color: 0xaaa69d, roughness: 1 }),
-    black: new THREE.MeshStandardMaterial({ color: 0x17191b, roughness: 0.6 })
+    wall: material(0xe9dfce),
+    wallAlt: material(0xd4bda0),
+    plaster: material(0xf5eee2),
+    roof: material(0x754333),
+    roofDark: material(0x49352e),
+    wood: material(0x70452e),
+    woodLight: material(0xa9794f),
+    tile: material(0xcbd3d2),
+    floor: material(0xb18a65),
+    white: material(0xf2eee5),
+    sofa: material(0x426779),
+    fabric: material(0xd9c9ad),
+    red: material(0x984a3c),
+    dark: material(0x25292b),
+    metal: material(0x929a9b, 0.4, 0.5),
+    glass: new THREE.MeshPhysicalMaterial({
+      color: 0x75b9d0,
+      transparent: true,
+      opacity: 0.48,
+      roughness: 0.2
+    }),
+    green: material(0x397343),
+    leaf: material(0x64954d),
+    concrete: material(0xaaa69d),
+    black: material(0x17191b),
+    gold: material(0xc59a50, 0.35, 0.4)
   };
 
-  function box(parent, x, y, z, w, h, d, material, castShadow = true) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  function box(parent, x, y, z, w, h, d, matRef, shadows = true) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      matRef
+    );
+
     mesh.position.set(x, y + h / 2, z);
-    mesh.castShadow = castShadow;
+    mesh.castShadow = shadows;
     mesh.receiveShadow = true;
     parent.add(mesh);
+
     return mesh;
   }
 
-  function cylinder(parent, x, y, z, radius, height, material) {
+  function cylinder(parent, x, y, z, radius, height, matRef) {
     const mesh = new THREE.Mesh(
       new THREE.CylinderGeometry(radius, radius, height, 16),
-      material
+      matRef
     );
+
     mesh.position.set(x, y + height / 2, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     parent.add(mesh);
+
     return mesh;
   }
 
   function addWindow(group, x, y, z, width, height, front = true) {
-    const depth = 0.12;
+    const frameZ = z + (front ? 0.09 : -0.09);
 
     box(group, x, y, z, width, height, 0.07, mat.glass, false);
 
-    const frameZ = z + (front ? 0.09 : -0.09);
+    box(group, x, y - 0.06, frameZ, width + 0.18, 0.12, 0.12, mat.white);
+    box(group, x, y + height - 0.04, frameZ, width + 0.18, 0.12, 0.12, mat.white);
+    box(group, x - width / 2 - 0.04, y, frameZ, 0.1, height, 0.12, mat.white);
+    box(group, x + width / 2 + 0.04, y, frameZ, 0.1, height, 0.12, mat.white);
+    box(group, x, y, frameZ + (front ? 0.04 : -0.04), 0.055, height, 0.07, mat.white);
 
-    box(group, x, y - 0.06, frameZ, width + 0.18, 0.12, depth, mat.white);
-    box(group, x, y + height - 0.04, frameZ, width + 0.18, 0.12, depth, mat.white);
-    box(group, x - width / 2 - 0.04, y, frameZ, 0.1, height, depth, mat.white);
-    box(group, x + width / 2 + 0.04, y, frameZ, 0.1, height, depth, mat.white);
-    box(group, x, y, frameZ + (front ? 0.015 : -0.015), 0.055, height, 0.07, mat.white);
+    box(group, x, y - height / 2 - 0.18, frameZ, width + 0.45, 0.12, 0.35, mat.concrete);
   }
 
   function addTree(group, x, z) {
@@ -80,18 +95,29 @@ export function createHouseSystem(scene) {
 
   function createExterior(location, variant) {
     const group = new THREE.Group();
-    const facade = variant === 1 ? mat.plaster : variant === 2 ? mat.wallAlt : mat.wall;
+    const facade = variant === 1
+      ? mat.plaster
+      : variant === 2
+        ? mat.wallAlt
+        : mat.wall;
+
     const frontZ = 6;
 
+    // Base e paredes
+    box(group, 0, -0.12, 0, 13.5, 0.25, 13.5, mat.concrete);
     box(group, -6.3, 0, 0, 0.35, 4.55, 12.6, facade);
     box(group, 6.3, 0, 0, 0.35, 4.55, 12.6, facade);
     box(group, 0, 0, -6.1, 12.9, 4.55, 0.35, facade);
 
+    // Fachada frontal com entrada central
     box(group, -4.55, 0, frontZ, 3.8, 4.55, 0.35, facade);
     box(group, 4.55, 0, frontZ, 3.8, 4.55, 0.35, facade);
     box(group, 0, 3.35, frontZ, 5.4, 1.2, 0.35, facade);
 
-    box(group, 0, 0, 6.22, 12.7, 0.28, 0.18, mat.concrete);
+    // Rodapé exterior
+    box(group, 0, 0, 6.2, 12.7, 0.3, 0.2, mat.concrete);
+
+    // Alpendre
     box(group, 0, 0, 7.35, 5.8, 0.22, 2.5, mat.tile);
     box(group, 0, 2.85, 7.25, 6.3, 0.2, 2.8, mat.roof);
 
@@ -99,21 +125,25 @@ export function createHouseSystem(scene) {
       box(group, x, 0, 7.25, 0.22, 2.85, 0.22, mat.white);
     }
 
+    // Porta de entrada
     const doorPivot = new THREE.Group();
     doorPivot.position.set(-1.82, 0.08, 6.12);
     group.add(doorPivot);
 
     box(doorPivot, 0.88, 0, 0, 1.76, 2.72, 0.14, mat.wood);
     box(doorPivot, 0.88, 0.18, -0.09, 1.48, 2.28, 0.035, mat.woodLight);
-    cylinder(doorPivot, 1.53, 1.25, -0.12, 0.055, 0.1, mat.metal);
+    box(doorPivot, 0.88, 1.25, -0.13, 0.7, 0.8, 0.035, mat.dark);
+    cylinder(doorPivot, 1.53, 1.25, -0.12, 0.055, 0.1, mat.gold);
 
     doorPivot.rotation.y = -1.08;
 
+    // Janelas
     addWindow(group, -4.55, 1.45, 6.2, 1.65, 1.45);
     addWindow(group, 4.55, 1.45, 6.2, 1.65, 1.45);
     addWindow(group, -6.48, 1.45, -1.4, 1.8, 1.45, false);
     addWindow(group, 6.48, 1.45, -1.4, 1.8, 1.45, false);
 
+    // Telhado inclinado
     const leftRoof = new THREE.Mesh(
       new THREE.BoxGeometry(7.4, 0.28, 14),
       mat.roof
@@ -137,6 +167,7 @@ export function createHouseSystem(scene) {
     box(group, 0, 4.55, 0, 0.22, 0.35, 14.2, mat.roofDark);
     box(group, 4.2, 4.45, -3.8, 0.8, 1.2, 0.8, mat.wallAlt);
 
+    // Lâmpadas da fachada
     for (const x of [-5.8, 5.8]) {
       box(group, x, 2.65, 6.25, 0.18, 0.3, 0.12, mat.dark);
 
@@ -145,12 +176,22 @@ export function createHouseSystem(scene) {
       group.add(lamp);
     }
 
+    // Jardim e caminho
     for (const x of [-8.2, 8.2]) {
       addTree(group, x, 5.8);
     }
 
     box(group, 0, -0.02, 9.5, 18, 0.12, 5, mat.green, false);
     box(group, 0, 0.02, 8.05, 4.4, 0.08, 3.2, mat.concrete, false);
+
+    // Pequena vedação lateral
+    for (const x of [-9.2, 9.2]) {
+      box(group, x, 0.05, 9.5, 0.18, 1.0, 5, mat.white);
+
+      for (const z of [7.5, 9.0, 10.5, 11.5]) {
+        box(group, x, 0.05, z, 0.12, 1.2, 0.12, mat.concrete);
+      }
+    }
 
     group.position.set(location.x, 0, location.z);
     scene.add(group);
@@ -183,11 +224,18 @@ export function createHouseSystem(scene) {
   function addLivingRoom(g, variant) {
     const sofaMaterial = variant === 2 ? mat.red : mat.sofa;
 
+    // Sofá
     box(g, -5.7, 0.28, 2.0, 3.8, 0.55, 1.15, sofaMaterial);
     box(g, -5.7, 0.82, 1.45, 3.8, 0.75, 0.2, sofaMaterial);
     box(g, -7.55, 0.48, 2.0, 0.25, 0.7, 1.15, sofaMaterial);
     box(g, -3.85, 0.48, 2.0, 0.25, 0.7, 1.15, sofaMaterial);
 
+    // Almofadas
+    for (const x of [-6.8, -5.7, -4.6]) {
+      box(g, x, 0.95, 1.45, 0.7, 0.35, 0.18, mat.fabric);
+    }
+
+    // Mesa de centro
     box(g, -5.4, 0.48, -0.2, 2.1, 0.14, 1.1, mat.woodLight);
 
     for (const x of [-6.25, -4.55]) {
@@ -196,13 +244,17 @@ export function createHouseSystem(scene) {
       }
     }
 
+    // Móvel de televisão
     box(g, -5.6, 0, -3.1, 3.7, 0.8, 0.65, mat.wood);
     box(g, -5.6, 0.85, -3.35, 2.7, 1.55, 0.12, mat.dark);
     box(g, -5.6, 1.65, -3.27, 0.4, 0.04, 0.03, mat.white);
+
+    // Tapete
     box(g, -5.6, 0.03, 1.2, 5.2, 0.04, 4.1, mat.fabric, false);
   }
 
   function addBedroom(g, variant) {
+    // Cama
     box(g, -5.7, 0.18, -6.1, 3.4, 0.35, 3.8, mat.wood);
     box(g, -5.7, 0.55, -6.1, 3.3, 0.22, 3.7, mat.white);
     box(g, -5.7, 0.78, -7.35, 3.25, 0.35, 1.0, mat.wood);
@@ -212,13 +264,23 @@ export function createHouseSystem(scene) {
       box(g, x, 0.82, -7.15, 0.85, 0.18, 0.65, mat.white);
     }
 
+    // Guarda-roupa e cómoda
     box(g, -1.7, 0, -6.5, 1.3, 2.65, 2.0, mat.woodLight);
     box(g, -1.5, 0, -3.8, 1.7, 0.95, 0.65, mat.wood);
+
+    for (const y of [0.5, 1.1, 1.7]) {
+      box(g, -1.5, y, -3.42, 1.45, 0.045, 0.04, mat.gold);
+    }
+
+    // Candeeiro de cabeceira
+    box(g, -3.3, 0, -7.2, 0.55, 0.75, 0.55, mat.wood);
+    cylinder(g, -3.3, 0.75, -7.2, 0.22, 0.35, mat.fabric);
   }
 
   function addKitchen(g, variant) {
     const cabinet = variant === 2 ? mat.woodLight : mat.white;
 
+    // Armários
     box(g, 5.5, 0.12, 5.8, 5.5, 0.95, 1.15, cabinet);
     box(g, 5.5, 1.08, 5.8, 5.65, 0.13, 1.3, mat.dark);
 
@@ -227,6 +289,7 @@ export function createHouseSystem(scene) {
       box(g, x, 0.5, 5.08, 0.06, 0.12, 0.05, mat.metal);
     }
 
+    // Lava-loiça e fogão
     box(g, 3.7, 1.18, 5.55, 1.05, 0.04, 0.65, mat.metal);
     box(g, 6.6, 1.2, 5.7, 1.05, 0.07, 0.8, mat.dark);
 
@@ -236,7 +299,11 @@ export function createHouseSystem(scene) {
       }
     }
 
+    // Frigorífico
     box(g, 8.05, 0, 3.35, 1.0, 2.4, 1.1, mat.white);
+    box(g, 8.05, 1.15, 3.93, 0.08, 0.8, 0.06, mat.metal);
+
+    // Mesa auxiliar
     box(g, 5.5, 0.85, 3.2, 2.2, 0.12, 1.2, mat.woodLight);
 
     for (const x of [4.65, 6.35]) {
@@ -261,21 +328,43 @@ export function createHouseSystem(scene) {
     box(g, 7.25, 0.02, -7.0, 3.2, 0.06, 3.6, mat.tile, false);
     box(g, 5.65, 0, -7.0, 0.14, 2.45, 3.5, mat.wallAlt);
     box(g, 7.2, 0, -8.75, 3.0, 2.45, 0.14, mat.wallAlt);
+
+    // Duche
     box(g, 7.75, 0.12, -7.65, 1.35, 0.12, 1.35, mat.white);
     box(g, 7.75, 0.15, -7.0, 1.25, 2.15, 0.06, mat.glass);
+
+    // Sanita e lavatório
     box(g, 6.35, 0.12, -5.65, 0.75, 0.4, 0.9, mat.white);
     box(g, 6.35, 0.55, -5.25, 0.65, 0.75, 0.2, mat.white);
     box(g, 8.25, 0.75, -5.55, 1.0, 0.12, 0.6, mat.white);
+  }
+
+  function addInteriorLights(g) {
+    const light = new THREE.PointLight(0xffe0b5, 0.65, 18);
+    light.position.set(0, 3.4, 0);
+    g.add(light);
+
+    for (const x of [-5.5, 5.5]) {
+      const lamp = new THREE.Mesh(
+        new THREE.SphereGeometry(0.13, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffe2ad })
+      );
+
+      lamp.position.set(x, 3.65, 0);
+      g.add(lamp);
+    }
   }
 
   function createInterior(index) {
     const g = new THREE.Group();
     const variant = index % 3;
 
+    // Piso e áreas com materiais diferentes
     box(g, 0, -0.16, 0, 18, 0.32, 18, mat.floor);
     box(g, 5.5, 0.012, 5.5, 7.0, 0.035, 4.5, mat.tile, false);
     box(g, 7.2, 0.018, -7.0, 3.2, 0.035, 3.8, mat.tile, false);
 
+    // Paredes exteriores
     box(g, -9, 0, 0, 0.3, 4.2, 18, mat.wall);
     box(g, 9, 0, 0, 0.3, 4.2, 18, mat.wall);
     box(g, 0, 0, -9, 18, 4.2, 0.3, mat.wall);
@@ -283,6 +372,7 @@ export function createHouseSystem(scene) {
     box(g, 6.5, 0, 9, 5, 4.2, 0.3, mat.wall);
     box(g, 0, 3.7, 9, 8, 0.5, 0.3, mat.wall);
 
+    // Divisões interiores
     box(g, -1.0, 0, -6.85, 0.16, 2.65, 4.1, mat.wallAlt);
     box(g, -1.0, 0, -2.05, 0.16, 2.65, 1.1, mat.wallAlt);
     box(g, -6.55, 0, -1.45, 4.9, 2.65, 0.16, mat.wallAlt);
@@ -296,7 +386,9 @@ export function createHouseSystem(scene) {
     addKitchen(g, variant);
     addDining(g);
     addBathroom(g);
+    addInteriorLights(g);
 
+    // Cobertura removível pelo sistema de entrada
     const roof = box(g, 0, 4.2, 0, 18, 0.18, 18, mat.wall, false);
 
     const interiorX = 500 + index * 35;
@@ -317,11 +409,14 @@ export function createHouseSystem(scene) {
       });
     };
 
+    // Paredes
     add(-9, 0, 0.45, 18);
     add(9, 0, 0.45, 18);
     add(0, -9, 18, 0.45);
     add(-6.5, 9, 5, 0.45);
     add(6.5, 9, 5, 0.45);
+
+    // Divisórias
     add(-1.0, -6.85, 0.25, 4.1);
     add(-1.0, -2.05, 0.25, 1.1);
     add(-6.55, -1.45, 4.9, 0.25);
@@ -330,6 +425,7 @@ export function createHouseSystem(scene) {
     add(5.5, -2.35, 0.25, 1.3);
     add(7.2, -8.6, 3.5, 0.25);
 
+    // Móveis
     add(-5.8, 2.0, 3.9, 1.2);
     add(-5.6, -3.1, 3.8, 0.75);
     add(-5.7, -6.1, 3.5, 3.9);
