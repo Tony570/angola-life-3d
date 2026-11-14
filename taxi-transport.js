@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attachRealCar } from './vehicle-models.js';
 
 const DISTRICTS = [
   { name: 'Cacuaco', x: -300, z: -410 },
@@ -170,35 +171,14 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
 
   function createTaxi(stop) {
     const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.72, 4.4), bodyMaterial);
-    body.position.y = 0.82;
-    body.castShadow = true;
-    group.add(body);
-
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.88, 2.35), glassMaterial);
-    cabin.position.set(0, 1.55, -0.28);
-    group.add(cabin);
-
-    const bonnet = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.28, 1.18), whiteMaterial);
-    bonnet.position.set(0, 1.12, 1.38);
-    group.add(bonnet);
-
-    for (const x of [-1.12, 1.12]) {
-      for (const z of [-1.45, 1.45]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.24, 14), darkMaterial);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(x, 0.48, z);
-        group.add(wheel);
-      }
-    }
-
-    const roofSign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.34), goldMaterial);
-    roofSign.position.set(0, 2.08, -0.2);
-    group.add(roofSign);
-
     group.position.set(stop.x + 4.2, 0, stop.z + 3.2);
     group.rotation.y = Math.atan2(-4.2, -3.2);
     scene.add(group);
+
+    const roofSign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.34), goldMaterial);
+    roofSign.position.set(0, 1.9, -0.2);
+    group.add(roofSign);
+    attachRealCar(group, { width: 2.3, length: 4.5, height: 1.65 });
 
     const taxi = {
       group,
@@ -206,7 +186,8 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
       occupied: false,
       isTaxi: true,
       stop,
-      stationId: stop.id
+      stationId: stop.id,
+      modelName: 'Táxi 3D'
     };
     taxis.push(taxi);
     world.vehicles.push(taxi);
