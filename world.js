@@ -231,7 +231,8 @@ export function createWorld(scene) {
         attachRealCar(displayCar, {
           width: 2.25,
           length: 4.1,
-          height: 1.55
+          height: 1.55,
+          paintColor: [0xc62828, 0xeeeeee, 0x2255aa][index]
         });
       });
     }
@@ -620,7 +621,7 @@ export function createWorld(scene) {
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
     scene.add(group);
-    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6 });
+    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6, paintColor: color });
     const vehicle = { group, speed: 0, occupied: false, modelName: 'Ferrari 3D' };
     world.vehicles.push(vehicle);
     return group;
