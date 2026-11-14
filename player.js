@@ -25,6 +25,7 @@ export class Player {
     this.onInteract = null;
     this.colliders = [];
     this.indoor = false;
+    this.groundY = 0;
     this.radius = 0.38;
 
     this.moveTarget = null;
@@ -223,7 +224,7 @@ export class Player {
     this.previousSitPosition = this.group.position.clone();
     this.previousSitRotation = this.group.rotation.y;
 
-    this.group.position.set(x, 0, z);
+    this.group.position.set(x, this.groundY, z);
     this.group.rotation.y = rotationY;
     this.sitting = true;
 
@@ -261,7 +262,7 @@ export class Player {
       this.group.position.copy(this.previousSitPosition);
     }
 
-    this.group.position.y = 0;
+    this.group.position.y = this.groundY;
     this.group.rotation.y = this.previousSitRotation;
 
     this.previousSitPosition = null;
@@ -289,6 +290,23 @@ export class Player {
 
     this.updateCamera();
     return true;
+  }
+
+  setIndoor(value) {
+    this.indoor = Boolean(value);
+
+    if (!this.indoor) {
+      this.groundY = 0;
+    } else if (this.group.position.x > 400) {
+      this.groundY = 0.16;
+    } else if (this.group.position.x < -40) {
+      this.groundY = 0.3825;
+    } else {
+      this.groundY = 0.16;
+    }
+
+    this.group.position.y = this.groundY;
+    this.updateCamera();
   }
 
   setColliders(colliders = []) {
@@ -413,7 +431,7 @@ export class Player {
       if (!corrected) break;
     }
 
-    p.y = 0;
+    p.y = this.groundY;
   }
 
   moveWithCollision(dx, dz) {
@@ -446,7 +464,7 @@ export class Player {
       if (canMoveZ) this.group.position.z = nextZ;
     }
 
-    this.group.position.y = 0;
+    this.group.position.y = this.groundY;
   }
 
   setupControls() {
@@ -699,7 +717,7 @@ export class Player {
     this.exitOffset.applyAxisAngle(this.vehicleUp, vehicle.group.rotation.y);
 
     this.group.position.copy(vehicle.group.position).add(this.exitOffset);
-    this.group.position.y = 0;
+    this.group.position.y = this.groundY;
     this.group.visible = true;
 
     vehicle.occupied = false;
@@ -709,7 +727,7 @@ export class Player {
   }
 
   update(delta) {
-    this.group.position.y = 0;
+    this.group.position.y = this.groundY;
 
     if (this.mixer) this.mixer.update(delta);
 
@@ -877,7 +895,14 @@ export class Player {
     if (this.currentVehicle) this.exitVehicle();
 
     this.moveTarget = null;
-    this.group.position.set(x, 0, z);
+
+    if (this.indoor) {
+      this.groundY = x > 400 ? 0.16 : x < -40 ? 0.3825 : 0.16;
+    } else {
+      this.groundY = 0;
+    }
+
+    this.group.position.set(x, this.groundY, z);
     this.updateCamera();
   }
 }
