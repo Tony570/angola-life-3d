@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const STOPS = [
+const DISTRICTS = [
   { name: 'Cacuaco', x: -300, z: -410 },
   { name: 'Mulenvos', x: -105, z: -390 },
   { name: 'Sambizanga', x: -115, z: -195 },
@@ -19,6 +19,23 @@ const STOPS = [
   { name: 'Kilamba', x: -65, z: 515 }
 ];
 
+const STOPS = DISTRICTS.flatMap((district, index) => [
+  {
+    name: `${district.name} · Centro`,
+    districtName: district.name,
+    x: district.x - 7,
+    z: district.z - 4,
+    id: index * 2
+  },
+  {
+    name: `${district.name} · Bairro`,
+    districtName: district.name,
+    x: district.x + 17,
+    z: district.z + 16,
+    id: index * 2 + 1
+  }
+]);
+
 const ARTERIAL = [
   [-300, -410, -115, -195], [-115, -195, 0, 0],
   [0, 0, 155, 35], [155, 35, 225, 285],
@@ -33,7 +50,7 @@ const ARTERIAL = [
 const money = value => `${Math.round(value).toLocaleString('pt-PT')} Kz`;
 
 export function createTaxiTransport({ scene, world, player, services, game }) {
-  const stops = STOPS.map((stop, index) => ({ ...stop, id: index }));
+  const stops = STOPS.map(stop => ({ ...stop }));
   const taxis = [];
   const roadNodes = [];
   const edges = new Map();
@@ -84,14 +101,19 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
       connect(addRoadNode(x1, z1), addRoadNode(x2, z2));
     }
 
-    for (const stop of stops) {
-      const stopNode = addRoadNode(stop.x, stop.z);
+    const accessPoints = [
+      ...stops,
+      ...DISTRICTS.map((district, index) => ({ ...district, id: 1000 + index }))
+    ];
+
+    for (const point of accessPoints) {
+      const pointNode = addRoadNode(point.x, point.z);
       const nearest = roadNodes
-        .filter(node => node.key !== stopNode.key)
-        .map(node => ({ node, distance: Math.hypot(node.x - stop.x, node.z - stop.z) }))
+        .filter(node => node.key !== pointNode.key)
+        .map(node => ({ node, distance: Math.hypot(node.x - point.x, node.z - point.z) }))
         .sort((a, b) => a.distance - b.distance)
         .slice(0, 2);
-      for (const candidate of nearest) connect(stopNode, candidate.node);
+      for (const candidate of nearest) connect(pointNode, candidate.node);
     }
   }
 
@@ -292,8 +314,8 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     message.textContent = '';
     list.innerHTML = '';
 
-    for (const destination of stops) {
-      if (destination.id === taxi.stop.id) continue;
+    for (const destination of DISTRICTS) {
+      if (destination.name === taxi.stop.districtName) continue;
       const path = shortestRoute(taxi.stop, destination);
       const distance = routeDistance(path);
       const fare = Math.max(1000, Math.ceil((600 + distance * 7.2) / 100) * 100);
