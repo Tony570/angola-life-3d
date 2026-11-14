@@ -1,3 +1,17 @@
+/* =========================================
+   ANGOLA LIFE 3D — INTERFACE VISUAL
+   ========================================= */
+
+:root {
+  --gold: #e9b94e;
+  --gold-light: #ffda83;
+  --green: #173e32;
+  --green-light: #28634d;
+  --dark: #101b20;
+  --panel: rgba(15, 31, 29, 0.96);
+  --white: #ffffff;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,11 +26,16 @@ body,
   height: 100%;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
-  background: #101820;
+  background: var(--dark);
+}
+
+body {
+  overscroll-behavior: none;
 }
 
 #game {
   position: relative;
+  isolation: isolate;
   touch-action: none;
 }
 
@@ -24,7 +43,12 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
+  outline: none;
 }
+
+/* =========================================
+   BARRA SUPERIOR
+   ========================================= */
 
 #topbar {
   position: absolute;
@@ -32,32 +56,47 @@ canvas {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 15px 20px;
+  min-height: 65px;
+  padding: 15px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
-  background: linear-gradient(#101820cc, transparent);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 20, 23, 0.88),
+    rgba(8, 20, 23, 0.25),
+    transparent
+  );
   pointer-events: none;
 }
 
 .brand {
-  font-weight: 900;
-  font-size: 19px;
-  letter-spacing: 1px;
+  font-weight: 1000;
+  font-size: 20px;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 8px #0009;
 }
 
 .brand span {
-  color: #f2c14e;
+  color: var(--gold);
 }
 
 .money {
-  padding: 9px 13px;
-  border-radius: 20px;
-  background: #172b25dd;
-  font-weight: bold;
+  padding: 11px 16px;
+  border: 1px solid #e9b94e66;
+  border-radius: 30px;
+  background: rgba(16, 43, 33, 0.94);
+  color: #ffe5a5;
+  font-weight: 900;
   font-size: 13px;
+  box-shadow: 0 5px 18px #0005;
+  backdrop-filter: blur(10px);
 }
+
+/* =========================================
+   ECRÃ DE ENTRADA
+   ========================================= */
 
 .screen {
   position: absolute;
@@ -68,8 +107,12 @@ canvas {
   justify-content: center;
   color: white;
   background:
-    linear-gradient(120deg, #071b25e8, #173d39bb),
-    radial-gradient(circle at center, #447b6a, #10202a);
+    radial-gradient(
+      circle at 50% 40%,
+      rgba(61, 119, 91, 0.65),
+      transparent 55%
+    ),
+    linear-gradient(135deg, #071820, #173d35 55%, #101c25);
   transition: opacity 0.4s ease;
 }
 
@@ -79,22 +122,29 @@ canvas {
 }
 
 .welcome-content {
-  width: min(90%, 430px);
+  width: min(90%, 450px);
+  padding: 35px 25px;
   text-align: center;
+  border: 1px solid #ffffff25;
+  border-radius: 24px;
+  background: rgba(8, 24, 25, 0.55);
+  box-shadow: 0 20px 70px #0008;
+  backdrop-filter: blur(12px);
 }
 
 .logo {
   font-size: clamp(34px, 8vw, 55px);
   font-weight: 1000;
   letter-spacing: 2px;
-  color: #f4c44e;
-  text-shadow: 0 4px 15px #0009;
+  color: var(--gold);
+  text-shadow: 0 4px 20px #000b;
 }
 
 .welcome-content p {
-  margin: 15px 0 30px;
-  font-size: 17px;
-  color: #eee;
+  margin: 17px 0 30px;
+  font-size: 16px;
+  color: #e5eee9;
+  line-height: 1.6;
 }
 
 button {
@@ -103,101 +153,357 @@ button {
   font-weight: bold;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.96);
 }
 
 #start-game {
-  padding: 17px 27px;
-  border-radius: 9px;
-  background: #e5ad35;
+  padding: 17px 29px;
+  border: 1px solid #ffe3a1;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffdc81, #d99b2d);
   color: #17221e;
-  font-size: 15px;
-  box-shadow: 0 5px 20px #0005;
+  font-size: 14px;
+  font-weight: 1000;
+  letter-spacing: 0.7px;
+  box-shadow: 0 7px 25px #0006;
 }
 
-#start-game:active {
-  transform: scale(0.97);
+#start-game:hover {
+  box-shadow: 0 8px 30px #e9b94e55;
 }
+
+/* =========================================
+   PAINEL DE JOGO
+   ========================================= */
 
 #hud {
   position: absolute;
   z-index: 4;
-  top: 75px;
-  left: 15px;
-  right: 15px;
+  top: 78px;
+  left: 16px;
+  right: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 
 .location,
 #map-button,
 #vehicle-button {
-  padding: 11px 13px;
-  border-radius: 9px;
+  min-height: 40px;
+  padding: 11px 15px;
+  border: 1px solid #ffffff24;
+  border-radius: 11px;
   color: white;
-  background: #14231edb;
+  background: rgba(15, 32, 29, 0.91);
   font-size: 12px;
+  font-weight: 800;
   pointer-events: auto;
+  box-shadow: 0 4px 15px #0005;
+  backdrop-filter: blur(9px);
+}
+
+.location {
+  letter-spacing: 0.4px;
 }
 
 #map-button {
-  background: #215d50;
+  background: linear-gradient(135deg, #286b55, #174537);
+  border-color: #83c5a255;
 }
 
 #vehicle-button {
-  background: #a45b24;
+  background: linear-gradient(135deg, #a9652e, #70401f);
+  border-color: #f3b36b55;
 }
+
+#map-button:hover,
+#vehicle-button:hover {
+  filter: brightness(1.18);
+}
+
+/* =========================================
+   MAPA E DESTINOS
+   ========================================= */
 
 #map-panel {
   position: absolute;
-  z-index: 8;
-  top: 125px;
-  right: 15px;
-  width: min(290px, calc(100% - 30px));
-  padding: 15px;
-  border-radius: 13px;
-  color: white;
-  background: #14231ef2;
+  z-index: 25;
+  inset: 0;
   display: none;
-  box-shadow: 0 8px 30px #0008;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(3, 10, 13, 0.78);
+  backdrop-filter: blur(7px);
 }
 
 #map-panel.visible {
-  display: block;
+  display: flex;
 }
 
-.map-heading {
+.phone-map {
+  width: min(92vw, 390px);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  padding: 17px;
+  border: 5px solid #35434a;
+  border-radius: 30px;
+  background: linear-gradient(160deg, #17332e, #0b171d);
+  color: white;
+  box-shadow: 0 20px 70px #000c;
+}
+
+.phone-top {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 2px 5px 14px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.phone-top span:last-child {
+  color: #8fe0a2;
+}
+
+.phone-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-heading div {
+  display: grid;
+  gap: 4px;
+}
+
+.phone-heading small,
+.map-selected small {
+  font-size: 9px;
+  letter-spacing: 1.4px;
+  color: #a6beb4;
+  font-weight: 800;
+}
+
+.phone-heading strong {
+  font-size: 20px;
 }
 
 #close-map {
-  padding: 7px 10px;
-  border-radius: 6px;
-  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: #803e32;
+  color: white;
+  font-size: 18px;
+}
+
+.map-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 14px 0 9px;
+  color: #a9c9ba;
+  font-size: 10px;
+}
+
+#city-map {
+  position: relative;
+  height: 230px;
+  overflow: hidden;
+  border: 1px solid #ffffff30;
+  border-radius: 17px;
+  background-color: #75866b;
+  background-image:
+    linear-gradient(
+      35deg,
+      transparent 47%,
+      #ffffff12 48%,
+      #ffffff12 51%,
+      transparent 52%
+    ),
+    linear-gradient(
+      120deg,
+      transparent 47%,
+      #ffffff12 48%,
+      #ffffff12 51%,
+      transparent 52%
+    ),
+    linear-gradient(#ffffff0b 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff0b 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    25px 25px,
+    25px 25px;
+}
+
+.map-road {
+  position: absolute;
+  background: #303a3b;
+  border: 2px solid #c8c4a4;
+  opacity: 0.95;
+}
+
+.map-road-one {
+  height: 17px;
+  width: 125%;
+  left: -10%;
+  top: 48%;
+  transform: rotate(-20deg);
+}
+
+.map-road-two {
+  height: 15px;
+  width: 120%;
+  left: -10%;
+  top: 20%;
+  transform: rotate(34deg);
+}
+
+.map-road-three {
+  height: 13px;
+  width: 115%;
+  left: -8%;
+  top: 77%;
+  transform: rotate(8deg);
+}
+
+#map-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 5px 7px;
+  border: 1px solid white;
+  border-radius: 8px;
+  background: #173c32;
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 2px 7px #0007;
+}
+
+.map-marker.active {
+  background: var(--gold);
+  color: #18231d;
+  z-index: 3;
+}
+
+#player-marker {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+#player-marker span {
+  width: 15px;
+  height: 15px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #268fff;
+  box-shadow: 0 0 0 5px #268fff55;
+}
+
+#player-marker b {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: #135c9b;
+  color: white;
+  font-size: 8px;
+}
+
+.map-selected {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+  padding: 13px;
+  border: 1px solid #ffffff16;
+  border-radius: 12px;
+  background: #ffffff10;
+}
+
+.map-selected strong {
+  font-size: 14px;
+}
+
+.map-selected span {
+  font-size: 11px;
+  color: #c0d1c9;
+  line-height: 1.5;
+}
+
+.map-list-heading {
+  margin: 12px 0 8px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.3px;
 }
 
 #map-destinations {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
 }
 
 .destination {
-  padding: 12px;
-  border-radius: 7px;
+  min-height: 42px;
+  padding: 10px;
+  border: 1px solid #ffffff20;
+  border-radius: 9px;
   text-align: left;
+  background: #24483c;
   color: white;
-  background: #2d5147;
+  font-size: 10px;
+  line-height: 1.3;
 }
 
-.destination:active {
-  background: #467c69;
+.destination.active {
+  border-color: var(--gold);
+  background: #755a26;
 }
+
+.destination:hover {
+  background: #376c55;
+}
+
+.phone-bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 10px 4px 0;
+  border-top: 1px solid #ffffff20;
+  color: #8da69c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+/* =========================================
+   JOYSTICK
+   ========================================= */
 
 #joystick {
   position: absolute;
@@ -206,10 +512,15 @@ button {
   bottom: 30px;
   width: 125px;
   height: 125px;
-  border: 2px solid #ffffff55;
+  border: 2px solid #ffffff65;
   border-radius: 50%;
-  background: #10182066;
+  background:
+    radial-gradient(circle, #ffffff20, #10182088);
+  box-shadow:
+    0 5px 25px #0005,
+    inset 0 0 20px #ffffff12;
   touch-action: none;
+  backdrop-filter: blur(5px);
 }
 
 #joystick-knob {
@@ -220,10 +531,15 @@ button {
   height: 48px;
   margin: -24px;
   border-radius: 50%;
-  background: #ffffffbb;
-  border: 3px solid #ffffff;
+  background: linear-gradient(145deg, #ffffff, #b9c8c5);
+  border: 3px solid white;
+  box-shadow: 0 4px 12px #0007;
   pointer-events: none;
 }
+
+/* =========================================
+   CONTROLADORES MOBILE
+   ========================================= */
 
 #mobile-controls {
   position: absolute;
@@ -242,19 +558,25 @@ button {
 }
 
 #mobile-controls button {
-  width: 45px;
-  height: 45px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   color: white;
-  background: #14231ec9;
-  border: 1px solid #ffffff55;
+  background: rgba(20, 35, 30, 0.9);
+  border: 1px solid #ffffff65;
   font-size: 18px;
+  box-shadow: 0 4px 12px #0006;
   touch-action: none;
 }
 
 #mobile-controls button.pressed {
   background: #b77b2d;
+  transform: scale(0.92);
 }
+
+/* =========================================
+   AJUDA
+   ========================================= */
 
 #help {
   position: absolute;
@@ -262,26 +584,53 @@ button {
   left: 50%;
   bottom: 10px;
   transform: translateX(-50%);
-  color: white;
-  background: #101820aa;
-  border-radius: 7px;
-  padding: 8px 12px;
+  color: #ffffff;
+  background: rgba(12, 24, 26, 0.82);
+  border: 1px solid #ffffff25;
+  border-radius: 9px;
+  padding: 9px 14px;
   font-size: 10px;
   white-space: nowrap;
+  box-shadow: 0 3px 12px #0005;
 }
+
+/* =========================================
+   ACESSIBILIDADE E EFEITOS
+   ========================================= */
+
+button:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 3px;
+}
+
+#map-panel,
+#restaurant-panel {
+  -webkit-overflow-scrolling: touch;
+}
+
+::selection {
+  background: #e9b94e;
+  color: #17221e;
+}
+
+/* =========================================
+   TABLETS E TELEMÓVEIS
+   ========================================= */
 
 @media (max-width: 700px) {
   #topbar {
-    padding: 12px;
+    min-height: 58px;
+    padding: 11px 12px;
   }
 
   .brand {
     font-size: 15px;
+    letter-spacing: 1px;
   }
 
   .money {
+    padding: 8px 11px;
     font-size: 11px;
-    padding: 8px;
   }
 
   #hud {
@@ -289,13 +638,16 @@ button {
     left: 8px;
     right: 8px;
     flex-wrap: wrap;
+    gap: 6px;
   }
 
   .location,
   #map-button,
   #vehicle-button {
-    padding: 9px;
+    min-height: 36px;
+    padding: 9px 10px;
     font-size: 10px;
+    border-radius: 9px;
   }
 
   #joystick {
@@ -305,24 +657,81 @@ button {
     bottom: 25px;
   }
 
+  #joystick-knob {
+    width: 44px;
+    height: 44px;
+    margin: -22px;
+  }
+
   #help {
     display: none;
   }
+
+  .welcome-content {
+    padding: 28px 18px;
+  }
+
+  .welcome-content p {
+    font-size: 14px;
+  }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 420px) {
+  .brand {
+    font-size: 13px;
+  }
+
+  .money {
+    font-size: 10px;
+    padding: 7px 9px;
+  }
+
+  .location,
+  #map-button,
+  #vehicle-button {
+    padding: 8px;
+    font-size: 9px;
+  }
+
   #joystick {
     width: 95px;
     height: 95px;
+    left: 12px;
+    bottom: 20px;
   }
 
   #joystick-knob {
-    width: 42px;
-    height: 42px;
-    margin: -21px;
+    width: 40px;
+    height: 40px;
+    margin: -20px;
   }
 
-  #vehicle-button {
-    font-size: 9px;
+  .phone-map {
+    width: 96vw;
+    padding: 13px;
+    border-width: 4px;
+  }
+
+  #city-map {
+    height: 190px;
+  }
+}
+
+@media (max-height: 650px) {
+  .phone-map {
+    max-height: 94vh;
+    padding: 12px;
+  }
+
+  #city-map {
+    height: 170px;
+  }
+
+  #joystick {
+    bottom: 12px;
+  }
+
+  #mobile-controls {
+    bottom: 12px;
   }
 }
