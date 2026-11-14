@@ -231,17 +231,17 @@ function goToFloor(floor) {
   const next = Math.max(0, Math.min(activeHouse.floorCount - 1, Number(floor) || 0));
   activeFloor = next;
   activeHouse.currentFloor = next;
+  for(const child of activeHouse.interior.children) {
+    if(child.userData && Number.isInteger(child.userData.houseFloor)) {
+      child.visible = child.userData.houseFloor === next;
+    }
+  }
   setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
-  // Câmara interior próxima, semelhante à experiência de entrar num café no Avakin Life.
-  // Mantém o personagem e o espaço visíveis sem recuar para paredes ou áreas exteriores.
-  // Câmara fixa no interior: fica atrás do personagem, virada para a recepção.
-  player.cameraYawOffset = Math.PI;
-  player.cameraPitch = 0;
-  player.cameraDistance = 3.8;
-  player.cameraHeightAngle = 0.22;
-  player.group.rotation.y = Math.PI;
-  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 7.2);
+  // Câmara próxima, mas livre: o jogador pode rodar e aproximar/afastar a vista.
+  player.cameraDistance = 6.2;
+  player.cameraHeightAngle = 0.28;
+  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 5.0);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.floor) === next);
@@ -417,9 +417,10 @@ function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
   house.residentsCreated = true;
   // Os rececionistas ficam atrás do balcão e de frente para quem entra.
+  const lobbyFloor = house.interior.children.find(child => child.userData?.houseFloor === 0) || house.interior;
   house.residents = [
-    player.createResident(house.interior, -4.9, 0.16, 4.45, 0),
-    player.createResident(house.interior, -2.6, 0.16, 4.45, 0)
+    player.createResident(lobbyFloor, -4.9, 0.16, 4.45, 0),
+    player.createResident(lobbyFloor, -2.6, 0.16, 4.45, 0)
   ].filter(Boolean);
   house.residents.forEach((resident,index) => {
     addReceptionistUniform(resident.group,index);
@@ -543,6 +544,9 @@ function updateHousePrompt() {
     let nearestDistance = 3.25;
     for (const object of activeHouse.interactables || []) {
       if (!object.visible) continue;
+      let floorParent = object;
+      while(floorParent && !Number.isInteger(floorParent.userData?.houseFloor)) floorParent = floorParent.parent;
+      if(floorParent && floorParent.userData.houseFloor !== activeFloor) continue;
       const position = object.getWorldPosition(new THREE.Vector3());
       const distance = Math.hypot(player.group.position.x - position.x, player.group.position.z - position.z);
       if (distance < nearestDistance) {
@@ -602,13 +606,6 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
 
   if (started && !services.isOpen()) {
-    if (activeHouse) {
-      // Mantém a câmara no enquadramento interior, sem rodar para a fachada ou rua.
-      player.cameraYawOffset = Math.PI;
-      player.cameraPitch = 0;
-      player.cameraDistance = 3.8;
-      player.cameraHeightAngle = 0.22;
-    }
     player.update(delta);
     if (activeHouse?.residents) {
       for (const resident of activeHouse.residents) resident.mixer?.update(delta);
