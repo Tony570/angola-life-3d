@@ -64,6 +64,11 @@ export class Player {
     this.cameraPitch = 0;
 
     this.cameraDesired = new THREE.Vector3();
+    this.cameraOccluders = [];
+    this.cameraRaycaster = new THREE.Raycaster();
+    this.cameraRayOrigin = new THREE.Vector3();
+    this.cameraRayDirection = new THREE.Vector3();
+    this.cameraTarget = new THREE.Vector3();
     this.vehicleDirection = new THREE.Vector3();
     this.vehicleUp = new THREE.Vector3(0, 1, 0);
     this.exitOffset = new THREE.Vector3(2.8, 0, 0);
@@ -447,6 +452,10 @@ export class Player {
     this.group.position.y = this.groundY;
     this.cameraDistance = 3.8;
     this.updateCamera();
+  }
+
+  setCameraOccluders(objects = []) {
+    this.cameraOccluders = Array.isArray(objects) ? objects.filter(Boolean) : [];
   }
 
   setColliders(colliders = []) {
@@ -989,6 +998,30 @@ export class Player {
       target.y + verticalDistance + 1.2,
       target.z + Math.cos(yaw) * horizontalDistance
     );
+
+    // A câmara não atravessa fachadas: testa a linha entre o jogador e a vista
+    // pretendida e aproxima-a da parede mais próxima, mesmo junto às janelas.
+    if (!this.indoor && this.cameraOccluders.length) {
+      this.cameraTarget.set(target.x, target.y + 1.2, target.z);
+      this.cameraRayDirection.subVectors(this.cameraDesired, this.cameraTarget);
+      const desiredDistance = this.cameraRayDirection.length();
+      if (desiredDistance > 0.001) {
+        this.cameraRayDirection.multiplyScalar(1 / desiredDistance);
+        this.cameraRaycaster.set(this.cameraTarget, this.cameraRayDirection);
+        this.cameraRaycaster.near = 0.12;
+        this.cameraRaycaster.far = desiredDistance;
+        const visibleBuildings = this.cameraOccluders.filter(object => object.visible);
+        const hits = this.cameraRaycaster.intersectObjects(visibleBuildings, true);
+        if (hits.length) {
+          const safeDistance = Math.max(0.65, hits[0].distance - 0.42);
+          this.cameraDesired.copy(this.cameraTarget).addScaledVector(
+            this.cameraRayDirection,
+            safeDistance
+          );
+          this.camera.position.copy(this.cameraDesired);
+        }
+      }
+    }
 
     // Suavização independente da taxa de fotogramas.
     const smoothing = 1 - Math.exp(-12 * Math.max(0, Math.min(delta, 0.1)));
