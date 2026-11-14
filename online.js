@@ -51,7 +51,18 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
       <p id="account-description">Entra ou cria uma conta para guardar o teu progresso online.</p>
       <form id="account-form">
         <label id="nickname-label" for="account-nickname">Nome no jogo</label>
-        <input id="account-nickname" autocomplete="nickname" maxlength="24" placeholder="Ex.: Tony Pitra">\n        <div id="account-appearance" class="account-appearance">\n          <strong>Personaliza o teu personagem</strong>\n          <label for="appearance-skin">Tom de pele</label>\n          <select id="appearance-skin"><option value="#f1c7a5">Claro</option><option value="#d99a6c">Moreno claro</option><option value="#8d5524" selected>Castanho</option><option value="#65351f">Castanho escuro</option><option value="#321b12">Escuro</option></select>\n          <label for="appearance-hair">Cor do cabelo</label>\n          <select id="appearance-hair"><option value="#17120f">Preto</option><option value="#4a2c1b">Castanho</option><option value="#8b5a2b">Castanho claro</option><option value="#b58b52">Loiro</option><option value="#777777">Grisalho</option></select>\n          <label for="appearance-eyes">Cor dos olhos</label>\n          <select id="appearance-eyes"><option value="#3b2418">Castanhos</option><option value="#315b3d">Verdes</option><option value="#416b91">Azuis</option><option value="#202020">Pretos</option></select>\n          <label for="appearance-hairstyle">Estilo de cabelo</label>\n          <select id="appearance-hairstyle"><option value="curto">Curto</option><option value="rapado">Rapado</option><option value="comprido">Comprido</option><option value="encaracolado">Encaracolado</option></select>\n        </div>
+        <input id="account-nickname" autocomplete="nickname" maxlength="24" placeholder="Ex.: Tony Pitra">
+        <div id="account-appearance" class="account-appearance">
+          <strong>Personaliza o teu personagem</strong>
+          <label for="appearance-skin">Tom de pele</label>
+          <select id="appearance-skin"><option value="#f1c7a5">Claro</option><option value="#d99a6c">Moreno claro</option><option value="#8d5524" selected>Castanho</option><option value="#65351f">Castanho escuro</option><option value="#321b12">Escuro</option></select>
+          <label for="appearance-hair">Cor do cabelo</label>
+          <select id="appearance-hair"><option value="#17120f">Preto</option><option value="#4a2c1b">Castanho</option><option value="#8b5a2b">Castanho claro</option><option value="#b58b52">Loiro</option><option value="#777777">Grisalho</option></select>
+          <label for="appearance-eyes">Cor dos olhos</label>
+          <select id="appearance-eyes"><option value="#3b2418">Castanhos</option><option value="#315b3d">Verdes</option><option value="#416b91">Azuis</option><option value="#202020">Pretos</option></select>
+          <label for="appearance-hairstyle">Estilo de cabelo</label>
+          <select id="appearance-hairstyle"><option value="curto">Curto</option><option value="rapado">Rapado</option><option value="comprido">Comprido</option><option value="encaracolado">Encaracolado</option></select>
+        </div>
         <label for="account-email">Email</label>
         <input id="account-email" type="email" autocomplete="email" required placeholder="teu@email.com">
         <label for="account-password">Palavra-passe</label>
@@ -103,7 +114,12 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     }
     #account-mode {background:#29483c;color:#fff}
     #account-logout {background:#803e32;color:#fff}
-    .account-appearance{display:grid;gap:6px;margin:12px 0;padding:12px;border:1px solid #ffffff25;border-radius:10px;background:#ffffff0a}\n    .account-appearance strong{color:#f0c66a;font-size:13px;margin-bottom:3px}\n    .account-appearance label{font-size:11px;color:#dbe5df}\n    .account-appearance select{width:100%;padding:10px;border:1px solid #ffffff30;border-radius:8px;background:#20382f;color:#fff}\n    #account-appearance[hidden]{display:none}\n    #account-message {min-height:20px;margin-top:10px;color:#bce7c6;font-size:12px;line-height:1.5}
+    .account-appearance{display:grid;gap:6px;margin:12px 0;padding:12px;border:1px solid #ffffff25;border-radius:10px;background:#ffffff0a}
+    .account-appearance strong{color:#f0c66a;font-size:13px;margin-bottom:3px}
+    .account-appearance label{font-size:11px;color:#dbe5df}
+    .account-appearance select{width:100%;padding:10px;border:1px solid #ffffff30;border-radius:8px;background:#20382f;color:#fff}
+    #account-appearance[hidden]{display:none}
+    #account-message {min-height:20px;margin-top:10px;color:#bce7c6;font-size:12px;line-height:1.5}
     #account-message.error {color:#ffb4a9}
     #account-logout[hidden],#nickname-label[hidden],#account-nickname[hidden] {display:none}
     @media(max-width:420px) {
@@ -116,7 +132,8 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
   document.head.appendChild(style);
 
   const form = panel.querySelector('#account-form');
-  const nicknameInput = panel.querySelector('#account-nickname');\n  const appearancePanel = panel.querySelector('#account-appearance');
+  const nicknameInput = panel.querySelector('#account-nickname');
+  const appearancePanel = panel.querySelector('#account-appearance');
   const emailInput = panel.querySelector('#account-email');
   const passwordInput = panel.querySelector('#account-password');
   const nicknameLabel = panel.querySelector('#nickname-label');
@@ -147,7 +164,16 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     creatingAccount = create;
     nicknameLabel.hidden = !create;
     nicknameInput.hidden = !create;
-    nicknameInput.required = create;\n    appearancePanel.hidden = !create;\n    if (create) {\n      const randomOption = selector => {\n        const options = [...selector.options];\n        selector.selectedIndex = Math.floor(Math.random() * options.length);\n      };\n      ['#appearance-skin','#appearance-hair','#appearance-eyes','#appearance-hairstyle']\n        .forEach(selector => randomOption(panel.querySelector(selector)));\n    }
+    nicknameInput.required = create;
+    appearancePanel.hidden = !create;
+    if (create) {
+      const randomOption = selector => {
+        const options = [...selector.options];
+        selector.selectedIndex = Math.floor(Math.random() * options.length);
+      };
+      ['#appearance-skin','#appearance-hair','#appearance-eyes','#appearance-hairstyle']
+        .forEach(selector => randomOption(panel.querySelector(selector)));
+    }
     passwordInput.autocomplete = create ? 'new-password' : 'current-password';
     title.textContent = create ? 'Criar conta de jogador' : 'Entrar na conta';
     description.textContent = create
@@ -160,7 +186,19 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     showMessage('');
   }
 
-  function defaultAppearance(userId = '') {\n    let seed = 0;\n    for (const char of String(userId)) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;\n    const choose = values => values[seed % values.length];\n    return {\n      skin: choose(['#f1c7a5','#d99a6c','#8d5524','#65351f','#321b12']),\n      hair: choose(['#17120f','#4a2c1b','#8b5a2b','#b58b52','#777777']),\n      eyes: choose(['#3b2418','#315b3d','#416b91','#202020']),\n      hairstyle: choose(['curto','rapado','comprido','encaracolado'])\n    };\n  }\n\n  async function loadPlayerData() {
+  function defaultAppearance(userId = '') {
+    let seed = 0;
+    for (const char of String(userId)) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;
+    const choose = values => values[seed % values.length];
+    return {
+      skin: choose(['#f1c7a5','#d99a6c','#8d5524','#65351f','#321b12']),
+      hair: choose(['#17120f','#4a2c1b','#8b5a2b','#b58b52','#777777']),
+      eyes: choose(['#3b2418','#315b3d','#416b91','#202020']),
+      hairstyle: choose(['curto','rapado','comprido','encaracolado'])
+    };
+  }
+
+  async function loadPlayerData() {
     if (!session?.user?.id) throw new Error('Inicia sessão primeiro.');
 
     const userId = session.user.id;
@@ -174,7 +212,17 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     if (bankResult.error) throw bankResult.error;
     if (inventoryResult.error) throw inventoryResult.error;
 
-    let appearance = session.user.user_metadata?.appearance || null;\n    if (!appearance) {\n      appearance = defaultAppearance(userId);\n      try {\n        await supabase.auth.updateUser({ data: { appearance } });\n        session.user.user_metadata = { ...(session.user.user_metadata || {}), appearance };\n      } catch (error) {\n        console.warn('A aparência padrão será usada nesta sessão:', error);\n      }\n    }\n    profile = { ...profileResult.data, appearance };
+    let appearance = session.user.user_metadata?.appearance || null;
+    if (!appearance) {
+      appearance = defaultAppearance(userId);
+      try {
+        await supabase.auth.updateUser({ data: { appearance } });
+        session.user.user_metadata = { ...(session.user.user_metadata || {}), appearance };
+      } catch (error) {
+        console.warn('A aparência padrão será usada nesta sessão:', error);
+      }
+    }
+    profile = { ...profileResult.data, appearance };
     const data = {
       profile,
       bankBalance: Number(bankResult.data?.balance || 0),
@@ -226,7 +274,13 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
 
     const email = emailInput.value.trim().toLowerCase();
     const password = passwordInput.value;
-    const nickname = nicknameInput.value.trim();\n    const appearance = {\n      skin: panel.querySelector('#appearance-skin').value,\n      hair: panel.querySelector('#appearance-hair').value,\n      eyes: panel.querySelector('#appearance-eyes').value,\n      hairstyle: panel.querySelector('#appearance-hairstyle').value\n    };
+    const nickname = nicknameInput.value.trim();
+    const appearance = {
+      skin: panel.querySelector('#appearance-skin').value,
+      hair: panel.querySelector('#appearance-hair').value,
+      eyes: panel.querySelector('#appearance-eyes').value,
+      hairstyle: panel.querySelector('#appearance-hairstyle').value
+    };
 
     if (creatingAccount && nickname.length < 3) {
       showMessage('O nome no jogo deve ter pelo menos 3 caracteres.', true);
