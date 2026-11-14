@@ -43,6 +43,43 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for (const dx of [-.9, 0, .9]) box(g, x + dx, .83, z - .43, .58, .24, .12, M.fabric);
   }
 
+
+  function addReceptionLobby(level, variant) {
+    box(level, 0, 0, 4.9, 16.4, .08, 6.6, M.tile, false);
+    box(level, 0, .02, 1.1, 16.2, .035, .12, M.gold, false);
+    box(level, -3.65, 0, 3.75, 4.25, 1.08, 1.15, M.wood);
+    box(level, -3.65, 1.08, 3.75, 4.4, .14, 1.22, M.gold);
+    box(level, -3.65, .22, 3.16, 3.8, .62, .08, M.woodLight);
+    box(level, -3.65, .92, 3.12, 1.9, .18, .06, M.white);
+    box(level, -3.65, 1.13, 3.12, 1.15, .12, .035, M.green);
+    box(level, -3.65, 0, 1.45, 4.9, 2.5, .16, M.wallAlt);
+    box(level, -3.65, 2.05, 1.34, 3.5, .42, .08, M.wood);
+    box(level, -3.65, 2.13, 1.27, 3.15, .12, .04, M.gold);
+    for (const x of [2.7, 5.2]) {
+      box(level, x, .22, 4.2, 1.9, .42, .82, variant % 2 ? M.red : M.sofa);
+      box(level, x, .62, 3.83, 1.9, .55, .16, variant % 2 ? M.red : M.sofa);
+      box(level, x - .88, .32, 4.2, .14, .58, .82, M.fabric);
+      box(level, x + .88, .32, 4.2, .14, .58, .82, M.fabric);
+    }
+    box(level, 4.0, .28, 5.35, 1.35, .18, .72, M.woodLight);
+    for (const x of [-7.1, 7.1]) {
+      cylinder(level, x, 0, 5.7, .42, .48, M.wood);
+      for (let n=0;n<5;n++) {
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(.22,.95,6), M.green);
+        leaf.position.set(x+Math.cos(n*Math.PI*2/5)*.22,.9,5.7+Math.sin(n*Math.PI*2/5)*.22);
+        leaf.rotation.z=-.18; level.add(leaf);
+      }
+    }
+    for (let n=0;n<8;n++) box(level, -5.8+(n%2)*.55, .25+Math.floor(n/2)*.43, 6.8, .46, .34, .12, n%3===0?M.gold:M.metal);
+    box(level, 0, 2.45, -2.05, 6.2, .08, .08, M.gold);
+    for (const [x,z] of [[-5.6,0],[0,0],[5.6,0]]) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(.12,10,8), new THREE.MeshBasicMaterial({color:0xffe4b1}));
+      lamp.position.set(x,2.55,z); level.add(lamp);
+      const light = new THREE.PointLight(0xffdfb0,.42,8);
+      light.position.set(x,2.35,z); level.add(light);
+    }
+  }
+
   function addApartmentFloor(parent, floorIndex, variant) {
     const level = new THREE.Group();
     level.position.y = floorIndex * FLOOR_HEIGHT;
@@ -71,41 +108,46 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level, 6.1, 0, -6.6, .8, 2.55, .16, M.wallAlt);
     box(level, 7.75, 0, -6.6, 1.1, 2.55, .16, M.wallAlt);
 
-    // Sala de estar e televisão.
-    addSofa(level, -5.2, 3.2, variant % 2 ? M.red : M.sofa);
-    box(level, -5.1, .42, 1.0, 1.8, .12, .9, M.woodLight);
-    box(level, -5.2, 0, -0.15, 3.0, .65, .48, M.wood);
-    box(level, -5.2, .72, -.38, 2.35, 1.35, .1, M.dark);
-    box(level, -5.2, .03, 3.0, 4.8, .035, 3.0, M.fabric, false);
-
-    // Quarto principal.
-    box(level, -5.0, .18, -6.6, 3.0, .35, 2.7, M.wood);
-    box(level, -5.0, .55, -6.6, 2.9, .2, 2.6, M.white);
-    box(level, -5.0, .78, -7.55, 2.8, .3, .65, M.fabric);
-    box(level, -1.9, 0, -6.5, 1.0, 2.35, 1.5, M.woodLight);
-    box(level, -1.85, .85, -4.95, 1.2, .9, .55, M.wood);
-
-    // Segundo quarto.
-    box(level, 2.1, .18, -6.55, 2.5, .35, 2.5, M.wood);
-    box(level, 2.1, .55, -6.55, 2.4, .2, 2.4, M.white);
-    box(level, 2.1, .78, -7.4, 2.3, .28, .55, M.fabric);
-    box(level, 4.25, 0, -4.7, 1.0, 2.25, .75, M.woodLight);
-
-    // Cozinha equipada.
-    box(level, 5.8, .08, 3.0, 4.2, .82, 1.0, M.woodLight);
-    box(level, 5.8, .92, 3.0, 4.35, .12, 1.08, M.white);
-    box(level, 4.25, .15, 2.45, .95, .65, .08, M.metal);
-    box(level, 6.8, .15, 2.45, .95, .65, .08, M.dark);
-    for (const x of [6.55, 7.05]) for (const z of [2.7, 3.15]) cylinder(level, x, 1.05, z, .12, .035, M.metal);
-    box(level, 7.55, 0, 4.65, .85, 2.15, .9, M.white);
-    box(level, 5.8, .78, .8, 2.0, .12, 1.0, M.wood);
-    // Casa de banho com duche, sanita e lavatório.
-    box(level, 6.75, .02, -6.65, 2.65, .06, 2.65, M.tile, false);
-    box(level, 7.5, .12, -7.25, 1.05, .12, 1.0, M.white);
-    box(level, 7.5, .2, -6.75, 1.0, 1.9, .05, M.glass, false);
-    box(level, 5.85, .12, -5.85, .65, .35, .75, M.white);
-    box(level, 5.85, .48, -5.55, .58, .65, .18, M.white);
-    box(level, 7.7, .7, -5.55, .8, .12, .5, M.white);
+    if (floorIndex === 0) {
+      addReceptionLobby(level, variant);
+    } else {
+      // Sala de estar e televisão.
+      addSofa(level, -5.2, 3.2, variant % 2 ? M.red : M.sofa);
+      box(level, -5.1, .42, 1.0, 1.8, .12, .9, M.woodLight);
+      box(level, -5.2, 0, -0.15, 3.0, .65, .48, M.wood);
+      box(level, -5.2, .72, -.38, 2.35, 1.35, .1, M.dark);
+      box(level, -5.2, .03, 3.0, 4.8, .035, 3.0, M.fabric, false);
+  
+      // Quarto principal.
+      box(level, -5.0, .18, -6.6, 3.0, .35, 2.7, M.wood);
+      box(level, -5.0, .55, -6.6, 2.9, .2, 2.6, M.white);
+      box(level, -5.0, .78, -7.55, 2.8, .3, .65, M.fabric);
+      box(level, -1.9, 0, -6.5, 1.0, 2.35, 1.5, M.woodLight);
+      box(level, -1.85, .85, -4.95, 1.2, .9, .55, M.wood);
+  
+      // Segundo quarto.
+      box(level, 2.1, .18, -6.55, 2.5, .35, 2.5, M.wood);
+      box(level, 2.1, .55, -6.55, 2.4, .2, 2.4, M.white);
+      box(level, 2.1, .78, -7.4, 2.3, .28, .55, M.fabric);
+      box(level, 4.25, 0, -4.7, 1.0, 2.25, .75, M.woodLight);
+  
+      // Cozinha equipada.
+      box(level, 5.8, .08, 3.0, 4.2, .82, 1.0, M.woodLight);
+      box(level, 5.8, .92, 3.0, 4.35, .12, 1.08, M.white);
+      box(level, 4.25, .15, 2.45, .95, .65, .08, M.metal);
+      box(level, 6.8, .15, 2.45, .95, .65, .08, M.dark);
+      for (const x of [6.55, 7.05]) for (const z of [2.7, 3.15]) cylinder(level, x, 1.05, z, .12, .035, M.metal);
+      box(level, 7.55, 0, 4.65, .85, 2.15, .9, M.white);
+      box(level, 5.8, .78, .8, 2.0, .12, 1.0, M.wood);
+      // Casa de banho com duche, sanita e lavatório.
+      box(level, 6.75, .02, -6.65, 2.65, .06, 2.65, M.tile, false);
+      box(level, 7.5, .12, -7.25, 1.05, .12, 1.0, M.white);
+      box(level, 7.5, .2, -6.75, 1.0, 1.9, .05, M.glass, false);
+      box(level, 5.85, .12, -5.85, .65, .35, .75, M.white);
+      box(level, 5.85, .48, -5.55, .58, .65, .18, M.white);
+      box(level, 7.7, .7, -5.55, .8, .12, .5, M.white);
+  
+      }
 
     // Janelas, caixilharia e varandas com vista para a fachada.
     for (const x of [-5.6, -2.8, 2.0, 5.5]) {
