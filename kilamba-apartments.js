@@ -4,10 +4,10 @@ import * as THREE from 'three';
 // quatro pisos residenciais, elevador, escadas e apartamentos T2.
 export function createHouseSystem(scene, world = { buildings: [] }) {
   const houses = [];
-  const FLOOR_HEIGHT = 5.0;
-  // Interior amplo: 1,70x em largura, profundidade e altura.
-  const INTERIOR_SCALE_XZ = 1.70;
-  const INTERIOR_SCALE_Y = 1.70;
+  // Mesma escala e altura entre pisos do edifício exterior: portas, paredes e varandas coincidem.
+  const FLOOR_HEIGHT = 3.05;
+  const INTERIOR_SCALE_XZ = 1.0;
+  const INTERIOR_SCALE_Y = 1.0;
   const FLOOR_COUNT = 5;
   const mat = (color, roughness=.82, metalness=0) => new THREE.MeshStandardMaterial({color,roughness,metalness});
   const M = {
@@ -274,7 +274,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     hinge.add(panel); level.add(hinge); doorList.push(panel); return panel;
   }
 
-  function addFloorShell(level) {
+  function addFloorShell(level,floorIndex) {
     box(level,0,-.16,0,17,.32,17,M.floor,false);
     // Paredes perimetrais, com porta larga na fachada da entrada.
     box(level,-8.35,0,0,.3,2.85,17,M.wall);
@@ -285,8 +285,15 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for(const [cx,width] of [[-7.05,2.45],[-4.2,1.55],[-.4,2.55],[3.75,1.0],[7.0,2.25]]) {
       box(level,cx,.42,-8.35,width,1.26,.3,M.wall);
     }
-    box(level,-5.2,0,8.35,6.3,2.85,.3,M.wall);
-    box(level,5.2,0,8.35,6.3,2.85,.3,M.wall);
+    if(floorIndex===0) {
+      box(level,-5.2,0,8.35,6.3,2.85,.3,M.wall);
+      box(level,5.2,0,8.35,6.3,2.85,.3,M.wall);
+    } else {
+      // Nos pisos superiores, duas portas coincidem com as varandas exteriores reais.
+      box(level,-7.35,0,8.35,2.0,2.85,.3,M.wall);
+      box(level,0,0,8.35,9.5,2.85,.3,M.wall);
+      box(level,7.35,0,8.35,2.0,2.85,.3,M.wall);
+    }
     // Divisórias com vãos de passagem.
     // Divisória com passagem larga: não fecha o percurso entre sala e cozinha.
     box(level,-1.2,0,-4.5,.16,2.55,1.6,M.wallAlt);
@@ -302,7 +309,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,6.1,0,-6.6,.8,2.55,.16,M.wallAlt);
     box(level,7.75,0,-6.6,1.1,2.55,.16,M.wallAlt);
   }
-  function addWindowsAndBalcony(level) {
+  function addWindowsAndBalcony(level,floorIndex) {
     for(const x of [-5.6,-2.8,2.0,5.5]) {
       box(level,x,1.05,-8.17,1.25,1.25,.06,M.glass,false);
       box(level,x,.42,-8.12,1.38,.08,.1,M.white);
@@ -310,9 +317,17 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       box(level,x-.66,1.05,-8.12,.08,1.3,.1,M.white);
       box(level,x+.66,1.05,-8.12,.08,1.3,.1,M.white);
     }
-    box(level,0,0,8.55,5.0,.16,1.15,M.tile);
-    for(let n=0;n<=10;n++) box(level,-2.5+n*.5,.16,9.08,.045,.85,.045,M.metal);
-    box(level,0,1.2,8.35,5.0,.06,.06,M.metal);
+    if(floorIndex>0) {
+      // Varandas à mesma posição e dimensão das varandas visíveis na fachada exterior.
+      for(const x of [-5.55,5.55]) {
+        box(level,x,0,9.14,2.42,.16,1.35,M.concrete);
+        box(level,x,.18,9.79,2.42,.08,.08,M.metal);
+        for(let n=0;n<=8;n++) box(level,x-1.21+n*.3025,.18,9.79,.045,.78,.045,M.metal);
+        for(const side of [-1,1]) {
+          box(level,x+side*1.21,.18,9.14,.06,.78,1.30,M.metal);
+        }
+      }
+    }
   }
   function addApartmentFloor(parent,floorIndex,variant,doorList,furnitureColliders) {
     const level=new THREE.Group();
@@ -320,53 +335,13 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     level.position.y=floorIndex*FLOOR_HEIGHT;
     level.scale.set(INTERIOR_SCALE_XZ, INTERIOR_SCALE_Y, INTERIOR_SCALE_XZ);
     parent.add(level);
-    addFloorShell(level);
+    addFloorShell(level,floorIndex);
     if(floorIndex===0) {
       addReceptionLobby(level,variant);
       addHotelLobbyFurniture(level,variant);
     }
-    addWindowsAndBalcony(level);
-    if (floorIndex > 0) {
-      // Pisos residenciais entregues vazios: paredes pintadas, chão limpo,
-      // janelas e iluminação. A mobília será colocada apenas pelo proprietário.
-      const apartmentPalettes = [
-        [0x3f7180,0xd6a34a,0xe6d8c4],
-        [0x8b5264,0xd4a76a,0xe8dfd2],
-        [0x4d795e,0xd8b65d,0xe8e0d0],
-        [0x59658e,0xc18a58,0xe7e1d7],
-        [0x9a6548,0x6f9a9b,0xf0e2cf],
-        [0x6c5b8b,0xc8a65d,0xe9e0d6],
-        [0x3f7772,0xc47d62,0xe8e1d4],
-        [0x8a7445,0x5d8094,0xeee4d5]
-      ];
-      const [accentColor,detailColor,lightColor] = apartmentPalettes[Math.abs(variant)%apartmentPalettes.length];
-      const accentMaterial = mat(accentColor,.72);
-      const detailMaterial = mat(detailColor,.48,.12);
-      const lightMaterial = mat(lightColor,.82);
-      // Pintura elegante e diferente em cada apartamento, sem móveis fixos.
-      box(level,0,.08,-8.08,8.8,.14,.055,detailMaterial,false);
-      box(level,0,1.48,-8.08,7.2,1.45,.045,accentMaterial,false);
-      box(level,0,1.48,-8.045,6.9,1.18,.025,lightMaterial,false);
-      box(level,-4.8,.025,3.0,6.4,.035,4.7,accentMaterial,false);
-      box(level,-4.8,.047,3.0,6.1,.018,4.4,lightMaterial,false);
-    }
-    if(floorIndex>0) {
-      addApartmentFurniture(level,variant);
-      furnitureColliders.push(
-        {x:-5.2,z:3.2,w:2.7,d:1.0,floor:floorIndex},
-        {x:-5.1,z:1.0,w:1.9,d:1.0,floor:floorIndex},
-        {x:-5.2,z:-.15,w:3.15,d:.58,floor:floorIndex},
-        {x:-5.0,z:-6.6,w:3.15,d:2.85,floor:floorIndex},
-        {x:-1.9,z:-6.5,w:1.15,d:1.65,floor:floorIndex},
-        {x:2.1,z:-6.55,w:2.65,d:2.65,floor:floorIndex},
-        {x:4.25,z:-4.7,w:1.15,d:.9,floor:floorIndex},
-        {x:5.8,z:3.0,w:4.35,d:1.12,floor:floorIndex},
-        {x:7.55,z:4.65,w:.95,d:1.0,floor:floorIndex},
-        {x:5.85,z:-5.85,w:.8,d:.9,floor:floorIndex},
-        {x:7.5,z:-6.75,w:1.15,d:.35,floor:floorIndex},
-        {x:7.7,z:-5.55,w:.95,d:.65,floor:floorIndex}
-      );
-    }
+    addWindowsAndBalcony(level,floorIndex);
+    // Os quatro apartamentos superiores começam totalmente vazios: sem mobília nem decoração fixa.
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
       bulb.position.set(x,2.55,z); level.add(bulb);
@@ -418,7 +393,18 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       ...(floor===null?{}:{floor})
     });
     add(-8.35,0,.35,17); add(8.35,0,.35,17); add(0,-8.35,17,.35);
-    add(-5.2,8.35,6.3,.35); add(5.2,8.35,6.3,.35);
+    add(-5.2,8.35,6.3,.35,0); add(5.2,8.35,6.3,.35,0);
+    for(let floor=1;floor<FLOOR_COUNT;floor++) {
+      add(-7.35,8.35,2.0,.35,floor);
+      add(0,8.35,9.5,.35,floor);
+      add(7.35,8.35,2.0,.35,floor);
+      // Corrimãos laterais e exteriores bloqueiam a passagem para fora das varandas.
+      for(const x of [-5.55,5.55]) {
+        add(x-1.21,9.14,.10,1.35,floor);
+        add(x+1.21,9.14,.10,1.35,floor);
+        add(x,9.79,2.42,.10,floor);
+      }
+    }
     add(-1.2,-4.5,.2,1.6); add(-1.2,-.8,.2,1.6);
     add(-5,-5,6.1,.2); add(2.9,-5,4.2,.2);
     add(-6.7,-1.5,3,.2); add(-2,-1.5,1.5,.2); add(3.8,-1.5,2.2,.2);
@@ -430,17 +416,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(3.15,4.25,2.55,1.15,0); add(6.15,4.25,1.85,1.15,0);
     add(4.7,5.2,1.95,1.12,0); add(-.1,5.85,1.45,.72,0);
     add(-7.0,1.0,.8,.8,0); add(7.0,1.0,.8,.8,0); add(6.45,6.7,1.4,.65,0);
-    // Colisões dos móveis dos apartamentos, convertidas para coordenadas do mundo.
-    for(const item of furnitureColliders) {
-      colliders.push({
-        minX:building.x+(item.x-item.w/2)*INTERIOR_SCALE_XZ,
-        maxX:building.x+(item.x+item.w/2)*INTERIOR_SCALE_XZ,
-        minZ:building.z+(item.z-item.d/2)*INTERIOR_SCALE_XZ,
-        maxZ:building.z+(item.z+item.d/2)*INTERIOR_SCALE_XZ,
-        floor:item.floor
-      });
-    }
-    for (const door of doors) {
+colisões de móveis    for (const door of doors) {
       const c=door.userData.houseDoorCollider;
       colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
     }
