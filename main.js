@@ -203,7 +203,7 @@ function goToFloor(floor) {
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
   player.cameraDistance = 6.2;
   player.cameraHeightAngle = 0.34;
-  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 10.4);
+  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 7.2);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.floor) === next);
