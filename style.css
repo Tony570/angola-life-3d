@@ -542,11 +542,13 @@ button:active {
    ========================================= */
 
 #mobile-controls {
-  position: absolute;
-  z-index: 6;
-  right: 20px;
-  bottom: 30px;
+  position: fixed;
+  z-index: 50;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
   display: none;
+  pointer-events: auto;
+  isolation: isolate;
   flex-direction: column;
   align-items: center;
   gap: 8px;
@@ -558,7 +560,9 @@ button:active {
 }
 
 #mobile-controls button {
-  width: 46px;
+  position: relative;
+  z-index: 1;
+  width: 54px;
   height: 46px;
   border-radius: 50%;
   color: white;
@@ -567,6 +571,8 @@ button:active {
   font-size: 18px;
   box-shadow: 0 4px 12px #0006;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #mobile-controls button.pressed {
