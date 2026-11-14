@@ -71,7 +71,8 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     #account-button {
       margin-left:8px;padding:8px 10px;border:1px solid #ffffff35;
       border-radius:9px;background:#20382f;color:#fff;
-      font-size:11px;font-weight:800;white-space:nowrap
+      font-size:11px;font-weight:800;white-space:nowrap;
+      pointer-events:auto;position:relative;z-index:6
     }
     #account-panel {
       position:absolute;z-index:80;inset:0;display:none;
