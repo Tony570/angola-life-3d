@@ -35,7 +35,8 @@ export function expandLuandaCity(scene, world) {
     roof: material(0x77736b),
     green: material(0x477b48),
     gold: material(0xd5a744),
-    red: material(0xa83d32)
+    red: material(0xa83d32),
+    water: material(0x258ca7, 0.25)
   };
 
   const box = (parent, x, y, z, w, h, d, mat) => {
