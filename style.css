@@ -1071,3 +1071,48 @@ button:focus-visible {
   .money { font-size: 9px; padding: 7px 6px; }
   .wardrobe-tabs button { font-size: 9px; padding: 8px 5px; }
 }
+
+
+/* Elevador e exploração dos cinco pisos dos blocos do Kilamba */
+#elevator-panel {
+  position: absolute;
+  z-index: 18;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(270px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid #d9b56c88;
+  border-radius: 16px;
+  background: linear-gradient(155deg, rgba(24,35,37,.97), rgba(7,14,17,.97));
+  color: #f7f3e9;
+  box-shadow: 0 18px 48px #000b;
+  font-family: Arial, Helvetica, sans-serif;
+  pointer-events: auto;
+}
+#elevator-panel[hidden] { display: none !important; }
+.elevator-heading { display: grid; gap: 5px; margin-bottom: 14px; text-align: center; }
+.elevator-heading span { color: #e6bf73; font-size: 10px; font-weight: 900; letter-spacing: 2px; }
+.elevator-heading strong { font-size: 16px; letter-spacing: .7px; }
+.elevator-floor-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+.elevator-floor-buttons button {
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid #d9d2c3;
+  border-radius: 9px;
+  background: linear-gradient(#e9e5dc, #b9b6ad);
+  color: #1d2729;
+  font-size: 15px;
+  font-weight: 1000;
+}
+.elevator-floor-buttons button.active {
+  border-color: #ffe3a0;
+  background: linear-gradient(#e7bf68, #a8792f);
+  color: #171d1c;
+  box-shadow: 0 0 0 2px #e7bf6844;
+}
+#elevator-panel > small { display: block; margin-top: 12px; color: #c3cec9; font-size: 10px; line-height: 1.4; text-align: center; }
+@media (max-width: 700px) {
+  #elevator-panel { top: auto; bottom: 105px; transform: translateX(-50%); padding: 13px; }
+  .elevator-floor-buttons button { min-height: 44px; }
+}
