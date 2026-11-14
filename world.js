@@ -748,35 +748,12 @@ export function createWorld(scene) {
       }
     ];
 
-    const positions = [-88, -53, -18, 18, 53, 88];
-
-    positions.forEach((x, xi) => {
-      positions.forEach((z, zi) => {
-        if (Math.abs(x) < 20 && Math.abs(z) < 20) return;
-
-        const bx = x + (xi % 2 ? 3 : -3);
-        const bz = z + (zi % 2 ? 3 : -3);
-
-        const nearFacility = facilities.some(item =>
-          Math.abs(item.x - bx) < 16 &&
-          Math.abs(item.z - bz) < 16
-        );
-
-        if (nearFacility) return;
-
-        const floors = 1 + ((xi * 3 + zi * 5) % 5);
-        const type = floors >= 4 ? 'apartment' : 'house';
-
-        makeOrdinaryBuilding(bx, bz, 14, 12, floors, type);
-      });
-    });
+    // Nesta etapa, removemos todas as casas e apartamentos residenciais.
 
     facilities.forEach(makeBuilding);
 
     makeOrdinaryBuilding(-25, -25, 18, 18, 5, 'office');
     makeOrdinaryBuilding(25, -25, 18, 18, 5, 'office');
-    makeOrdinaryBuilding(-25, 25, 18, 18, 4, 'apartment');
-    makeOrdinaryBuilding(25, 25, 18, 18, 4, 'apartment');
   }
 
   function makeCoast() {
