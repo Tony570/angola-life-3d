@@ -162,8 +162,8 @@ export function expandLuandaCity(scene, world) {
     box(group, width / 2 - 0.15, 0.28, 0, 0.3, height, depth, wall);
     box(group, 0, 0.28, -depth / 2 + 0.15, width, height, 0.3, wall);
     const facadeZ = depth / 2;
-    box(group, -width * 0.36, 0.28, facadeZ, width * 0.28, height, 0.3, wall);
-    box(group, width * 0.36, 0.28, facadeZ, width * 0.28, height, 0.3, wall);
+    box(group, -width / 2 + 0.15, 0.28, facadeZ, 0.3, height, 0.3, wall);
+    box(group, width / 2 - 0.15, 0.28, facadeZ, 0.3, height, 0.3, wall);
     box(group, 0, 0.28, facadeZ, width * 0.16, 0.35, 0.3, wall);
     box(group, 0, 2.55, facadeZ, width * 0.16, 0.35, 0.3, wall);
     box(group, 0, height - 0.2, facadeZ, width, 0.4, 0.3, wall);
