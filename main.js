@@ -14,6 +14,7 @@ import {
 import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
+import { createMultiplayer } from './multiplayer.js';
 import { createTaxiTransport } from './taxi-transport.js';
 import './style.css';
 
@@ -506,6 +507,8 @@ const online = createOnlineAccount({
     if (data?.profile?.appearance) player.setAppearance(data.profile.appearance);
   }
 });
+
+const multiplayer = createMultiplayer({ scene, player, online });
 
 services = createServices({
   game,
@@ -1696,6 +1699,7 @@ function animate() {
     }
 
     taxiTransport.update(delta);
+    multiplayer.update(delta);
     npcAccumulator += delta;
     uiAccumulator += delta;
 
