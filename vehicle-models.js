@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CAR_MODEL_URL = 'https://threejs.org/examples/models/gltf/ferrari.glb';
 let modelPromise = null;
 
-export async function attachRealCar(group, { width = 2.25, length = 4.4, height = 1.55 } = {}) {
+export async function attachRealCar(group, { width = 2.25, length = 4.4, height = 1.55, paintColor = null } = {}) {
   try {
     if (!modelPromise) {
       modelPromise = new GLTFLoader().loadAsync(CAR_MODEL_URL).then(gltf => gltf.scene);
@@ -27,6 +27,17 @@ export async function attachRealCar(group, { width = 2.25, length = 4.4, height 
       if (object.isMesh) {
         object.castShadow = true;
         object.receiveShadow = true;
+        if (paintColor !== null) {
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          const painted = materials.map(material => {
+            const clone = material.clone();
+            if (/paint|body|car.?color/i.test(clone.name || '') && clone.color) {
+              clone.color.setHex(paintColor);
+            }
+            return clone;
+          });
+          object.material = Array.isArray(object.material) ? painted : painted[0];
+        }
       }
     });
     group.add(model);
