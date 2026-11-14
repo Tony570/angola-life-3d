@@ -892,8 +892,10 @@ export class Player {
       const side = sideways / length;
       const yaw = this.cameraYawOffset;
 
-      directionX = Math.sin(yaw) * f + Math.cos(yaw) * side;
-      directionZ = Math.cos(yaw) * f - Math.sin(yaw) * side;
+      // A frente do personagem aponta para longe da câmara.
+      // Mantém esquerda/direita alinhadas com a vista do jogador.
+      directionX = -Math.sin(yaw) * f + Math.cos(yaw) * side;
+      directionZ = -Math.cos(yaw) * f - Math.sin(yaw) * side;
 
       moving = true;
     } else if (this.moveTarget) {
