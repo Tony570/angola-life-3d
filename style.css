@@ -1117,3 +1117,15 @@ button:focus-visible {
   #elevator-panel { top: auto; bottom: 105px; transform: translateX(-50%); padding: 13px; }
   .elevator-floor-buttons button { min-height: 44px; }
 }
+
+/* Painel de ferramentas domésticas e decoração */
+#home-tools { position:absolute; z-index:19; right:14px; top:390px; width:min(250px,calc(100vw - 28px)); padding:13px; border:1px solid #d9b56c88; border-radius:14px; background:rgba(12,24,26,.96); color:#fff; box-shadow:0 12px 34px #0009; font-family:Arial,Helvetica,sans-serif; }
+#home-tools[hidden], #decor-catalog[hidden] { display:none !important; }
+.home-tools-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; color:#f0c66a; letter-spacing:1.4px; font-size:11px; }
+#home-tools button { min-height:36px; padding:8px 10px; border:1px solid #ffffff30; border-radius:8px; background:#25483a; color:#fff; font-size:10px; font-weight:800; }
+#toggle-decor-mode { width:100%; background:#765629 !important; }
+#decor-catalog { margin-top:10px; }
+#decor-catalog small,#home-tools-help { display:block; margin:9px 0 7px; color:#c5d4cc; font-size:9px; line-height:1.4; }
+.decor-items,.decor-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
+.decor-actions { grid-template-columns:1fr 1fr; margin-top:7px; }
+@media(max-width:700px) { #home-tools { top:auto; right:8px; bottom:190px; width:min(220px,calc(100vw - 16px)); padding:10px; } #home-tools button { min-height:34px; padding:7px 6px; font-size:9px; } }
