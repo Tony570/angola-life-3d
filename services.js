@@ -1,9 +1,38 @@
-
 const MONEY_KEY = 'angolaLife3D_money';
 const INVENTORY_KEY = 'angolaLife3D_inventory';
 const BANK_KEY = 'angolaLife3D_bank';
 
 const CATALOGS = {
+  dealership: {
+    title: 'Concessionária de Automóveis',
+    subtitle: 'Escolhe a tua viatura. Cada compra será entregue no parque da concessionária.',
+    items: [
+      ['Toyota Starlet', 200000, 0xc62828],
+      ['Suzuki Alto', 250000, 0xeeeeee],
+      ['Kia Picanto', 350000, 0x2255aa],
+      ['Hyundai i10', 450000, 0xf2c230],
+      ['Toyota Vitz', 550000, 0x30343b],
+      ['Nissan March', 650000, 0x2e8b57],
+      ['Toyota Yaris', 850000, 0xffffff],
+      ['Honda Fit', 1000000, 0x555b66],
+      ['Hyundai Accent', 1200000, 0x8d2635],
+      ['Toyota Corolla', 1800000, 0x1c4777],
+      ['Kia Rio', 2000000, 0xeeeeee],
+      ['Hyundai Elantra', 2500000, 0x252525],
+      ['Toyota Camry', 3500000, 0x8a8d91],
+      ['Honda Civic', 4000000, 0xc62828],
+      ['Toyota Hilux', 6000000, 0xeeeeee],
+      ['Nissan Navara', 7000000, 0x273c75],
+      ['Mitsubishi L200', 8000000, 0x424b54],
+      ['Toyota Fortuner', 10000000, 0x222222],
+      ['BMW Série 3', 12000000, 0x2255aa],
+      ['Mercedes-Benz Classe C', 15000000, 0x777777],
+      ['Toyota Land Cruiser', 25000000, 0xeeeeee],
+      ['Range Rover Sport', 30000000, 0x1f2925],
+      ['Mercedes-Benz GLE', 35000000, 0x30343b],
+      ['Range Rover Vogue', 45000000, 0x202020]
+    ]
+  },
   market: {
     title: 'Mercado de Luanda',
     subtitle: 'Escolhe os alimentos que queres levar para casa.',
@@ -439,6 +468,25 @@ export function createServices({ game, onMoneyChange = () => {} } = {}) {
       return;
     }
 
+    if (currentService === 'dealership') {
+      const vehicle = {
+        name,
+        price: total,
+        color: item[2] || 0xc62828,
+        purchasedAt: Date.now()
+      };
+
+      window.dispatchEvent(new CustomEvent('angolaLife3D:vehiclePurchase', {
+        detail: vehicle
+      }));
+
+      addInventory(name, 1, 'vehicle');
+      save();
+      showMessage(`${name} comprado por ${moneyFormat(total)}. A tua viatura está no parque em frente à concessionária.`);
+      updateBalanceDisplay();
+      return;
+    }
+
     const category = currentService === 'market'
       ? 'food'
       : currentService;
@@ -638,4 +686,3 @@ export function createServices({ game, onMoneyChange = () => {} } = {}) {
     getInventory
   };
 }
-
