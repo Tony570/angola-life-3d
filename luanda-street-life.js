@@ -255,8 +255,8 @@ export function createLuandaStreetLife(scene, world) {
   park.add(fountainWater);
   addCylinder(park, 0, 0.58, 0, 0.35, 0.55, 2.2, concrete, 12);
   for (const [x,z] of [[-21,-15],[21,-15],[-21,15],[21,15],[-12,0],[12,0]]) {
-    bench(x,z,0);
-    palm(x + 3.2,z + 1.8,0.72);
+    bench(205 + x, 305 + z, 0);
+    palm(205 + x + 3.2, 305 + z + 1.8, 0.72);
   }
   park.position.set(205, 0, 305);
   scene.add(park);
@@ -269,8 +269,8 @@ export function createLuandaStreetLife(scene, world) {
   addBox(waterfront, 0, 0.28, -6.2, 110, 0.48, 0.18, metal);
   for (let x = -50; x <= 50; x += 10) {
     addBox(waterfront, x, 0.18, -6.2, 0.12, 0.9, 0.12, metal);
-    bench(x, 2.5, 0);
-    streetLamp(x, 5.5, Math.PI);
+    bench(-430 + x, -20 + 2.5, 0);
+    streetLamp(-430 + x, -20 + 5.5, Math.PI);
   }
   waterfront.position.set(-430, 0, -20);
   scene.add(waterfront);
