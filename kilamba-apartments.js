@@ -14,7 +14,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     concrete:mat(0xb7b4ac), wood:mat(0x795239), woodLight:mat(0xa8794f), white:mat(0xf4f1e9),
     sofa:mat(0x3f6475), fabric:mat(0xd9cbb6), dark:mat(0x252b30), metal:mat(0x8e999d,.38,.58),
     gold:mat(0xc29a58,.35,.4), green:mat(0x477b4d), red:mat(0x9d5146),
-    glass:new THREE.MeshPhysicalMaterial({color:0x8fc4d3,transparent:true,opacity:.38,roughness:.18})
+    glass:new THREE.MeshPhysicalMaterial({color:0x8fc4d3,transparent:true,opacity:.38,roughness:.18,depthWrite:false})
   };
   const geometryCache = new Map();
   function cachedGeometry(key, create) {
@@ -106,7 +106,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,-3.75,.05,3.45,4.55,1.12,1.2,deep);
     box(level,-3.75,.12,2.83,4.2,.91,.045,accent,false);
     for(let n=0;n<7;n++) box(level,-5.55+n*.6,.17,2.80,.025,.76,.025,light,false);
-    box(level,-3.75,1.18,3.45,4.82,.15,1.34,marble);
+    const receptionCounterTop=box(level,-3.75,1.18,3.45,4.82,.15,1.34,marble);
+    receptionCounterTop.userData.houseAction={label:'CONSULTAR PREÇOS DOS QUARTOS',type:'reception'};
     box(level,-3.75,1.27,3.45,4.66,.035,1.2,light,false);
     // Computador, teclado e telefone em escala de recepção.
     box(level,-4.55,1.37,3.12,.72,.48,.09,black);
@@ -359,9 +360,10 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     }
     const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,28.8,.3,28.8,M.wall,false);
     const colliders=[];
-    const add=(x,z,w,d)=>colliders.push({
+    const add=(x,z,w,d,floor=null)=>colliders.push({
       minX:building.x+(x-w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(x+w/2)*INTERIOR_SCALE_XZ,
-      minZ:building.z+(z-d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(z+d/2)*INTERIOR_SCALE_XZ
+      minZ:building.z+(z-d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(z+d/2)*INTERIOR_SCALE_XZ,
+      ...(floor===null?{}:{floor})
     });
     add(-8.35,0,.35,17); add(8.35,0,.35,17); add(0,-8.35,17,.35);
     add(-5.2,8.35,6.3,.35); add(5.2,8.35,6.3,.35);
@@ -369,6 +371,15 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(-5,-5,6.1,.2); add(2.9,-5,4.2,.2);
     add(-6.7,-1.5,3,.2); add(-2,-1.5,1.5,.2); add(3.8,-1.5,2.2,.2);
     add(5,-6.6,.2,3.2); add(5,-1.4,.2,2); add(7,-6.6,2.6,.2);
+    // Paredes opacas e sólidas da receção no rés-do-chão.
+    add(0,1.05,15.8,.22,0); add(-6.7,1.0,1.75,.22,0); add(6.7,1.0,1.75,.22,0);
+    // Colisão real com balcão, área de espera, mesas, bagagem e plantas.
+    add(-3.75,3.45,4.75,1.42,0);
+    add(3.15,4.25,2.55,1.15,0); add(6.15,4.25,1.85,1.15,0);
+    add(4.7,5.2,1.95,1.12,0); add(-.1,5.85,1.45,.72,0);
+    add(-7.0,1.0,.8,.8,0); add(7.0,1.0,.8,.8,0); add(6.45,6.7,1.4,.65,0);
+    // Os rececionistas também têm volume físico e não podem ser atravessados.
+    add(-4.65,2.05,.78,.78,0); add(-2.85,2.05,.78,.78,0);
     for (const door of doors) {
       const c=door.userData.houseDoorCollider;
       colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
