@@ -119,14 +119,14 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     const bathroomSink = box(level,7.7,.7,-5.55,.8,.12,.5,M.white);
     bathroomSink.userData.houseAction = { label: 'LAVAR AS MÃOS', type: 'sink' };
   }
-  function addDoor(level, doorList, x, z, width, baseRotation = 0, openRotation = 1.35) {
+  function addDoor(level, doorList, x, z, width, floorIndex, baseRotation = 0, openRotation = 1.35) {
     const hinge = new THREE.Group();
     hinge.position.set(x,0,z); hinge.rotation.y = baseRotation;
     const panel = box(hinge,width/2,.05,0,width,2.15,.09,M.woodLight);
     panel.position.x = width/2;
     const rotated = Math.abs(Math.sin(baseRotation)) > .5;
     panel.userData.houseAction = { label: 'ABRIR / FECHAR PORTA', type: 'door', openRotation };
-    panel.userData.houseDoorCollider = { x:x+Math.cos(baseRotation)*width/2, z:z-Math.sin(baseRotation)*width/2, w:rotated ? .18 : width, d:rotated ? width : .18, active:true };
+    panel.userData.houseDoorCollider = { x:x+Math.cos(baseRotation)*width/2, z:z-Math.sin(baseRotation)*width/2, w:rotated ? .18 : width, d:rotated ? width : .18, active:true, floor:floorIndex };
     panel.userData.isOpen = false; panel.userData.houseDoorHinge = hinge; panel.userData.houseDoorBaseRotation = baseRotation;
     hinge.add(panel); level.add(hinge); doorList.push(panel); return panel;
   }
@@ -180,8 +180,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     else addApartmentFurniture(level,variant);
     addWindowsAndBalcony(level);
     if (floorIndex > 0) {
-      addDoor(level,doorList,-1.95,-5.0,.95,0,1.35);
-      addDoor(level,doorList,5.0,-5.95,.9,Math.PI/2,1.35);
+      addDoor(level,doorList,-1.95,-5.0,.95,floorIndex,0,1.35);
+      addDoor(level,doorList,5.0,-5.95,.9,floorIndex,Math.PI/2,1.35);
     }
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
@@ -231,7 +231,11 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(-5,-5,6.1,.2); add(2.9,-5,4.2,.2);
     add(-6.7,-1.5,3,.2); add(-2,-1.5,1.5,.2); add(3.8,-1.5,2.2,.2);
     add(5,-6.6,.2,3.2); add(5,-1.4,.2,2); add(7,-6.6,2.6,.2);
-    return {group:root,roof,interiorX:building.x,interiorZ:building.z,colliders,floorCount:FLOOR_COUNT,floorHeight:FLOOR_HEIGHT};
+    for (const door of doors) {
+      const c=door.userData.houseDoorCollider;
+      colliders.push({minX:building.x+c.x-c.w/2,maxX:building.x+c.x+c.w/2,minZ:building.z+c.z-c.d/2,maxZ:building.z+c.z+c.d/2,_houseDoor:true,floor:c.floor,door});
+    }
+    return {group:root,roof,interiorX:building.x,interiorZ:building.z,colliders,doors,floorCount:FLOOR_COUNT,floorHeight:FLOOR_HEIGHT};
   }
 
   const locations=(world.buildings||[])
