@@ -2,7 +2,7 @@ import { supabase } from './online.js';
 
 const CHANNEL_NAME = 'angola-life-3d-luanda-live';
 const FINE_AMOUNT = 5000;
-export function createPlayerPhone({ game, online, services } = {}) {
+export function createPlayerPhone({ game, online, services, player } = {}) {
   const topbar = game?.querySelector('#topbar');
   if (!topbar || !online) return { open() {}, close() {} };
 
@@ -386,6 +386,7 @@ export function createPlayerPhone({ game, online, services } = {}) {
     const moderation = await online.registerPublicChatMessage(text);
     const payload = { nickname, text, from: currentUser().id, sentAt: Date.now() };
     renderChatMessage(payload);
+    window.dispatchEvent(new CustomEvent('angolaLife3D:chatBubble', { detail: { text, playerId: currentUser().id } }));
     await channel.send({ type: 'broadcast', event: 'public-chat', payload });
 
     if (Number(moderation?.fines_applied) > 0) {
