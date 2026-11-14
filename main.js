@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createWorld } from './world.js';
 import { expandLuandaCity } from './luanda-city.js';
 import { createLuandaStreetLife } from './luanda-street-life.js';
+import { addLuandaArchitectureDetails } from './luanda-architecture.js';
 import { createHouseSystem } from './houses.js';
 import { Player } from './player.js';
 import {
@@ -435,6 +436,7 @@ scene.add(sun);
 const world = createWorld(scene);
 expandLuandaCity(scene, world);
 createLuandaStreetLife(scene, world);
+addLuandaArchitectureDetails(scene, world);
 
 const restaurantSites = [
   { x: -55, z: -20 },
