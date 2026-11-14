@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
@@ -109,6 +108,39 @@ const JOBS = [
     outfit: 0x263b65,
     service: 'fuel',
     serviceName: 'Posto de Combustível'
+  },
+
+  // NOVOS FUNCIONÁRIOS DOS ESTABELECIMENTOS
+
+  {
+    role: 'Funcionário do Banco',
+    gender: 'male',
+    x: -50,
+    z: 58.5,
+    patrol: false,
+    outfit: 0x263b65,
+    service: 'bank',
+    serviceName: 'Banco Nacional'
+  },
+  {
+    role: 'Vendedora da Boutique',
+    gender: 'female',
+    x: -50,
+    z: 29.5,
+    patrol: false,
+    outfit: 0x8d315c,
+    service: 'clothing',
+    serviceName: 'Boutique Central'
+  },
+  {
+    role: 'Rececionista do Hospital',
+    gender: 'female',
+    x: 91,
+    z: 101.5,
+    patrol: false,
+    outfit: 0xffffff,
+    service: 'hospital',
+    serviceName: 'Hospital Municipal'
   }
 ];
 
@@ -278,7 +310,7 @@ export function createPeople(scene, world) {
       });
 
       console.log(
-        'ANGOLA LIFE 3D: habitantes e funcionários carregados:',
+        'ANGOLA LIFE 3D: funcionários e habitantes carregados:',
         world.npcs.length
       );
     })
