@@ -262,6 +262,25 @@ function makeNPC(scene, job, assets, index) {
   };
 }
 
+export async function createReceptionist(parent, job = {}, index = 0) {
+  const assets = await loadAssets();
+  const npc = makeNPC(parent, {
+    role: job.role || 'Rececionista',
+    gender: job.gender === 'female' ? 'female' : 'male',
+    x: Number(job.x) || 0,
+    z: Number(job.z) || 0,
+    patrol: false,
+    outfit: Number(job.outfit) || (index % 2 ? 0x29483e : 0x172b43)
+  }, assets, index + 100);
+
+  npc.root.position.y = Number(job.y) || 0;
+  npc.root.rotation.y = Number(job.rotationY) || 0;
+  // Os pisos interiores são ampliados 1,70x; esta compensação conserva
+  // a mesma altura de 2,5 m do jogador e dos restantes habitantes.
+  npc.root.scale.setScalar(1 / 1.7);
+  return npc;
+}
+
 function setAnimation(npc, name) {
   if (npc.current === name) return;
 
