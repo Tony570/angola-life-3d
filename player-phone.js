@@ -108,6 +108,7 @@ export function createPlayerPhone({ game, online, services, player } = {}) {
   function showMessage(text) { message.textContent = text || ''; }
   function open() {
     panel.classList.add('visible');
+    window.dispatchEvent(new CustomEvent('angolaLife3D:phoneOpened'));
     refreshPersonal();
     connectLive();
   }
