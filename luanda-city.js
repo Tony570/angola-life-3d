@@ -299,6 +299,9 @@ export function expandLuandaCity(scene, world) {
     });
     addSign(district.name, district.subtitle, district.x, district.z - 20);
 
+    // Ingombota já é representada pelo centro urbano construído em world.js.
+    if (district.name === 'Ingombota') return;
+
     if (district.style === 'musseque') {
       makeHome(district.x - 23, district.z + 22, 'musseque', index, district.name);
       makeHome(district.x + 1, district.z + 24, 'musseque', index + 1, district.name);
@@ -325,7 +328,7 @@ export function expandLuandaCity(scene, world) {
   });
 
   // Serviços públicos distribuídos pelas diferentes zonas da cidade.
-  makePublic('Administração Municipal', 'Atendimento ao cidadão', -20, -38, 'administration', 0x285b77);
+  makePublic('Administração Municipal', 'Atendimento ao cidadão', -20, -120, 'administration', 0x285b77);
   makePublic('Universidade de Luanda', 'Ensino superior', 185, -360, 'university', 0x315d83);
   makePublic('Escola Pública', 'Ensino geral', -280, -340, 'school', 0x39704d);
   makePublic('Hospital Geral', 'Urgência e consultas', 320, 30, 'hospital', 0x9d3030);
