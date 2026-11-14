@@ -190,11 +190,16 @@ function nearestHouse() {
   return distance <= 5.5 ? nearest : null;
 }
 function floorName(floor) { return floor === 0 ? 'RÉS-DO-CHÃO' : 'PISO '+floor; }
+function setActiveHouseColliders() {
+  if (!activeHouse) return;
+  player.setColliders(activeHouse.colliders.filter(item => !item._houseDoor || (item.floor === activeFloor && item.door.userData.houseDoorCollider.active)));
+}
 function goToFloor(floor) {
   if (!activeHouse) return;
   const next = Math.max(0, Math.min(activeHouse.floorCount - 1, Number(floor) || 0));
   activeFloor = next;
   activeHouse.currentFloor = next;
+  setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
   player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 6.2);
   elevatorLabel.textContent = floorName(next);
@@ -222,7 +227,7 @@ function enterHouse(house) {
   activeFloor = 0;
   player.setIndoor(true);
   player.setIndoorFloor(0.16);
-  player.setColliders(house.colliders);
+  player.setColliders(house.colliders.filter(item => !item._houseDoor || (item.floor === 0 && item.door.userData.houseDoorCollider.active)));
   player.teleport(house.interiorX, house.interiorZ + 6.2);
   elevatorPanel.hidden = false;
   homePanel.hidden = false;
@@ -261,7 +266,7 @@ function interactWithHouse() {
       const position=activeInteractable.getWorldPosition(new THREE.Vector3());
       const showHomeMessage=message=>{districtLocation.textContent=message;window.setTimeout(()=>{if(activeHouse)districtLocation.textContent='🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(activeFloor);},1800);};
       if(action.type==='sit'||action.type==='bed'||action.type==='toilet'){player.sitAt(position.x,position.z+(action.offsetZ||1),action.rotationY||0);return;}
-      if(action.type==='door'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.userData.houseDoorHinge.rotation.y=activeInteractable.userData.houseDoorBaseRotation+(open?action.openRotation:0);activeInteractable.userData.houseDoorCollider.active=!open;activeHouse.colliders=activeHouse.colliders.filter(item=>!item._houseDoor);activeHouse.interior.traverse(object=>{const c=object.userData?.houseDoorCollider;if(c?.active)activeHouse.colliders.push({minX:activeHouse.interiorX+c.x-c.w/2,maxX:activeHouse.interiorX+c.x+c.w/2,minZ:activeHouse.interiorZ+c.z-c.d/2,maxZ:activeHouse.interiorZ+c.z+c.d/2,_houseDoor:true});});player.setColliders(activeHouse.colliders);showHomeMessage(open?'🚪 PORTA ABERTA':'🚪 PORTA FECHADA');return;}
+      if(action.type==='door'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.userData.houseDoorHinge.rotation.y=activeInteractable.userData.houseDoorBaseRotation+(open?action.openRotation:0);activeInteractable.userData.houseDoorCollider.active=!open;setActiveHouseColliders();showHomeMessage(open?'🚪 PORTA ABERTA':'🚪 PORTA FECHADA');return;}
       if(action.type==='stove'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.emissive.setHex(on?0xff4b08:0x000000);activeInteractable.material.emissiveIntensity=on ? .8 : 0;showHomeMessage(on?'🔥 FOGÃO LIGADO':'Fogão desligado');return;}
       if(action.type==='fridge'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.rotation.y=open ? .85 : 0;showHomeMessage(open?'🧊 FRIGORÍFICO ABERTO':'Frigorífico fechado');return;}
       if(action.type==='shower'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.opacity=on ? .68 : .38;showHomeMessage(on?'🚿 DUCHE LIGADO':'Duche desligado');return;}
