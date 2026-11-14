@@ -416,7 +416,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(3.15,4.25,2.55,1.15,0); add(6.15,4.25,1.85,1.15,0);
     add(4.7,5.2,1.95,1.12,0); add(-.1,5.85,1.45,.72,0);
     add(-7.0,1.0,.8,.8,0); add(7.0,1.0,.8,.8,0); add(6.45,6.7,1.4,.65,0);
-colisões de móveis    for (const door of doors) {
+    for (const door of doors) {
       const c=door.userData.houseDoorCollider;
       colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
     }
