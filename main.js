@@ -217,48 +217,49 @@ elevatorPanel.addEventListener('click', event => {
 function addReceptionistUniform(group, variant=0) {
   if (!group || group.userData.hotelUniformApplied) return;
   group.userData.hotelUniformApplied = true;
-  const navy = new THREE.MeshStandardMaterial({color:variant===0?0x14283f:0x24364b,roughness:.62});
-  const white = new THREE.MeshStandardMaterial({color:0xf5f3ed,roughness:.78});
-  const gold = new THREE.MeshStandardMaterial({color:0xb99554,metalness:.55,roughness:.32});
-  const black = new THREE.MeshStandardMaterial({color:0x171b20,roughness:.85});
-  const makeBox=(x,y,z,w,h,d,material)=>{
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-    mesh.position.set(x,y,z); mesh.castShadow=false; mesh.receiveShadow=false; group.add(mesh); return mesh;
+  const jacketColors=[0x172b43,0x29323c,0x233c38,0x202b40];
+  const jacket=new THREE.MeshStandardMaterial({color:jacketColors[variant%jacketColors.length],roughness:.72});
+  const shirt=new THREE.MeshStandardMaterial({color:0xf4f1e9,roughness:.82});
+  const tie=new THREE.MeshStandardMaterial({color:variant%2?0x8a6840:0x9b3e36,roughness:.55});
+  const trousers=new THREE.MeshStandardMaterial({color:0x20252c,roughness:.84});
+  const leather=new THREE.MeshStandardMaterial({color:0x17191d,roughness:.42});
+  const brass=new THREE.MeshStandardMaterial({color:0xb9975b,metalness:.48,roughness:.38});
+  const addCapsule=(x,y,z,radius,length,material,rotationZ=0)=>{
+    const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,4,10),material);
+    mesh.position.set(x,y,z); mesh.rotation.z=rotationZ; mesh.castShadow=false; mesh.receiveShadow=false; group.add(mesh); return mesh;
   };
-  const makeCylinder=(x,y,z,r1,r2,h,material)=>{
-    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,10),material);
+  const addBox=(x,y,z,w,h,d,material)=>{
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
     mesh.position.set(x,y,z); group.add(mesh); return mesh;
   };
-  // Colete/blazer azul-marinho sobre a camisa, com lapelas claras.
-  makeBox(0,1.36,0,.62,.82,.34,navy);
-  makeBox(0,1.39,.177,.28,.73,.025,white);
-  makeBox(0,1.43,.198,.065,.48,.025,variant===0?gold:navy);
+  // Alfaiataria ajustada ao corpo do modelo humano, sem ombreiras quadradas.
+  addCapsule(0,1.34,0,.285,.48,jacket);
+  addCapsule(0,1.36,.205,.105,.43,shirt);
+  addBox(0,1.34,.315,.075,.42,.035,tie);
   for(const side of [-1,1]) {
-    const lapel=makeBox(side*.13,1.56,.198,.13,.32,.035,white);
-    lapel.rotation.z=side*.22;
-    const sleeve=makeCylinder(side*.37,1.32,0,.105,.13,.72,navy);
-    sleeve.rotation.z=side*.08;
-    makeCylinder(side*.37,.94,0,.105,.105,.12,white);
+    addCapsule(side*.355,1.31,0,.09,.42,jacket,side*.12);
+    addCapsule(side*.355,1.02,.005,.075,.12,shirt,side*.12);
+    addCapsule(side*.155,.58,0,.105,.58,trousers);
+    addBox(side*.155,.17,.075,.23,.13,.34,leather);
   }
-  // Calças sociais e sapatos escuros.
-  makeBox(-.16,.55,0,.22,.68,.27,navy);
-  makeBox(.16,.55,0,.22,.68,.27,navy);
-  makeBox(-.16,.16,.07,.25,.16,.4,black);
-  makeBox(.16,.16,.07,.25,.16,.4,black);
-  // Crachá dourado e botões do uniforme.
-  makeBox(-.19,1.58,.22,.13,.07,.025,gold);
-  for(const y of [1.25,1.4,1.55]) makeCylinder(.12,y,.205,.018,.018,.025,gold);
-  // Ombreiras discretas de concierge.
-  makeBox(-.27,1.73,0,.19,.055,.36,gold);
-  makeBox(.27,1.73,0,.19,.055,.36,gold);
+  // Lapelas finas, botões e identificação profissional.
+  for(const side of [-1,1]) {
+    const lapel=addBox(side*.105,1.53,.25,.075,.28,.035,shirt);
+    lapel.rotation.z=side*.28;
+  }
+  for(const y of [1.22,1.39,1.56]) {
+    const button=new THREE.Mesh(new THREE.SphereGeometry(.022,8,6),brass);
+    button.position.set(.16,y,.26); group.add(button);
+  }
+  addBox(-.19,1.55,.27,.12,.065,.025,brass);
 }
-
 function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
   house.residentsCreated = true;
+  // Dois recepcionistas alinhados atrás do balcão, virados para a entrada.
   house.residents = [
-    player.createResident(house.interior, -3.75, 0.16, 2.15, Math.PI),
-    player.createResident(house.interior, 1.55, 0.16, 1.55, Math.PI)
+    player.createResident(house.interior, -4.65, 0.16, 2.15, 0),
+    player.createResident(house.interior, -2.85, 0.16, 2.15, 0)
   ].filter(Boolean);
   house.residents.forEach((resident,index) => addReceptionistUniform(resident.group,index));
 }
