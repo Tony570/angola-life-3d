@@ -157,21 +157,35 @@ export function expandLuandaCity(scene, world) {
 
     const height = floors * 3.15;
     box(group, 0, 0, 0, width + 1.2, 0.28, depth + 1.2, M.concrete);
-    box(group, 0, 0.28, 0, width, height, depth, wall);
+    // Estrutura oca: paredes laterais, traseira e fachada com vãos.
+    box(group, -width / 2 + 0.15, 0.28, 0, 0.3, height, depth, wall);
+    box(group, width / 2 - 0.15, 0.28, 0, 0.3, height, depth, wall);
+    box(group, 0, 0.28, -depth / 2 + 0.15, width, height, 0.3, wall);
+    const facadeZ = depth / 2;
+    box(group, -width * 0.36, 0.28, facadeZ, width * 0.28, height, 0.3, wall);
+    box(group, width * 0.36, 0.28, facadeZ, width * 0.28, height, 0.3, wall);
+    box(group, 0, 0.28, facadeZ, width * 0.16, 0.35, 0.3, wall);
+    box(group, 0, 2.55, facadeZ, width * 0.16, 0.35, 0.3, wall);
+    box(group, 0, height - 0.2, facadeZ, width, 0.4, 0.3, wall);
     box(group, 0, height + 0.28, 0, width + 0.5, 0.35, depth + 0.5,
       style === 'musseque' ? M.roof : M.white);
 
     const front = depth / 2 + 0.06;
     box(group, 0, 0.38, front, 1.35, 2.2, 0.13, M.dark);
-    box(group, 0, 0.42, front + 0.08, 1.05, 2.0, 0.06, M.gold);
+    box(group, 0, 0.42, front + 0.08, 1.05, 2.0, 0.06, M.wood);
+    box(group, 0.42, 1.25, front + 0.15, 0.07, 0.07, 0.08, M.gold);
+    box(group, 0, 2.55, front + 0.1, 1.7, 0.14, 0.18, M.white);
 
     const windowCount = floors >= 3 ? 3 : 2;
     for (let floor = 0; floor < floors; floor++) {
       for (let n = 0; n < windowCount; n++) {
         const wx = (n - (windowCount - 1) / 2) * (width / (windowCount + 0.2));
         const wy = floor * 3.15 + 1.35;
+        if (floor === 0 && Math.abs(wx) < 0.2) continue;
         box(group, wx, wy, front + 0.04, 1.65, 1.25, 0.12, M.dark);
         box(group, wx, wy + 0.08, front + 0.12, 1.35, 1.05, 0.05, M.glass);
+        box(group, wx, wy - 0.69, front + 0.1, 1.75, 0.12, 0.18, M.white);
+        box(group, wx, wy + 0.69, front + 0.1, 1.75, 0.12, 0.18, M.white);
       }
     }
 
