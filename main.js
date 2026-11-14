@@ -770,12 +770,12 @@ function createTable(parent, x, z, restaurant) {
 
 function createRestaurantStructure(interior, restaurant) {
   const wallMaterial = new THREE.MeshStandardMaterial({
-    color: restaurant.id === 'cantinho-ilha' ? '#e7d8bd' : '#e8dfcc',
+    color: restaurant.id === 'cantinho-ilha' ? '#e7d8bd' : restaurant.id === 'paladar-angolano' ? '#e7c8b5' : '#e8dfcc',
     roughness: 0.88
   });
 
   const trim = new THREE.MeshStandardMaterial({
-    color: '#5b3828',
+    color: restaurant.id === 'cantinho-ilha' ? '#31596a' : restaurant.id === 'paladar-angolano' ? '#71362c' : '#5b3828',
     roughness: 0.72
   });
 
@@ -887,7 +887,7 @@ function buildRestaurants() {
     const floor = new THREE.Mesh(
       new THREE.BoxGeometry(16.8, 0.045, 13.8),
       new THREE.MeshStandardMaterial({
-        color: '#c7bba7',
+        color: restaurant.id === 'cantinho-ilha' ? '#b7c6c2' : restaurant.id === 'paladar-angolano' ? '#c7a58d' : '#c7bba7',
         roughness: 0.82
       })
     );
@@ -900,7 +900,7 @@ function buildRestaurants() {
     restaurant.colliders = structure.colliders;
 
     const counterWood = new THREE.MeshStandardMaterial({
-      color: '#573923',
+      color: restaurant.id === 'cantinho-ilha' ? '#4a6370' : restaurant.id === 'paladar-angolano' ? '#6b3429' : '#573923',
       roughness: 0.72
     });
 
@@ -938,10 +938,31 @@ function buildRestaurants() {
     addBox(interior, [0.25, 2.2, 0.25], [-7.2, 1.4, -5], green);
     addBox(interior, [0.25, 2.2, 0.25], [7.2, 1.4, -5], green);
 
-    createTable(interior, -3.2, -1.1, restaurant);
-    createTable(interior, 3.2, -1.1, restaurant);
-    createTable(interior, -3.2, 3.1, restaurant);
-    createTable(interior, 3.2, 3.1, restaurant);
+    const tableLayouts = {
+      'sabor-luanda': [[-3.2, -1.1], [3.2, -1.1], [-3.2, 3.1], [3.2, 3.1]],
+      'cantinho-ilha': [[-4.2, -2.0], [0, -2.0], [4.2, -2.0], [0, 3.0]],
+      'paladar-angolano': [[-4.0, -2.7], [0, -2.7], [4.0, -2.7], [-4.0, 2.6], [4.0, 2.6]]
+    };
+    (tableLayouts[restaurant.id] || tableLayouts['sabor-luanda'])
+      .forEach(([x, z]) => createTable(interior, x, z, restaurant));
+
+    const wallArtColor = restaurant.id === 'cantinho-ilha'
+      ? '#26718a'
+      : restaurant.id === 'paladar-angolano'
+        ? '#9a3c2f'
+        : '#286447';
+    const wallArt = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2, 1.45, 0.12),
+      new THREE.MeshStandardMaterial({ color: wallArtColor, roughness: 0.7 })
+    );
+    wallArt.position.set(0, 2.7, -6.48);
+    interior.add(wallArt);
+    const wallArtFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(3.45, 1.7, 0.08),
+      new THREE.MeshStandardMaterial({ color: '#c99a4a', metalness: 0.25, roughness: 0.5 })
+    );
+    wallArtFrame.position.set(0, 2.7, -6.58);
+    interior.add(wallArtFrame);
 
     interior.position.set(restaurant.x, 0, restaurant.z);
     restaurant.interior = interior;
