@@ -318,35 +318,67 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     return true;
   }
 
-  async function startTrip(taxi, destination, path, fare, button) {
-    if (activeRoute || taxi !== activeTaxi) return;
-    button.disabled = true;
-    message.textContent = 'A confirmar o pagamento...';
+  const TRIP_DURATION = 30;
+  const tripStatus = document.createElement('div');
+  tripStatus.id = 'taxi-trip-status';
+  tripStatus.setAttribute('role', 'status');
+  tripStatus.style.cssText = 'position:absolute;z-index:66;left:50%;bottom:105px;transform:translateX(-50%);width:min(92vw,360px);padding:12px 15px;border:1px solid #ffffff35;border-radius:13px;background:#14231ef2;color:#fff;text-align:center;font:700 13px Arial,sans-serif;box-shadow:0 8px 28px #0008;display:none;pointer-events:none';
+  game.appendChild(tripStatus);
+
+  async function finishTrip() {
+    if (!activeRoute || activeRoute.finishing) return;
+    const trip = activeRoute;
+    trip.finishing = true;
     try {
-      const paid = await services.charge(fare);
+      const paid = await services.charge(trip.fare);
       if (!paid) {
-        message.textContent = 'Saldo insuficiente para esta viagem.';
-        button.disabled = false;
-        return;
+        player.group.visible = true;
+        player.teleport(trip.origin.x, trip.origin.z);
+        message.textContent = 'Viagem cancelada: o saldo já não é suficiente para pagar.';
+      } else {
+        player.group.visible = true;
+        player.teleport(trip.destination.x, trip.destination.z);
+        message.textContent = 'Chegaste ao destino. Boa viagem!';
       }
-      player.keys = {};
-      player.moveTarget = null;
-      player.enterVehicle(taxi);
-      taxi.occupied = true;
-      taxi.speed = 0;
-      activeRoute = {
-        taxi,
-        destination,
-        path,
-        segment: 0,
-        progress: 0,
-        speed: 23
-      };
-      close();
     } catch (error) {
-      message.textContent = error?.message || 'Não foi possível pagar a viagem.';
-      button.disabled = false;
+      player.group.visible = true;
+      player.teleport(trip.origin.x, trip.origin.z);
+      message.textContent = error?.message || 'Não foi possível concluir o pagamento. Voltaste à origem.';
+    } finally {
+      trip.taxi.occupied = false;
+      trip.taxi.speed = 0;
+      activeRoute = null;
+      tripStatus.style.display = 'none';
     }
+  }
+
+  function startTrip(taxi, destination, path, fare, button) {
+    if (activeRoute || taxi !== activeTaxi) return;
+    if (services.getBalance() < fare) {
+      message.textContent = 'Saldo insuficiente. Escolhe um destino mais próximo.';
+      return;
+    }
+    button.disabled = true;
+    const origin = {
+      x: player.group.position.x,
+      z: player.group.position.z
+    };
+    player.keys = {};
+    player.moveTarget = null;
+    player.group.visible = false;
+    taxi.occupied = true;
+    taxi.speed = 0;
+    activeRoute = {
+      taxi,
+      destination,
+      fare,
+      origin,
+      remaining: TRIP_DURATION,
+      finishing: false
+    };
+    close();
+    tripStatus.style.display = 'block';
+    tripStatus.textContent = '🚕 Viagem em curso · ' + TRIP_DURATION + ' segundos';
   }
 
   function close() {
@@ -362,7 +394,7 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
   });
 
   function findNearestTaxi() {
-    if (player.currentVehicle || player.sitting) return null;
+    if (player.currentVehicle || player.sitting || activeRoute) return null;
     let nearest = null;
     let best = 9;
     for (const taxi of taxis) {
@@ -378,38 +410,12 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
 
   function update(delta) {
     if (!activeRoute) return;
-    const route = activeRoute;
-    const taxi = route.taxi;
-    let remaining = route.speed * delta;
-
-    while (remaining > 0 && route.segment < route.path.length - 1) {
-      const from = route.path[route.segment];
-      const to = route.path[route.segment + 1];
-      const length = from.distanceTo(to);
-      if (length < 0.001) { route.segment++; route.progress = 0; continue; }
-      const available = length - route.progress;
-      const step = Math.min(remaining, available);
-      route.progress += step;
-      remaining -= step;
-      const t = route.progress / length;
-      taxi.group.position.lerpVectors(from, to, t);
-      taxi.group.position.y = 0;
-      const dx = to.x - from.x;
-      const dz = to.z - from.z;
-      taxi.group.rotation.y = Math.atan2(-dx, -dz);
-      if (route.progress >= length - 0.001) {
-        route.segment++;
-        route.progress = 0;
-      }
-    }
-
-    if (route.segment >= route.path.length - 1) {
-      taxi.group.position.set(route.destination.x, 0, route.destination.z);
-      player.exitVehicle();
-      taxi.occupied = false;
-      taxi.speed = 0;
-      activeRoute = null;
-    }
+    activeRoute.remaining = Math.max(0, activeRoute.remaining - delta);
+    const seconds = Math.ceil(activeRoute.remaining);
+    tripStatus.textContent = '🚕 Viagem em curso · ' + seconds + ' segundos';
+    player.keys = {};
+    player.moveTarget = null;
+    if (activeRoute.remaining <= 0) finishTrip();
   }
 
   function isOpen() { return menuOpen; }
