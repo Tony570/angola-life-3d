@@ -296,7 +296,7 @@ receptionPricePanel.innerHTML=`
     <p id="reception-dialogue">Sou da equipa de receção. Posso dar-lhe informações sobre os apartamentos e a hospedagem.</p>
     <div class="reception-dialogue-actions">
       <button type="button" data-reception-info="buy">Comprar apartamento</button>
-      <button type="button" data-reception-info="night">Passar uma noite</button>
+      <button type="button" data-reception-info="night">Alugar quarto no hotel</button>
       <button type="button" data-reception-info="apartments">Informações dos apartamentos</button>
       <button type="button" data-reception-info="welcome">Voltar ao atendimento</button>
     </div>
@@ -368,9 +368,9 @@ receptionPricePanel.addEventListener('click',event=>{
   const floorOptions=receptionPricePanel.querySelector('#property-floor-options');
   floorOptions.hidden=button.dataset.receptionInfo!=='buy';
   const messages={
-    buy:['Temos apartamentos disponíveis do 1.º ao 4.º andar. Escolhe o piso abaixo para verificar a disponibilidade e concluir a compra na tua conta.','Preço fixo: 500.000 Kz. O apartamento comprado fica associado à tua conta.'],
-    night:['Para passar uma noite no edifício, o valor é 1.000 Kz por noite.','Hospedagem: 1.000 Kz / noite.'],
-    apartments:['Temos apartamentos T2 nos pisos residenciais. Pode conhecer os espaços e circular pelos pisos através do elevador.','Se precisar de mais informações, fale connosco aqui na receção.'],
+    buy:['Temos apartamentos vazios disponíveis do 1.º ao 4.º andar. Escolhe o piso abaixo para verificar a disponibilidade e concluir a compra na tua conta.','Preço de compra: 500.000 Kz por apartamento. O apartamento comprado fica associado à tua conta.'],
+    night:['Temos quartos disponíveis para aluguer no hotel. O preço é 1.000 Kz por noite.','Aluguer de quarto: 1.000 Kz/noite. O pagamento e a reserva serão ativados numa próxima etapa.'],
+    apartments:['Temos apartamentos disponíveis para compra nos pisos superiores e quartos de hotel para aluguer.','Compra do apartamento: 500.000 Kz. Aluguer do quarto: 1.000 Kz por noite.'],
     welcome:['Seja bem-vindo ao Kilamba. Estamos disponíveis para ajudar com informações sobre compra e hospedagem.','Em que mais posso ajudar?']
   };
   const message=messages[button.dataset.receptionInfo];
