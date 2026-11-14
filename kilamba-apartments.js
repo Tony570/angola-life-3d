@@ -33,7 +33,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
   }
   function addSofa(g,x,z,color=M.sofa,scale=1) {
     const seat = box(g,x,.26,z,2.55*scale,.48,.9,color);
-    seat.userData.houseAction = { label: 'SENTAR NO SOFÁ', rotationY: Math.PI };
+    seat.userData.houseAction = { label: 'SENTAR NO SOFÁ', type: 'sit', rotationY: Math.PI, offsetZ: 1.05 };
     box(g,x,.72,z-.36,2.55*scale,.55,.17,color);
     for(const side of [-1,1]) box(g,x+side*1.2*scale,.4,z,.16,.58,.9,color);
     for(const dx of [-.72,0,.72]) box(g,x+dx*scale,.78,z-.34,.48,.18,.12,M.fabric);
@@ -82,33 +82,55 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,-5.2,.03,3.0,4.8,.035,3.0,M.fabric,false);
     // Quarto principal.
     const mainBed = box(level,-5.0,.18,-6.6,3.0,.35,2.7,M.wood);
-    mainBed.userData.houseAction = { label: 'SENTAR NA CAMA', rotationY: 0 };
+    mainBed.userData.houseAction = { label: 'DEITAR NA CAMA', type: 'bed', rotationY: 0, offsetZ: 1.15 };
     box(level,-5.0,.55,-6.6,2.9,.2,2.6,M.white);
     box(level,-5.0,.78,-7.55,2.8,.3,.65,M.fabric);
-    box(level,-1.9,0,-6.5,1.0,2.35,1.5,M.woodLight);
+    const wardrobe = box(level,-1.9,0,-6.5,1.0,2.35,1.5,M.woodLight);
+    wardrobe.userData.houseAction = { label: 'ABRIR GUARDA-ROUPA', type: 'wardrobe' };
     box(level,-1.85,.85,-4.95,1.2,.9,.55,M.wood);
     // Segundo quarto.
     const secondBed = box(level,2.1,.18,-6.55,2.5,.35,2.5,M.wood);
-    secondBed.userData.houseAction = { label: 'SENTAR NA CAMA', rotationY: 0 };
+    secondBed.userData.houseAction = { label: 'DEITAR NA CAMA', type: 'bed', rotationY: 0, offsetZ: 1.15 };
     box(level,2.1,.55,-6.55,2.4,.2,2.4,M.white);
     box(level,2.1,.78,-7.4,2.3,.28,.55,M.fabric);
     box(level,4.25,0,-4.7,1.0,2.25,.75,M.woodLight);
     // Cozinha com bancada, armários, lava-loiça e fogão.
     box(level,5.8,.08,3.0,4.2,.82,1.0,M.woodLight);
     box(level,5.8,.92,3.0,4.35,.12,1.08,M.white);
-    box(level,4.25,.15,2.45,.95,.65,.08,M.metal);
-    box(level,6.8,.15,2.45,.95,.65,.08,M.dark);
+    const sink = box(level,4.25,.15,2.45,.95,.65,.08,M.metal);
+    sink.userData.houseAction = { label: 'USAR LAVA-LOIÇA', type: 'sink' };
+    const stove = box(level,6.8,.15,2.45,.95,.65,.08,M.dark);
+    stove.userData.houseAction = { label: 'LIGAR / DESLIGAR FOGÃO', type: 'stove' };
+    stove.material = new THREE.MeshStandardMaterial({ color: 0x252b30, roughness: .4, metalness: .35, emissive: 0x000000 });
     for(const x of [6.55,7.05]) for(const z of [2.7,3.15]) cylinder(level,x,1.05,z,.12,.035,M.metal);
-    box(level,7.55,0,4.65,.85,2.15,.9,M.white);
+    const fridge = box(level,7.55,0,4.65,.85,2.15,.9,M.white);
+    fridge.userData.houseAction = { label: 'ABRIR FRIGORÍFICO', type: 'fridge' };
+    fridge.geometry = new THREE.BoxGeometry(.08,1.95,.82);
+    fridge.position.set(7.08,1.075,4.65);
     box(level,5.8,.78,.8,2.0,.12,1.0,M.wood);
     // Casa de banho com duche, sanita e lavatório.
     box(level,6.75,.02,-6.65,2.65,.06,2.65,M.tile,false);
     box(level,7.5,.12,-7.25,1.05,.12,1.0,M.white);
-    box(level,7.5,.2,-6.75,1.0,1.9,.05,M.glass,false);
-    box(level,5.85,.12,-5.85,.65,.35,.75,M.white);
+    const shower = box(level,7.5,.2,-6.75,1.0,1.9,.05,M.glass,false);
+    shower.userData.houseAction = { label: 'LIGAR / DESLIGAR DUCHE', type: 'shower' };
+    const toilet = box(level,5.85,.12,-5.85,.65,.35,.75,M.white);
+    toilet.userData.houseAction = { label: 'USAR SANITA', type: 'toilet', offsetZ: .9 };
     box(level,5.85,.48,-5.55,.58,.65,.18,M.white);
-    box(level,7.7,.7,-5.55,.8,.12,.5,M.white);
+    const bathroomSink = box(level,7.7,.7,-5.55,.8,.12,.5,M.white);
+    bathroomSink.userData.houseAction = { label: 'LAVAR AS MÃOS', type: 'sink' };
   }
+  function addDoor(level, doorList, x, z, width, baseRotation = 0, openRotation = 1.35) {
+    const hinge = new THREE.Group();
+    hinge.position.set(x,0,z); hinge.rotation.y = baseRotation;
+    const panel = box(hinge,width/2,.05,0,width,2.15,.09,M.woodLight);
+    panel.position.x = width/2;
+    const rotated = Math.abs(Math.sin(baseRotation)) > .5;
+    panel.userData.houseAction = { label: 'ABRIR / FECHAR PORTA', type: 'door', openRotation };
+    panel.userData.houseDoorCollider = { x:x+Math.cos(baseRotation)*width/2, z:z-Math.sin(baseRotation)*width/2, w:rotated ? .18 : width, d:rotated ? width : .18, active:true };
+    panel.userData.isOpen = false; panel.userData.houseDoorHinge = hinge; panel.userData.houseDoorBaseRotation = baseRotation;
+    hinge.add(panel); level.add(hinge); doorList.push(panel); return panel;
+  }
+
   function addFloorShell(level) {
     box(level,0,-.16,0,17,.32,17,M.floor,false);
     // Paredes perimetrais, com porta larga na fachada da entrada.
@@ -149,7 +171,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for(let n=0;n<=10;n++) box(level,-2.5+n*.5,.16,9.08,.045,.85,.045,M.metal);
     box(level,0,1.2,8.35,5.0,.06,.06,M.metal);
   }
-  function addApartmentFloor(parent,floorIndex,variant) {
+  function addApartmentFloor(parent,floorIndex,variant,doorList) {
     const level=new THREE.Group();
     level.position.y=floorIndex*FLOOR_HEIGHT;
     parent.add(level);
@@ -157,6 +179,10 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     if(floorIndex===0) addReceptionLobby(level,variant);
     else addApartmentFurniture(level,variant);
     addWindowsAndBalcony(level);
+    if (floorIndex > 0) {
+      addDoor(level,doorList,-1.95,-5.0,.95,0,1.35);
+      addDoor(level,doorList,5.0,-5.95,.9,Math.PI/2,1.35);
+    }
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
       bulb.position.set(x,2.55,z); level.add(bulb);
@@ -172,7 +198,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     root.position.set(building.x,0,building.z);
     root.visible=false;
     scene.add(root);
-    for(let floor=0;floor<FLOOR_COUNT;floor++) addApartmentFloor(root,floor,index+floor);
+    const doors=[];
+    for(let floor=0;floor<FLOOR_COUNT;floor++) addApartmentFloor(root,floor,index+floor,doors);
 
     // Elevator shaft and doors are part of the shared lobby on every level.
     const shaft=new THREE.Group(); root.add(shaft);
@@ -224,7 +251,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       const inside=createBuildingInterior(house,index);
       house.interior=inside.group; house.interiorRoof=inside.roof;
       house.interiorX=inside.interiorX; house.interiorZ=inside.interiorZ;
-      house.colliders=inside.colliders; house.floorCount=inside.floorCount; house.floorHeight=inside.floorHeight;
+      house.colliders=inside.colliders; house.doors=inside.doors; house.floorCount=inside.floorCount; house.floorHeight=inside.floorHeight;
       return house;
     };
     houses.push(house);
