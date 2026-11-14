@@ -277,13 +277,36 @@ export function expandLuandaCity(scene, world) {
 
   const makePublic = (name, subtitle, x, z, kind, color = 0x285b77) => {
     const group = new THREE.Group();
-    const wall = material(0xe8dfce);
-    const height = kind === 'university' || kind === 'hospital' ? 12 : 8;
-    const width = kind === 'university' ? 25 : 18;
-    const depth = kind === 'university' ? 20 : 15;
+    const wallColors = {
+      bank: 0xe5e8e8, boutique: 0xd9c9b7, 'car-dealer': 0xe8e6df,
+      hotel: 0xd8d0c4, 'fuel-station': 0xe8e4d8, market: 0xd9c8a8,
+      hospital: 0xe8e7df, police: 0xdce3e8
+    };
+    const wall = material(wallColors[kind] || 0xe8dfce);
+    const height = ['university','hospital','hotel'].includes(kind) ? 12 : 8;
+    const width = ({
+      university:25, hotel:24, 'car-dealer':24, bank:21,
+      boutique:19, 'fuel-station':22, market:22
+    })[kind] || 18;
+    const depth = ({
+      university:20, hotel:19, 'car-dealer':19, bank:17,
+      boutique:16, 'fuel-station':18, market:19
+    })[kind] || 15;
     box(group, 0, 0, 0, width + 1, 0.3, depth + 1, M.concrete);
     box(group, 0, 0.3, 0, width, height, depth, wall);
     box(group, 0, height + 0.3, 0, width + 0.6, 0.45, depth + 0.6, M.white);
+    // Fachada comercial com montra, molduras, entrada coberta e pilares.
+    if (['bank','boutique','car-dealer','hotel','fuel-station','market'].includes(kind)) {
+      box(group, 0, 0.38, depth / 2 + 0.18, width * 0.72, 2.9, 0.12, M.glass);
+      box(group, 0, 3.25, depth / 2 + 0.32, width * 0.78, 0.28, 0.72, M.dark);
+      for (const px of [-width * 0.39, width * 0.39]) {
+        box(group, px, 0.25, depth / 2 + 0.42, 0.34, 3.35, 0.34, M.white);
+      }
+      box(group, 0, 3.55, depth / 2 + 0.48, width * 0.84, 0.22, 1.15, M.white);
+      for (const wx of [-width * 0.28, width * 0.28]) {
+        box(group, wx, 0.55, depth / 2 + 0.27, 0.12, 2.6, 0.12, M.metal);
+      }
+    }
     box(group, 0, 0.45, depth / 2 + 0.12, 4.2, 2.8, 0.18, M.dark);
     for (let floor = 0; floor < Math.ceil(height / 3.2); floor++) {
       for (const wx of [-width / 3, 0, width / 3]) {
@@ -386,8 +409,15 @@ export function expandLuandaCity(scene, world) {
   makePublic('Esquadra de Polícia', 'Polícia Nacional', 80, -185, 'police', 0x24466f);
   makePublic('Instituto Técnico', 'Formação profissional', 260, 270, 'technical-school', 0x4e6c85);
   makePublic('Terminal de Transportes', 'Táxis e autocarros', 345, 180, 'transport-terminal', 0x8a652b);
-  makePublic('Mercado Municipal', 'Comércio e abastecimento', -325, -80, 'market', 0x39704d);
+  makePublic('Mercado Central', 'Comércio e abastecimento', -325, -80, 'market', 0x39704d);
   makePublic('Centro de Saúde', 'Cuidados primários', -80, 360, 'clinic', 0x9d3030);
+
+  // Equipamentos comerciais da referência visual do mundo virtual.
+  makePublic('Banco de Luanda', 'Serviços bancários e atendimento', -350, 245, 'bank', 0x176b55);
+  makePublic('Boutique Moda Angola', 'Loja de roupa e acessórios', 320, -325, 'boutique', 0x8a3c62);
+  makePublic('Concessionária de Automóveis', 'Exposição e compra de viaturas', 390, -245, 'car-dealer', 0x9b3028);
+  makePublic('Hotel Angola', 'Recepção e alojamento', -420, -245, 'hotel', 0x315b83);
+  makePublic('Posto Angola Oil', 'Combustível e loja de conveniência', 340, 390, 'fuel-station', 0xc52f27);
 
   // A Ilha de Luanda é uma zona própria, além dos dez bairros principais.
   world.destinations.push({ name: ILHA_DE_LUANDA.name, x: ILHA_DE_LUANDA.x, z: ILHA_DE_LUANDA.z, category: 'ilha' });
