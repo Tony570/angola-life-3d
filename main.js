@@ -218,12 +218,48 @@ elevatorPanel.addEventListener('click', event => {
 const receptionPricePanel=document.createElement('section');
 receptionPricePanel.id='reception-price-panel';
 receptionPricePanel.hidden=true;
-receptionPricePanel.innerHTML=`<div class="hotel-price-card"><button type="button" id="close-hotel-prices" aria-label="Fechar">×</button><small>RECEÇÃO · KILAMBA</small><h2>Quartos disponíveis</h2><p>Apartamento T2 · compra</p><strong>500.000 Kz</strong><p>Passar uma noite</p><strong>1.000 Kz / noite</strong><span>Consulte o rececionista para conhecer a disponibilidade.</span></div>`;
+receptionPricePanel.innerHTML=`
+  <div class="hotel-price-card">
+    <button type="button" id="close-hotel-prices" aria-label="Fechar">×</button>
+    <small>RECEÇÃO · KILAMBA</small>
+    <h2 id="reception-greeting">Bom dia! Seja bem-vindo.</h2>
+    <p id="reception-dialogue">Sou da equipa de receção. Posso dar-lhe informações sobre os apartamentos e a hospedagem.</p>
+    <div class="reception-dialogue-actions">
+      <button type="button" data-reception-info="buy">Comprar apartamento</button>
+      <button type="button" data-reception-info="night">Passar uma noite</button>
+      <button type="button" data-reception-info="apartments">Informações dos apartamentos</button>
+      <button type="button" data-reception-info="welcome">Voltar ao atendimento</button>
+    </div>
+    <span id="reception-extra">Escolha o assunto para receber informações do rececionista.</span>
+  </div>`;
 document.body.appendChild(receptionPricePanel);
 const hotelPriceStyle=document.createElement('style');
-hotelPriceStyle.textContent=`#reception-price-panel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(5,12,16,.78);backdrop-filter:blur(5px)}#reception-price-panel[hidden]{display:none!important}.hotel-price-card{position:relative;width:min(390px,94vw);padding:28px 24px;border:1px solid #d7b66f;border-radius:20px;background:linear-gradient(145deg,#f4efe4,#d8cbb5);color:#25332f;box-shadow:0 24px 70px #000b;font-family:Arial,sans-serif}.hotel-price-card small{color:#8a642c;font-size:10px;font-weight:900;letter-spacing:2px}.hotel-price-card h2{margin:8px 0 22px;font-size:24px}.hotel-price-card p{margin:13px 0 5px;color:#5d6259;font-size:12px;font-weight:700}.hotel-price-card strong{display:block;color:#173e32;font-size:23px}.hotel-price-card span{display:block;margin-top:20px;padding-top:14px;border-top:1px solid #b9ad99;color:#62675f;font-size:11px;line-height:1.5}.hotel-price-card #close-hotel-prices{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#263e35;color:#fff;font-size:22px}`;
+hotelPriceStyle.textContent=`#reception-price-panel{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;background:rgba(5,12,16,.78);backdrop-filter:blur(5px)}#reception-price-panel[hidden]{display:none!important}.hotel-price-card{position:relative;width:min(420px,94vw);max-height:88vh;overflow:auto;padding:28px 24px;border:1px solid #d7b66f;border-radius:20px;background:linear-gradient(145deg,#f4efe4,#d8cbb5);color:#25332f;box-shadow:0 24px 70px #000b;font-family:Arial,sans-serif}.hotel-price-card small{color:#8a642c;font-size:10px;font-weight:900;letter-spacing:2px}.hotel-price-card h2{margin:10px 0 12px;font-size:23px}.hotel-price-card p{margin:8px 0 12px;color:#4d5b53;font-size:13px;line-height:1.6}.hotel-price-card span{display:block;margin-top:16px;padding-top:13px;border-top:1px solid #b9ad99;color:#62675f;font-size:11px;line-height:1.55}.hotel-price-card #close-hotel-prices{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#263e35;color:#fff;font-size:22px}.reception-dialogue-actions{display:grid;gap:8px;margin-top:18px}.reception-dialogue-actions button{min-height:44px;padding:11px 14px;border:1px solid #b69a68;border-radius:10px;background:linear-gradient(135deg,#24483a,#17372d);color:#fff;text-align:left;font-size:12px;font-weight:800}.reception-dialogue-actions button:last-child{background:#e5ddce;color:#344238}`;
 document.head.appendChild(hotelPriceStyle);
+function openReceptionConversation(index=0) {
+  const greeting=receptionPricePanel.querySelector('#reception-greeting');
+  const dialogue=receptionPricePanel.querySelector('#reception-dialogue');
+  const extra=receptionPricePanel.querySelector('#reception-extra');
+  greeting.textContent=index===1?'Olá! Em que posso ajudar?':'Bom dia! Seja bem-vindo.';
+  dialogue.textContent='Sou da equipa de receção do Kilamba. Posso explicar os preços e dar informações sobre os apartamentos e a hospedagem.';
+  extra.textContent='Escolha o assunto para receber informações do rececionista.';
+  receptionPricePanel.hidden=false;
+}
 receptionPricePanel.querySelector('#close-hotel-prices').addEventListener('click',()=>{receptionPricePanel.hidden=true;});
+receptionPricePanel.addEventListener('click',event=>{
+  const button=event.target.closest('[data-reception-info]');
+  if(!button)return;
+  const dialogue=receptionPricePanel.querySelector('#reception-dialogue');
+  const extra=receptionPricePanel.querySelector('#reception-extra');
+  const messages={
+    buy:['Para comprar um apartamento T2, o preço é 500.000 Kz. O apartamento é destinado a quem pretende ter a sua própria habitação no bloco.','Preço de compra: 500.000 Kz. A compra ainda não é concluída por esta conversa.'],
+    night:['Para passar uma noite no edifício, o valor é 1.000 Kz por noite.','Hospedagem: 1.000 Kz / noite.'],
+    apartments:['Temos apartamentos T2 nos pisos residenciais. Pode conhecer os espaços e circular pelos pisos através do elevador.','Se precisar de mais informações, fale connosco aqui na receção.'],
+    welcome:['Seja bem-vindo ao Kilamba. Estamos disponíveis para ajudar com informações sobre compra e hospedagem.','Em que mais posso ajudar?']
+  };
+  const message=messages[button.dataset.receptionInfo];
+  if(message){dialogue.textContent=message[0];extra.textContent=message[1];}
+});
 function addReceptionistUniform(group, variant=0) {
   if (!group || group.userData.hotelUniformApplied) return;
   group.userData.hotelUniformApplied = true;
@@ -274,12 +310,20 @@ function addReceptionistUniform(group, variant=0) {
 function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
   house.residentsCreated = true;
-  // Dois recepcionistas alinhados atrás do balcão, virados para a entrada.
+  // Dois funcionários separados, atrás do balcão, com espaço para serem vistos.
   house.residents = [
-    player.createResident(house.interior, -4.65, 0.16, 2.05, Math.PI),
-    player.createResident(house.interior, -2.85, 0.16, 2.05, Math.PI)
+    player.createResident(house.interior, -4.9, 0.16, 2.05, Math.PI),
+    player.createResident(house.interior, -2.6, 0.16, 2.05, Math.PI)
   ].filter(Boolean);
-  house.residents.forEach((resident,index) => addReceptionistUniform(resident.group,index));
+  house.residents.forEach((resident,index) => {
+    addReceptionistUniform(resident.group,index);
+    resident.group.userData.houseAction = {
+      label: 'FALAR COM O RECECIONISTA',
+      type: 'reception-agent',
+      receptionistIndex: index
+    };
+    resident.group.userData.receptionist = true;
+  });
 }
 
 player.onModelReady = () => {
@@ -343,7 +387,7 @@ function interactWithHouse() {
       const action=activeInteractable.userData.houseAction;
       const position=activeInteractable.getWorldPosition(new THREE.Vector3());
       const showHomeMessage=message=>{districtLocation.textContent=message;window.setTimeout(()=>{if(activeHouse)districtLocation.textContent='🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(activeFloor);},1800);};
-      if(action.type==='reception'){receptionPricePanel.hidden=false;return;}
+      if(action.type==='reception'||action.type==='reception-agent'){openReceptionConversation(action.receptionistIndex??0);return;}
       if(action.type==='sit'||action.type==='bed'||action.type==='toilet'){player.sitAt(position.x,position.z+(action.offsetZ||1),action.rotationY||0);return;}
       if(action.type==='door'){const open=!activeInteractable.userData.isOpen;activeInteractable.userData.isOpen=open;activeInteractable.userData.houseDoorHinge.rotation.y=activeInteractable.userData.houseDoorBaseRotation+(open?action.openRotation:0);activeInteractable.userData.houseDoorCollider.active=!open;setActiveHouseColliders();showHomeMessage(open?'🚪 PORTA ABERTA':'🚪 PORTA FECHADA');return;}
       if(action.type==='stove'){const on=!activeInteractable.userData.isOn;activeInteractable.userData.isOn=on;activeInteractable.material.emissive.setHex(on?0xff4b08:0x000000);activeInteractable.material.emissiveIntensity=on ? .8 : 0;showHomeMessage(on?'🔥 FOGÃO LIGADO':'Fogão desligado');return;}
@@ -381,7 +425,7 @@ function updateHousePrompt() {
       return;
     }
     let nearest = null;
-    let nearestDistance = 2.8;
+    let nearestDistance = 3.25;
     for (const object of activeHouse.interactables || []) {
       if (!object.visible) continue;
       const position = object.getWorldPosition(new THREE.Vector3());
