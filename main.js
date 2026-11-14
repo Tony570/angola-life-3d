@@ -438,14 +438,14 @@ function ensureHouseResidents(house) {
     createReceptionist(lobbyFloor, {
       role: 'Rececionista',
       gender: 'male',
-      x: -4.9, y: 0.16, z: 4.45,
-      rotationY: 0,
+      x: -4.8, y: 0.16, z: 5.25,
+      rotationY: Math.PI,
       outfit: 0x172b43
     }, 0),
     createReceptionist(lobbyFloor, {
       role: 'Rececionista',
       gender: 'female',
-      x: -2.6, y: 0.16, z: 4.45,
+      x: -2.1, y: 0.16, z: 5.25,
       rotationY: 0,
       outfit: 0x29483e
     }, 1)
@@ -556,6 +556,30 @@ function interactWithHouse() {
 }
 interactButton.addEventListener('click', interactWithHouse);
 player.onInteract = interactWithHouse;
+
+// Tocar diretamente num rececionista abre o atendimento no telemóvel ou computador.
+const receptionistRaycaster = new THREE.Raycaster();
+const receptionistPointer = new THREE.Vector2();
+renderer.domElement.addEventListener('pointerup', event => {
+  if (!activeHouse || activeFloor !== 0 || receptionPricePanel.hidden === false) return;
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  receptionistPointer.set(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  receptionistRaycaster.setFromCamera(receptionistPointer, camera);
+  const roots = (activeHouse.residents || []).map(resident => resident.group).filter(Boolean);
+  if (!roots.length) return;
+  const hits = receptionistRaycaster.intersectObjects(roots, true);
+  if (!hits.length) return;
+  let target = hits[0].object;
+  while (target && !target.userData?.receptionist) target = target.parent;
+  if (target?.userData?.receptionist) {
+    openReceptionConversation(target.userData.houseAction?.receptionistIndex ?? 0);
+  }
+});
+
 function updateHousePrompt() {
   if (services.isOpen()) return;
   if (!activeHouse) {
