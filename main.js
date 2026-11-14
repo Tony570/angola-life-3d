@@ -16,6 +16,7 @@ import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
 import { createMultiplayer } from './multiplayer.js';
 import { createTaxiTransport } from './taxi-transport.js';
+import { createLifeGuide } from './life-guide.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -524,6 +525,7 @@ services = createServices({
 
 const playerPhone = createPlayerPhone({ game, online, services, player });
 const taxiTransport = createTaxiTransport({ scene, world, player, services, game });
+const lifeGuide = createLifeGuide({ game, player, world });
 
 window.addEventListener('angolaLife3D:clothingPurchase', event => {
   const item = event.detail?.name;
@@ -1223,6 +1225,7 @@ startButton.addEventListener('click', () => {
   started = true;
   welcome.classList.add('hidden');
   player.updateCamera();
+  lifeGuide.start();
 });
 
 function snapCameraToPlayer() {
@@ -1260,7 +1263,10 @@ mapButton.addEventListener('click', () => {
   const opening = !mapPanel.classList.contains('visible');
   mapPanel.classList.toggle('visible', opening);
   mapPanel.setAttribute('aria-hidden', String(!opening));
-  if (opening) updatePhoneMap();
+  if (opening) {
+    updatePhoneMap();
+    window.dispatchEvent(new CustomEvent('angolaLife3D:mapOpened'));
+  }
 });
 
 document.querySelector('#close-map').addEventListener('click', () => {
@@ -1711,6 +1717,7 @@ function animate() {
     }
 
     taxiTransport.update(delta);
+    lifeGuide.update();
     world.updateTraffic?.(delta);
     multiplayer.update(delta);
     npcAccumulator += delta;
