@@ -84,6 +84,58 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       // A esfera luminosa substitui vários focos dinâmicos para reduzir o custo gráfico.
     }
   }
+  function addHotelLobbyFurniture(level, variant) {
+    const navy=mat(0x172b43,.42), cream=mat(0xf2eee5,.72), marble=mat(0xd7d5ce,.28,.08);
+    const leather=mat(variant%2?0x67443b:0x263f50,.82), brass=mat(0xb68b4c,.3,.65);
+    const black=mat(0x20262d,.35,.18), screen=new THREE.MeshStandardMaterial({color:0x172f3b,emissive:0x102c3b,emissiveIntensity:.45,roughness:.25});
+    // Balcão de recepção com frente em painéis, tampo em pedra e equipamento.
+    box(level,-3.75,.05,3.45,4.45,1.12,1.18,navy);
+    box(level,-3.75,.12,2.84,4.12,.92,.045,brass,false);
+    for(let n=0;n<5;n++) box(level,-5.55+n*.9,.16,2.80,.035,.78,.025,cream,false);
+    box(level,-3.75,1.18,3.45,4.7,.14,1.3,marble);
+    box(level,-3.75,1.26,3.45,4.55,.035,1.18,cream,false);
+    // Monitor, teclado, telefone e campainha de atendimento.
+    box(level,-4.55,1.34,3.12,.72,.48,.09,black);
+    box(level,-4.55,1.42,3.065,.61,.32,.025,screen,false);
+    box(level,-4.55,1.28,3.35,.55,.045,.22,black);
+    box(level,-3.25,1.32,3.18,.36,.045,.24,black);
+    cylinder(level,-2.75,1.31,3.15,.11,.12,brass);
+    // Poltronas e sofás premium na zona de espera.
+    for(const [x,z,rot] of [[3.1,4.2,0],[6.25,4.2,0],[4.7,6.35,Math.PI]]) {
+      const seat=box(level,x,.24,z,2.15,.42,.92,leather);
+      box(level,x,.68,z-.34,2.15,.62,.22,leather);
+      for(const side of [-1,1]) box(level,x+side*1.0,.42,z,.18,.55,1.0,navy);
+      for(const dx of [-.65,.65]) box(level,x+dx,.72,z-.34,.62,.12,.18,cream);
+    }
+    // Mesa de centro em pedra e mesas laterais com pés metálicos.
+    box(level,4.7,.42,5.15,1.65,.12,.95,marble);
+    for(const x of [4.05,5.35]) for(const z of [4.8,5.5]) cylinder(level,x,.04,z,.045,.38,brass);
+    box(level,2.0,.48,4.2,.62,.09,.62,brass);
+    cylinder(level,2.0,.04,4.2,.045,.42,navy);
+    // Luggage rack com mala de viagem e vasos elegantes.
+    box(level,-.1,.18,5.8,1.3,.12,.55,brass);
+    for(const x of [-.62,.42]) box(level,x,.04,5.8,.07,.28,.07,navy);
+    box(level,-.1,.36,5.8,.85,.52,.38,leather);
+    box(level,-.1,.62,5.8,.85,.05,.38,brass);
+    // Painéis decorativos na parede, quadros e relógio.
+    for(const x of [-6.4,-3.75,-1.1]) {
+      box(level,x,1.35,.99,1.55,1.7,.12,navy);
+      box(level,x,1.45,.91,1.28,1.42,.035,cream,false);
+      box(level,x,1.65,.88,.95,.055,.025,brass,false);
+    }
+    cylinder(level,1.0,2.05,1.02,.34,.07,brass);
+    cylinder(level,1.0,2.12,1.02,.27,.025,cream);
+    // Candeeiros pendentes e iluminação indireta simples.
+    for(const [x,z] of [[-5.3,2.2],[-1.0,2.2],[3.4,2.0],[6.5,2.0]]) {
+      cylinder(level,x,2.45,z,.025,.62,brass);
+      const shade=new THREE.Mesh(new THREE.ConeGeometry(.28,.25,12),cream);
+      shade.position.set(x,2.2,z); level.add(shade);
+    }
+    // Receção mais acolhedora: tapete de entrada e plantas de interior.
+    box(level,1.4,.025,1.1,5.8,.04,2.1,leather,false);
+    box(level,1.4,.05,.05,5.65,.025,.07,brass,false);
+    plant(level,-7.0,1.0); plant(level,7.0,1.0);
+  }
   function addPremiumDetails(level, variant) {
     // Tapetes, quadros, mesas laterais e elementos decorativos.
     box(level,-5.1,.018,3.0,5.6,.035,4.4,variant%2?M.fabric:M.tile,false);
@@ -235,7 +287,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     level.scale.set(INTERIOR_SCALE_XZ, INTERIOR_SCALE_Y, INTERIOR_SCALE_XZ);
     parent.add(level);
     addFloorShell(level);
-    if(floorIndex===0) addReceptionLobby(level,variant);
+    if(floorIndex===0) { addReceptionLobby(level,variant); addHotelLobbyFurniture(level,variant); }
     else addApartmentFurniture(level,variant);
     if (floorIndex > 0) addPremiumDetails(level,variant);
     addWindowsAndBalcony(level);
