@@ -91,13 +91,25 @@ const CATALOGS = {
     title: 'Loja de Roupa',
     subtitle: 'Escolhe as peças que desejas comprar.',
     items: [
-      ['T-shirt', 8000],
-      ['Calças', 15000],
-      ['Camisa', 12000],
-      ['Vestido', 18000],
-      ['Casaco', 25000],
-      ['Sapatos', 22000],
-      ['Ténis', 28000]
+      ['T-shirt básica branca', 8000],
+      ['T-shirt preta estampada', 11000],
+      ['T-shirt desportiva', 14500],
+      ['Polo clássico', 16000],
+      ['Camisa social branca', 18000],
+      ['Camisa xadrez', 17500],
+      ['Camisa africana estampada', 26000],
+      ['Calças de ganga azuis', 22000],
+      ['Calças de ganga pretas', 24000],
+      ['Calças clássicas', 19000],
+      ['Calções desportivos', 12000],
+      ['Vestido casual', 28000],
+      ['Vestido elegante', 42000],
+      ['Casaco casual', 32000],
+      ['Blusão desportivo', 38000],
+      ['Sapatos sociais', 26000],
+      ['Ténis brancos', 30000],
+      ['Ténis desportivos', 42000],
+      ['Botas urbanas', 45000]
     ]
   },
   hospital: {
@@ -557,6 +569,12 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
     if (!online?.isAuthenticated()) {
       addInventory(name, 1, category);
       save();
+    }
+
+    if (currentService === 'clothing') {
+      window.dispatchEvent(new CustomEvent('angolaLife3D:clothingPurchase', {
+        detail: { name, category: 'clothing' }
+      }));
     }
 
     showMessage(`${name} comprado por ${moneyFormat(total)}.`);
