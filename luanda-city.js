@@ -261,6 +261,107 @@ export function expandLuandaCity(scene, world) {
       }
     }
 
+    // RENOVAÇÃO RESIDENCIAL: elementos de grande leitura visual por tipologia.
+    // Cada bairro recebe uma silhueta própria, não apenas uma cor diferente.
+    const addRoofMesh = (geometry, x, y, z, materialRef, rotationY = 0) => {
+      const mesh = new THREE.Mesh(geometry, materialRef);
+      mesh.position.set(x, y, z);
+      mesh.rotation.y = rotationY;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      group.add(mesh);
+      return mesh;
+    };
+
+    if (style === 'musseque') {
+      // Cobertura inclinada de chapa e alpendre simples, com variação por casa.
+      const roof = addRoofMesh(
+        new THREE.ConeGeometry(width * 0.78, 1.45, 4),
+        0, height + 0.95, 0, index % 2 ? M.roof : M.dark, Math.PI / 4
+      );
+      roof.scale.z = Math.max(0.78, depth / width);
+      box(group, 0, 0.2, front + 1.65, width * 0.82, 0.16, 2.25, M.roof);
+      for (const px of [-width * 0.34, width * 0.34]) {
+        box(group, px, 0.2, front + 1.65, 0.12, 2.15, 0.12, M.metal);
+      }
+    } else if (style === 'popular') {
+      // Casas familiares: garagem/portão, varanda frontal e cobertura inclinada.
+      if (floors === 1) {
+        addRoofMesh(
+          new THREE.ConeGeometry(width * 0.78, 1.55, 4),
+          0, height + 0.92, 0, index % 2 ? M.roof : M.red, Math.PI / 4
+        );
+      }
+      const garageX = index % 2 === 0 ? -width * 0.27 : width * 0.27;
+      box(group, garageX, 0.22, front + 0.12, width * 0.34, 2.35, 0.16, M.dark);
+      box(group, garageX, 0.3, front + 0.22, width * 0.29, 2.12, 0.06, M.metal);
+      for (let bar = -3; bar <= 3; bar++) {
+        box(group, garageX + bar * 0.32, 0.35, front + 0.28, 0.045, 2.0, 0.045, M.white);
+      }
+      box(group, -width * 0.34, 2.78, front + 1.55, width * 0.48, 0.13, 2.55, M.red);
+      box(group, -width * 0.34, 1.55, front + 2.75, width * 0.48, 0.08, 0.08, M.metal);
+    } else if (style === 'apartments') {
+      // Prédios de apartamentos: varandas profundas, guarda-corpos e pilares.
+      for (let floor = 1; floor < floors; floor++) {
+        const balconyY = floor * 3.15 + 0.35;
+        box(group, 0, balconyY, front + 1.05, width * 0.82, 0.16, 2.0, M.concrete);
+        box(group, 0, balconyY + 0.62, front + 2.0, width * 0.82, 0.08, 0.08, M.metal);
+        for (let rail = 0; rail <= 10; rail++) {
+          const rx = (rail - 5) * (width * 0.82 / 10);
+          box(group, rx, balconyY + 0.12, front + 2.0, 0.045, 0.52, 0.045, M.white);
+        }
+        for (const px of [-width * 0.4, width * 0.4]) {
+          box(group, px, balconyY + 0.72, front + 1.05, 0.16, 1.45, 0.16, M.white);
+        }
+      }
+      box(group, -width * 0.39, 0.28, front + 0.78, 0.22, 2.9, 0.22, M.gold);
+      box(group, width * 0.39, 0.28, front + 0.78, 0.22, 2.9, 0.22, M.gold);
+      box(group, 0, height + 0.52, 0, width + 0.9, 0.28, depth + 0.9, M.concrete);
+    } else if (style === 'modern' || style === 'coastal') {
+      // Moradias contemporâneas: volumes assimétricos, vidro panorâmico e garagem.
+      const accent = index % 2 === 0 ? M.dark : M.wood;
+      box(group, width * 0.29, 1.75, front + 0.19, width * 0.22, 3.2, 0.16, accent);
+      box(group, -width * 0.25, 1.55, front + 0.2, width * 0.3, 2.15, 0.12, M.glass);
+      box(group, -width * 0.25, 1.55, front + 0.29, 0.08, 2.25, 0.08, M.metal);
+      box(group, -width * 0.25, 1.55, front + 0.29, width * 0.31, 0.08, 0.08, M.metal);
+      box(group, 0, 3.35, front + 1.45, width * 0.78, 0.2, 3.0, M.dark);
+      box(group, 0, 3.18, front + 1.45, width * 0.7, 0.12, 2.75, M.white);
+      box(group, width * 0.27, 0.2, front + 0.12, width * 0.28, 2.25, 0.16, M.dark);
+      for (let slat = 0; slat < 7; slat++) {
+        box(group, width * 0.27 - width * 0.12 + slat * 0.04 * width, 0.28, front + 0.22, 0.045, 2.05, 0.05, M.white);
+      }
+      if (style === 'coastal') {
+        box(group, 0, 0.14, front + 4.1, width * 0.76, 0.16, 3.6, M.water);
+        box(group, 0, 0.28, front + 5.95, width * 0.8, 0.18, 0.18, M.white);
+      }
+    } else if (style === 'luxury') {
+      // Vivendas de luxo: pórtico monumental, vidro amplo e platibanda alta.
+      box(group, 0, height + 0.34, 0, width + 1.5, 0.65, depth + 1.5, M.dark);
+      box(group, 0, height + 0.72, 0, width + 0.9, 0.18, depth + 0.9, M.white);
+      for (const px of [-width * 0.39, width * 0.39]) {
+        box(group, px, 0.25, front + 2.0, 0.42, 3.65, 0.42, M.white);
+      }
+      box(group, 0, 3.95, front + 2.0, width * 0.84, 0.24, 3.8, M.white);
+      box(group, 0, 1.8, front + 0.22, width * 0.48, 2.8, 0.1, M.glass);
+      box(group, width * 0.28, 1.45, front + 0.3, width * 0.12, 2.55, 0.12, M.wood);
+      box(group, -width * 0.25, 0.18, front + 4.0, width * 0.34, 0.16, 4.0, M.water);
+    }
+
+    // Iluminação de entrada e número da residência, legíveis à escala do jogador.
+    const porchLight = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.28, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0x8a5718, emissiveIntensity: 0.35 })
+    );
+    porchLight.position.set(width * 0.13, 2.25, front + 0.23);
+    group.add(porchLight);
+
+    const houseNumber = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.24, 0.045),
+      new THREE.MeshStandardMaterial({ color: 0xf4e7c8, roughness: 0.7 })
+    );
+    houseNumber.position.set(-width * 0.13, 2.35, front + 0.22);
+    group.add(houseNumber);
+
     group.position.set(x, 0, z);
     scene.add(group);
     world.buildings.push({
