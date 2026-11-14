@@ -147,7 +147,7 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     creatingAccount = create;
     nicknameLabel.hidden = !create;
     nicknameInput.hidden = !create;
-    nicknameInput.required = create;\n    appearancePanel.hidden = !create;
+    nicknameInput.required = create;\n    appearancePanel.hidden = !create;\n    if (create) {\n      const randomOption = selector => {\n        const options = [...selector.options];\n        selector.selectedIndex = Math.floor(Math.random() * options.length);\n      };\n      ['#appearance-skin','#appearance-hair','#appearance-eyes','#appearance-hairstyle']\n        .forEach(selector => randomOption(panel.querySelector(selector)));\n    }
     passwordInput.autocomplete = create ? 'new-password' : 'current-password';
     title.textContent = create ? 'Criar conta de jogador' : 'Entrar na conta';
     description.textContent = create
@@ -160,7 +160,7 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     showMessage('');
   }
 
-  async function loadPlayerData() {
+  function defaultAppearance(userId = '') {\n    let seed = 0;\n    for (const char of String(userId)) seed = (seed * 31 + char.charCodeAt(0)) >>> 0;\n    const choose = values => values[seed % values.length];\n    return {\n      skin: choose(['#f1c7a5','#d99a6c','#8d5524','#65351f','#321b12']),\n      hair: choose(['#17120f','#4a2c1b','#8b5a2b','#b58b52','#777777']),\n      eyes: choose(['#3b2418','#315b3d','#416b91','#202020']),\n      hairstyle: choose(['curto','rapado','comprido','encaracolado'])\n    };\n  }\n\n  async function loadPlayerData() {
     if (!session?.user?.id) throw new Error('Inicia sessão primeiro.');
 
     const userId = session.user.id;
@@ -174,7 +174,7 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     if (bankResult.error) throw bankResult.error;
     if (inventoryResult.error) throw inventoryResult.error;
 
-    profile = {\n      ...profileResult.data,\n      appearance: session.user.user_metadata?.appearance || null\n    };
+    let appearance = session.user.user_metadata?.appearance || null;\n    if (!appearance) {\n      appearance = defaultAppearance(userId);\n      try {\n        await supabase.auth.updateUser({ data: { appearance } });\n        session.user.user_metadata = { ...(session.user.user_metadata || {}), appearance };\n      } catch (error) {\n        console.warn('A aparência padrão será usada nesta sessão:', error);\n      }\n    }\n    profile = { ...profileResult.data, appearance };
     const data = {
       profile,
       bankBalance: Number(bankResult.data?.balance || 0),
