@@ -22,22 +22,12 @@ const JOBS = [
   {
     role: 'Polícia',
     gender: 'male',
-    x: 41.1,
-    z: -45,
-    patrol: true,
-    axis: 'z',
+    x: 75,
+    z: -185,
+    patrol: false,
     outfit: 0x263b65,
     service: 'police',
     serviceName: 'Esquadra de Polícia'
-  },
-  {
-    role: 'Agente de trânsito',
-    gender: 'male',
-    x: -41.1,
-    z: 45,
-    patrol: true,
-    axis: 'z',
-    outfit: 0xd99b24
   },
   {
     role: 'Funcionária de restaurante',
@@ -528,42 +518,9 @@ export function updateRestaurantStaff(staff = [], delta) {
 export function updatePeople(delta) {
   if (!activeWorld) return;
 
+  // Funcionários permanecem nos seus postos de trabalho.
+  // Não são criados habitantes artificiais a caminhar nas ruas.
   for (const npc of activeWorld.npcs) {
-    npc.mixer.update(delta);
-
-    if (!npc.patrol) continue;
-
-    npc.timer -= delta;
-
-    if (npc.timer <= 0) {
-      if (npc.current === 'idle' && npc.walk) {
-        setAnimation(npc, 'walk');
-        npc.timer = 3.5;
-      } else {
-        setAnimation(npc, 'idle');
-        npc.timer = 2.5 + (npc.phase % 2);
-        npc.direction *= -1;
-      }
-    }
-
-    if (npc.current === 'walk') {
-      const movement = npc.direction * npc.speed * delta;
-
-      if (npc.axis === 'z') {
-        npc.root.position.z += movement;
-        npc.root.rotation.y = npc.direction > 0 ? 0 : Math.PI;
-      } else {
-        npc.root.position.x += movement;
-        npc.root.rotation.y = npc.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
-      }
-
-      const distance = npc.axis === 'z'
-        ? Math.abs(npc.root.position.z - npc.originZ)
-        : Math.abs(npc.root.position.x - npc.originX);
-
-      if (distance > 2.5) {
-        npc.direction *= -1;
-      }
-    }
+    if (npc.mixer) npc.mixer.update(delta);
   }
 }
