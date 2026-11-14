@@ -109,9 +109,6 @@ const JOBS = [
     service: 'fuel',
     serviceName: 'Posto de Combustível'
   },
-
-  // NOVOS FUNCIONÁRIOS DOS ESTABELECIMENTOS
-
   {
     role: 'Funcionário do Banco',
     gender: 'male',
@@ -131,6 +128,16 @@ const JOBS = [
     outfit: 0x8d315c,
     service: 'clothing',
     serviceName: 'Boutique Central'
+  },
+  {
+    role: 'Vendedor da Concessionária',
+    gender: 'male',
+    x: 50,
+    z: 61,
+    patrol: false,
+    outfit: 0x263b65,
+    service: 'dealership',
+    serviceName: 'Concessionária de Automóveis'
   },
   {
     role: 'Rececionista do Hospital',
@@ -298,9 +305,162 @@ function setAnimation(npc, name) {
   npc.current = name;
 }
 
+function createPurchasedVehicle(scene, world, data) {
+  const group = new THREE.Group();
+
+  const paint = new THREE.MeshStandardMaterial({
+    color: Number(data.color) || 0xc62828,
+    roughness: 0.34,
+    metalness: 0.28
+  });
+
+  const glass = new THREE.MeshPhysicalMaterial({
+    color: 0x9acbd4,
+    roughness: 0.16,
+    metalness: 0.12,
+    transparent: true,
+    opacity: 0.72
+  });
+
+  const dark = new THREE.MeshStandardMaterial({
+    color: 0x202326,
+    roughness: 0.9
+  });
+
+  const chrome = new THREE.MeshStandardMaterial({
+    color: 0xbfc5c8,
+    metalness: 0.8,
+    roughness: 0.25
+  });
+
+  const addBox = (x, y, z, w, h, d, material) => {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      material
+    );
+
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+
+    return mesh;
+  };
+
+  // Carroceria, capô, tejadilho e vidros.
+  addBox(0, 0.48, 0, 2.15, 0.62, 4.35, paint);
+  addBox(0, 0.91, -0.28, 1.78, 0.72, 2.35, glass);
+  addBox(0, 0.85, 1.48, 2.04, 0.28, 1.05, paint);
+  addBox(0, 0.85, -1.55, 2.04, 0.28, 0.9, paint);
+  addBox(0, 1.29, -0.28, 1.8, 0.12, 2.2, paint);
+  addBox(-0.83, 0.55, 0, 0.08, 0.52, 2.1, chrome);
+  addBox(0.83, 0.55, 0, 0.08, 0.52, 2.1, chrome);
+
+  for (const x of [-1.08, 1.08]) {
+    for (const z of [-1.42, 1.42]) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.43, 0.43, 0.27, 20),
+        dark
+      );
+
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.42, z);
+      wheel.castShadow = true;
+      group.add(wheel);
+
+      const hub = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.19, 0.19, 0.285, 16),
+        chrome
+      );
+
+      hub.rotation.z = Math.PI / 2;
+      hub.position.set(x, 0.42, z);
+      group.add(hub);
+    }
+  }
+
+  for (const x of [-0.72, 0.72]) {
+    addBox(
+      x,
+      0.57,
+      2.19,
+      0.42,
+      0.2,
+      0.08,
+      new THREE.MeshStandardMaterial({
+        color: 0xfff2c2,
+        emissive: 0x665522
+      })
+    );
+
+    addBox(
+      x,
+      0.57,
+      -2.19,
+      0.42,
+      0.2,
+      0.08,
+      new THREE.MeshStandardMaterial({
+        color: 0xb52222
+      })
+    );
+  }
+
+  // Entrega no parque em frente à concessionária.
+  const bay = world.vehicles.filter(vehicle => vehicle.purchased).length;
+
+  group.position.set(
+    43 + (bay % 3) * 4.5,
+    0,
+    69 + Math.floor(bay / 3) * 6
+  );
+
+  group.rotation.y = Math.PI;
+  group.userData.vehicleName = data.name;
+  group.userData.purchased = true;
+
+  scene.add(group);
+
+  const vehicle = {
+    group,
+    speed: 0,
+    occupied: false,
+    purchased: true,
+    name: data.name,
+    price: data.price,
+    fuel: 100,
+    maxFuel: 100
+  };
+
+  world.vehicles.push(vehicle);
+
+  return vehicle;
+}
+
 export function createPeople(scene, world) {
   world.npcs = [];
   activeWorld = world;
+
+  // Recebe a compra feita na concessionária e cria a viatura no mapa.
+  if (typeof window !== 'undefined') {
+    if (window.__angolaVehiclePurchaseHandler) {
+      window.removeEventListener(
+        'angolaLife3D:vehiclePurchase',
+        window.__angolaVehiclePurchaseHandler
+      );
+    }
+
+    window.__angolaVehiclePurchaseHandler = event => {
+      if (!event.detail || !activeWorld) return;
+
+      createPurchasedVehicle(scene, activeWorld, event.detail);
+    };
+
+    window.addEventListener(
+      'angolaLife3D:vehiclePurchase',
+      window.__angolaVehiclePurchaseHandler
+    );
+  }
 
   loadAssets()
     .then(assets => {
