@@ -41,6 +41,7 @@ export function createWorld(scene) {
     sidewalk: mat(0xbab6aa),
     curb: mat(0x77766f),
     concrete: mat(0xaaa69d),
+    roof: mat(0x754333),
     white: mat(0xf1eee5),
     cream: mat(0xe8d7bd),
     sand: mat(0xd1b58b),
@@ -315,21 +316,30 @@ export function createWorld(scene) {
 
     box(group, 0, 0, 0, width, 0.3, depth, M.concrete);
 
-    box(group, -width / 2, 0.3, 0, 0.3, height, depth, wall);
-    box(group, width / 2, 0.3, 0, 0.3, height, depth, wall);
-    box(group, 0, 0.3, -depth / 2, width, height, 0.3, wall);
-    box(group, 0, 0.3, depth / 2, width * 0.45, height, 0.3, wall);
+    // Paredes laterais e traseira; a fachada deixa vãos para portas e janelas.
+    box(group, -width / 2 + 0.15, 0.3, 0, 0.3, height, depth, wall);
+    box(group, width / 2 - 0.15, 0.3, 0, 0.3, height, depth, wall);
+    box(group, 0, 0.3, -depth / 2 + 0.15, width, height, 0.3, wall);
+    box(group, -width * 0.36, 0.3, depth / 2, width * 0.28, height, 0.3, wall);
+    box(group, width * 0.36, 0.3, depth / 2, width * 0.28, height, 0.3, wall);
+    box(group, 0, 2.5, depth / 2, width * 0.16, Math.max(0.2, height - 2.5), 0.3, wall);
+    box(group, 0, 0.3, depth / 2, width * 0.16, 0.35, 0.3, wall);
+    box(group, 0, height - 0.15, depth / 2, width, 0.3, 0.3, wall);
 
     for (let floor = 0; floor < floors; floor++) {
       for (let i = 0; i < 3; i++) {
+        if (floor === 0 && i === 1) continue;
         const wx = -width / 2 + (i + 1) * width / 4;
         const wy = floor * 3.2 + 0.9;
-
         addWindow(group, wx, wy, depth / 2 + 0.18, 1.5, 1.55);
-
         box(group, wx, wy - 0.82, depth / 2 + 0.25, 1.7, 0.1, 0.22, M.concrete);
       }
     }
+
+    // Porta principal de madeira com moldura e puxador metálico.
+    box(group, 0, 0.35, depth / 2 + 0.2, 1.65, 2.25, 0.12, M.dark);
+    box(group, 0, 0.42, depth / 2 + 0.29, 1.35, 2.0, 0.06, M.wood);
+    cylinder(group, 0.48, 1.25, depth / 2 + 0.35, 0.055, 0.08, M.gold, 10);
 
     box(group, 0, height, 0, width + 0.5, 0.3, depth + 0.5, M.concrete);
 
