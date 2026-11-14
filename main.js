@@ -92,6 +92,7 @@ const houses = createHouseSystem(scene, world);
 
 const player = new Player(scene, camera, world.vehicles);
 player.setColliders(world.colliders);
+player.setCameraOccluders(world.buildings.map(building => building.group));
 
 const moneyDisplay = document.querySelector('.money');
 let services = null;
@@ -377,49 +378,54 @@ receptionPricePanel.addEventListener('click',event=>{
 function addReceptionistUniform(group, variant=0) {
   if (!group || group.userData.hotelUniformApplied) return;
   group.userData.hotelUniformApplied = true;
-  group.visible = true;
+
+  // O átrio tem escala arquitectónica 1,70x. Compensa-a no personagem
+  // para que a altura final continue exactamente igual à do jogador (2,5 m).
+  group.scale.setScalar(1 / 1.7);
+
+  const looks = [
+    {skin:0x875236,hair:0x17110e,eyes:0x392318,uniform:0x172b43,shirt:0xf4f1e9,trousers:0x20252c,hairstyle:1.08,head:1.025},
+    {skin:0xa56b49,hair:0x38251c,eyes:0x24170f,uniform:0x29483e,shirt:0xf1e7d8,trousers:0x292b35,hairstyle:0.86,head:0.975}
+  ];
+  const look=looks[variant%looks.length];
+  const skin=new THREE.Color(look.skin);
+  const hair=new THREE.Color(look.hair);
+  const eyes=new THREE.Color(look.eyes);
+  const uniform=new THREE.Color(look.uniform);
+  const shirt=new THREE.Color(look.shirt);
+  const trousers=new THREE.Color(look.trousers);
+
   group.traverse(object => {
-    if (!object.isMesh) return;
-    object.visible = true;
-    object.frustumCulled = false;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    materials.forEach(material => { if (material) { material.visible = true; material.transparent = false; material.opacity = 1; material.depthWrite = true; } });
+    if (!object.isMesh || !object.material) return;
+    const materials=Array.isArray(object.material)?object.material:[object.material];
+    const names=[object.name,...materials.map(material=>material.name||'')].join(' ').toLowerCase();
+    let tint=null;
+    if (/hair|cabelo|beard|barba/.test(names)) {
+      tint=hair;
+      if (!object.userData.baseReceptionHairScale) object.userData.baseReceptionHairScale=object.scale.clone();
+      object.scale.copy(object.userData.baseReceptionHairScale);
+      object.scale.y*=look.hairstyle;
+    } else if (/eye|iris|pupil|olho/.test(names)) {
+      tint=eyes;
+    } else if (/skin|face|head|body|arm|hand|leg|neck|pele|rosto/.test(names)) {
+      tint=skin;
+      if (/face|head|rosto/.test(names)) {
+        object.scale.x*=look.head;
+      }
+    } else if (/pant|trouser|jean|bottom|calça/.test(names)) {
+      tint=trousers;
+    } else if (/shirt|jacket|cloth|uniform|coat|top|blazer|camisa|roupa/.test(names)) {
+      tint=uniform;
+    }
+
+    if (!tint) return;
+    const changed=materials.map(material=>{
+      const copy=material.clone();
+      if(copy.color) copy.color.copy(tint);
+      return copy;
+    });
+    object.material=Array.isArray(object.material)?changed:changed[0];
   });
-  const jacketColors=[0x172b43,0x29323c,0x233c38,0x202b40];
-  const jacket=new THREE.MeshStandardMaterial({color:jacketColors[variant%jacketColors.length],roughness:.72});
-  const shirt=new THREE.MeshStandardMaterial({color:0xf4f1e9,roughness:.82});
-  const tie=new THREE.MeshStandardMaterial({color:variant%2?0x8a6840:0x9b3e36,roughness:.55});
-  const trousers=new THREE.MeshStandardMaterial({color:0x20252c,roughness:.84});
-  const leather=new THREE.MeshStandardMaterial({color:0x17191d,roughness:.42});
-  const brass=new THREE.MeshStandardMaterial({color:0xb9975b,metalness:.48,roughness:.38});
-  const addCapsule=(x,y,z,radius,length,material,rotationZ=0)=>{
-    const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,4,10),material);
-    mesh.position.set(x,y,z); mesh.rotation.z=rotationZ; mesh.castShadow=false; mesh.receiveShadow=false; group.add(mesh); return mesh;
-  };
-  const addBox=(x,y,z,w,h,d,material)=>{
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-    mesh.position.set(x,y,z); group.add(mesh); return mesh;
-  };
-  // Alfaiataria ajustada ao corpo do modelo humano, sem ombreiras quadradas.
-  addCapsule(0,1.34,0,.285,.48,jacket);
-  addCapsule(0,1.36,.205,.105,.43,shirt);
-  addBox(0,1.34,.315,.075,.42,.035,tie);
-  for(const side of [-1,1]) {
-    addCapsule(side*.355,1.31,0,.09,.42,jacket,side*.12);
-    addCapsule(side*.355,1.02,.005,.075,.12,shirt,side*.12);
-    addCapsule(side*.155,.58,0,.105,.58,trousers);
-    addBox(side*.155,.17,.075,.23,.13,.34,leather);
-  }
-  // Lapelas finas, botões e identificação profissional.
-  for(const side of [-1,1]) {
-    const lapel=addBox(side*.105,1.53,.25,.075,.28,.035,shirt);
-    lapel.rotation.z=side*.28;
-  }
-  for(const y of [1.22,1.39,1.56]) {
-    const button=new THREE.Mesh(new THREE.SphereGeometry(.022,8,6),brass);
-    button.position.set(.16,y,.26); group.add(button);
-  }
-  addBox(-.19,1.55,.27,.12,.065,.025,brass);
 }
 function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
