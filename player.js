@@ -18,7 +18,7 @@ export class Player {
     this.group.position.set(0, 0, 18);
     this.scene.add(this.group);
 
-    this.speed = 5;
+    this.speed = 5.8;
     this.keys = {};
     this.currentVehicle = null;
     this.nearVehicle = null;
@@ -60,6 +60,15 @@ export class Player {
     this.cameraHeightAngle = 0.42;
     this.cameraYawOffset = 0;
     this.cameraPitch = 0;
+
+    this.cameraDesired = new THREE.Vector3();
+    this.vehicleDirection = new THREE.Vector3();
+    this.vehicleUp = new THREE.Vector3(0, 1, 0);
+    this.exitOffset = new THREE.Vector3(2.8, 0, 0);
+
+    this.vehicleScanTimer = 0;
+    this.nearbyColliderBuffer = [];
+    this.colliderQueryId = 0;
 
     this.cameraPointers = new Map();
     this.pointerStart = new Map();
@@ -103,8 +112,8 @@ export class Player {
 
       model.traverse(object => {
         if (object.isMesh) {
-          object.castShadow = true;
-          object.receiveShadow = true;
+          object.castShadow = false;
+          object.receiveShadow = false;
         }
 
         if (object.isBone) {
@@ -286,8 +295,14 @@ export class Player {
     this.colliders = Array.isArray(colliders) ? colliders : [];
     this.colliderCellSize = 12;
     this.colliderGrid = new Map();
+    this.nearbyColliderBuffer.length = 0;
+
+    let colliderId = 0;
 
     for (const wall of this.colliders) {
+      wall._playerColliderId = ++colliderId;
+      wall._playerQueryStamp = 0;
+
       const minCellX = Math.floor(wall.minX / this.colliderCellSize);
       const maxCellX = Math.floor(wall.maxX / this.colliderCellSize);
       const minCellZ = Math.floor(wall.minZ / this.colliderCellSize);
@@ -310,8 +325,12 @@ export class Player {
   }
 
   getNearbyColliders(x, z, padding = this.radius) {
+    const nearby = this.nearbyColliderBuffer;
+    nearby.length = 0;
+
     if (!this.colliderGrid || this.colliderGrid.size === 0) {
-      return this.colliders;
+      for (const wall of this.colliders) nearby.push(wall);
+      return nearby;
     }
 
     const size = this.colliderCellSize;
@@ -319,8 +338,7 @@ export class Player {
     const maxCellX = Math.floor((x + padding) / size);
     const minCellZ = Math.floor((z - padding) / size);
     const maxCellZ = Math.floor((z + padding) / size);
-    const nearby = [];
-    const seen = new Set();
+    const stamp = ++this.colliderQueryId;
 
     for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
       for (let cellZ = minCellZ; cellZ <= maxCellZ; cellZ++) {
@@ -328,8 +346,8 @@ export class Player {
         if (!bucket) continue;
 
         for (const wall of bucket) {
-          if (seen.has(wall)) continue;
-          seen.add(wall);
+          if (wall._playerQueryStamp === stamp) continue;
+          wall._playerQueryStamp = stamp;
           nearby.push(wall);
         }
       }
@@ -358,7 +376,7 @@ export class Player {
   resolveCollisionOverlap() {
     const p = this.group.position;
 
-    for (let pass = 0; pass < 3; pass++) {
+    for (let pass = 0; pass < 2; pass++) {
       let corrected = false;
       const nearby = this.getNearbyColliders(p.x, p.z, this.radius + 0.05);
 
@@ -404,7 +422,7 @@ export class Player {
 
     this.resolveCollisionOverlap();
 
-    const maxStep = 0.22;
+    const maxStep = 0.45;
     const steps = Math.max(1, Math.ceil(distance / maxStep));
     const stepX = dx / steps;
     const stepZ = dz / steps;
@@ -676,14 +694,11 @@ export class Player {
     if (!this.currentVehicle) return;
 
     const vehicle = this.currentVehicle;
-    const offset = new THREE.Vector3(2.8, 0, 0);
 
-    offset.applyAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      vehicle.group.rotation.y
-    );
+    this.exitOffset.set(2.8, 0, 0);
+    this.exitOffset.applyAxisAngle(this.vehicleUp, vehicle.group.rotation.y);
 
-    this.group.position.copy(vehicle.group.position).add(offset);
+    this.group.position.copy(vehicle.group.position).add(this.exitOffset);
     this.group.position.y = 0;
     this.group.visible = true;
 
@@ -719,14 +734,14 @@ export class Player {
       vehicle.speed = THREE.MathUtils.clamp(vehicle.speed, -9, 22);
       vehicle.group.rotation.y -= sideways * delta * 1.8;
 
-      const direction = new THREE.Vector3(
+      this.vehicleDirection.set(
         Math.sin(vehicle.group.rotation.y),
         0,
         Math.cos(vehicle.group.rotation.y)
       );
 
       vehicle.group.position.addScaledVector(
-        direction,
+        this.vehicleDirection,
         vehicle.speed * delta
       );
 
@@ -735,9 +750,31 @@ export class Player {
       return;
     }
 
-    let moving = false;
+    const forward =
+      (this.keys.w || this.keys.arrowup ? 1 : 0) -
+      (this.keys.s || this.keys.arrowdown ? 1 : 0);
 
-    if (this.moveTarget) {
+    const sideways =
+      (this.keys.d || this.keys.arrowright ? 1 : 0) -
+      (this.keys.a || this.keys.arrowleft ? 1 : 0);
+
+    let moving = false;
+    let directionX = 0;
+    let directionZ = 0;
+
+    if (forward !== 0 || sideways !== 0) {
+      this.moveTarget = null;
+
+      const length = Math.hypot(forward, sideways);
+      const f = forward / length;
+      const side = sideways / length;
+      const yaw = this.cameraYawOffset;
+
+      directionX = Math.sin(yaw) * f + Math.cos(yaw) * side;
+      directionZ = Math.cos(yaw) * f - Math.sin(yaw) * side;
+
+      moving = true;
+    } else if (this.moveTarget) {
       const dx = this.moveTarget.x - this.group.position.x;
       const dz = this.moveTarget.z - this.group.position.z;
       const distance = Math.hypot(dx, dz);
@@ -745,53 +782,56 @@ export class Player {
       if (distance < 0.2) {
         this.moveTarget = null;
       } else {
+        directionX = dx / distance;
+        directionZ = dz / distance;
         moving = true;
+      }
+    }
 
-        const directionX = dx / distance;
-        const directionZ = dz / distance;
+    if (moving) {
+      const targetRotation = Math.atan2(directionX, directionZ);
+      let angleDifference = targetRotation - this.group.rotation.y;
 
-        const targetRotation = Math.atan2(
-          directionX,
-          directionZ
-        );
+      angleDifference = Math.atan2(
+        Math.sin(angleDifference),
+        Math.cos(angleDifference)
+      );
 
-        let angleDifference = targetRotation - this.group.rotation.y;
+      this.group.rotation.y += angleDifference * Math.min(1, delta * 10);
 
-        angleDifference = Math.atan2(
-          Math.sin(angleDifference),
-          Math.cos(angleDifference)
-        );
+      const step = this.speed * delta;
+      const oldX = this.group.position.x;
+      const oldZ = this.group.position.z;
 
-        this.group.rotation.y +=
-          angleDifference * Math.min(1, delta * 10);
+      this.moveWithCollision(
+        directionX * step,
+        directionZ * step
+      );
 
-        const step = Math.min(this.speed * delta, distance);
+      const actuallyMoved = Math.hypot(
+        this.group.position.x - oldX,
+        this.group.position.z - oldZ
+      );
 
-        const oldX = this.group.position.x;
-        const oldZ = this.group.position.z;
+      if (actuallyMoved < 0.001) {
+        this.resolveCollisionOverlap();
 
-        this.moveWithCollision(
-          directionX * step,
-          directionZ * step
-        );
+        if (this.moveTarget) this.moveTarget = null;
 
-        const actuallyMoved = Math.hypot(
-          this.group.position.x - oldX,
-          this.group.position.z - oldZ
-        );
-
-        if (actuallyMoved < 0.001) {
-          this.resolveCollisionOverlap();
-          this.moveTarget = null;
-          moving = false;
-        }
+        moving = false;
       }
     }
 
     this.setAnimation(moving ? 'walk' : 'idle');
     this.updateProceduralAnimation(delta, moving);
 
-    this.findNearestVehicle();
+    this.vehicleScanTimer += delta;
+
+    if (this.vehicleScanTimer >= 0.25) {
+      this.vehicleScanTimer = 0;
+      this.findNearestVehicle();
+    }
+
     this.updateCamera();
   }
 
@@ -817,13 +857,13 @@ export class Player {
     const horizontalDistance = distance * Math.cos(pitch);
     const verticalDistance = distance * Math.sin(pitch);
 
-    const desired = new THREE.Vector3(
+    this.cameraDesired.set(
       target.x + Math.sin(yaw) * horizontalDistance,
       target.y + verticalDistance + 1.2,
       target.z + Math.cos(yaw) * horizontalDistance
     );
 
-    this.camera.position.lerp(desired, 0.18);
+    this.camera.position.lerp(this.cameraDesired, 0.18);
 
     this.camera.lookAt(
       target.x,
