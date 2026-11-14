@@ -199,6 +199,56 @@ export function expandLuandaCity(scene, world) {
       group.add(garden);
     }
 
+    // Detalhes de fachada por tipologia, para evitar casas repetidas.
+    if (style === 'musseque') {
+      // Telhado de chapa e pequenas emendas típicas de construção progressiva.
+      for (let rib = -3; rib <= 3; rib++) {
+        box(group, rib * 1.05, height + 0.55, 0, 0.055, 0.12, depth + 1.2, M.dark);
+      }
+      box(group, -width / 2 - 0.55, 0.28, front + 1.4, 0.12, 1.15, 3.2, M.roof);
+      box(group, width / 2 + 0.55, 0.28, front + 1.4, 0.12, 1.15, 3.2, M.roof);
+    } else if (style === 'popular') {
+      // Pequeno alpendre, pilares e muro frontal com portão.
+      box(group, 0, 2.55, front + 1.05, width * 0.62, 0.16, 2.0, M.roof);
+      for (const px of [-width * 0.29, width * 0.29]) {
+        box(group, px, 0.25, front + 1.05, 0.18, 2.3, 0.18, M.white);
+      }
+      box(group, -width * 0.36, 0.2, front + 3.2, 0.18, 0.8, 2.4, M.white);
+      box(group, width * 0.36, 0.2, front + 3.2, 0.18, 0.8, 2.4, M.white);
+      box(group, 0, 0.2, front + 4.35, width * 0.72, 0.12, 0.12, M.metal);
+    } else if (style === 'apartments') {
+      // Molduras horizontais, varandas e entrada comum de prédio.
+      for (let floor = 1; floor < floors; floor++) {
+        box(group, 0, floor * 3.15, front + 0.22, width + 0.18, 0.12, 0.18, M.concrete);
+      }
+      box(group, 0, 0.22, front + 1.0, 5.8, 0.18, 1.8, M.concrete);
+      box(group, -2.75, 0.35, front + 1.75, 0.16, 2.8, 0.16, M.white);
+      box(group, 2.75, 0.35, front + 1.75, 0.16, 2.8, 0.16, M.white);
+    } else if (style === 'modern' || style === 'coastal') {
+      // Alpendre contemporâneo, vidro e jardim frontal.
+      box(group, 0, 2.85, front + 1.4, width * 0.72, 0.18, 2.7, M.white);
+      for (const px of [-width * 0.32, width * 0.32]) {
+        box(group, px, 0.2, front + 1.4, 0.2, 2.65, 0.2, M.white);
+      }
+      box(group, 0, 1.0, front + 2.75, width * 0.56, 0.08, 0.08, M.glass);
+      box(group, 0, 0.08, front + 4.0, width * 0.8, 0.12, 3.4, M.green);
+      if (style === 'coastal') {
+        box(group, width / 2 - 1.4, 0.08, -depth / 2 - 1.2, 2.8, 0.12, 2.8, M.water);
+      }
+    } else if (style === 'luxury') {
+      // Vivenda de luxo com piscina, colunas, varanda e entrada em pedra.
+      box(group, 0, 0.08, front + 4.4, width * 0.7, 0.12, 4.2, M.water);
+      box(group, 0, 0.16, front + 2.0, width * 0.78, 0.18, 2.0, M.concrete);
+      for (const px of [-width * 0.34, width * 0.34]) {
+        box(group, px, 0.2, front + 1.7, 0.34, 3.0, 0.34, M.white);
+      }
+      box(group, 0, 3.15, front + 1.7, width * 0.8, 0.2, 3.0, M.white);
+      box(group, 0, 1.2, front + 3.15, width * 0.58, 0.08, 0.08, M.glass);
+      for (const px of [-width * 0.25, width * 0.25]) {
+        box(group, px, 0.12, -depth / 2 - 1.0, 0.18, 1.0, 0.18, M.gold);
+      }
+    }
+
     group.position.set(x, 0, z);
     scene.add(group);
     world.buildings.push({
