@@ -678,22 +678,15 @@ export function createWorld(scene) {
     return group;
   }
 
-  function makeTrafficCar(x, z, color, pathIndex = 0) {
+  function makeTrafficCar(x, z, color, pathIndex = 0, route = null) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     scene.add(group);
     attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6, paintColor: color });
     const vehicle = {
-      group,
-      speed: 0,
-      traffic: true,
-      pathIndex,
-      path: [
-        new THREE.Vector3(-70, 0, -35),
-        new THREE.Vector3(70, 0, -35),
-        new THREE.Vector3(70, 0, 35),
-        new THREE.Vector3(-70, 0, 35)
-      ]
+      group, speed: 0, traffic: true, pathIndex,
+      path: (route || [[-70, -35], [70, -35], [70, 35], [-70, 35]])
+        .map(([px, pz]) => new THREE.Vector3(px, 0, pz))
     };
     world.trafficVehicles.push(vehicle);
   }
@@ -843,11 +836,20 @@ export function createWorld(scene) {
   makeCar(55, -70, 0x2255aa, Math.PI / 2);
   makeCar(-72, 70, 0x252525, 0);
 
-  // Trânsito autónomo: os carros circulam pelas estradas principais.
-  makeTrafficCar(-70, -35, 0xc62828, 0);
-  makeTrafficCar(70, -35, 0xeeeeee, 1);
-  makeTrafficCar(70, 35, 0x2255aa, 2);
-  makeTrafficCar(-70, 35, 0x202020, 3);
+  // Trânsito autónomo distribuído pelos eixos que ligam os bairros de Luanda.
+  const luandaTrafficRoute = [
+    [-390, -20], [-285, 65], [-155, 190], [20, 320],
+    [155, 195], [245, -115], [145, 55], [0, 0],
+    [-125, 35], [-255, -105], [-285, 65]
+  ];
+  const trafficStarts = [
+    [-390, -20], [-155, 190], [20, 320], [155, 195],
+    [245, -115], [145, 55], [-125, 35], [-255, -105]
+  ];
+  const trafficColors = [0xc62828, 0xeeeeee, 0x2255aa, 0x202020, 0xd6a52c, 0x347a58, 0x777777, 0x8b3434];
+  trafficStarts.forEach(([x, z], index) => {
+    makeTrafficCar(x, z, trafficColors[index], (index + 1) % luandaTrafficRoute.length, luandaTrafficRoute);
+  });
 
   world.updateTraffic = updateWorldTraffic;
   return world;
