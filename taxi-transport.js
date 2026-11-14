@@ -233,9 +233,11 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
   }
 
   buildRoadGraph();
-  for (const stop of stops) {
+  for (let index = 0; index < stops.length; index++) {
+    const stop = stops[index];
     createStop(stop);
-    createTaxi(stop);
+    // Mantém duas paragens por bairro, mas apenas uma viatura em cada bairro.
+    if (index % 2 === 0) createTaxi(stop);
   }
 
   const panel = document.createElement('section');
