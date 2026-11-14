@@ -103,10 +103,9 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     stove.userData.houseAction = { label: 'LIGAR / DESLIGAR FOGÃO', type: 'stove' };
     stove.material = new THREE.MeshStandardMaterial({ color: 0x252b30, roughness: .4, metalness: .35, emissive: 0x000000 });
     for(const x of [6.55,7.05]) for(const z of [2.7,3.15]) cylinder(level,x,1.05,z,.12,.035,M.metal);
-    const fridge = box(level,7.55,0,4.65,.85,2.15,.9,M.white);
+    box(level,7.55,0,4.65,.85,2.15,.9,M.white);
+    const fridge = box(level,7.08,.1,4.65,.08,1.95,.82,M.metal);
     fridge.userData.houseAction = { label: 'ABRIR FRIGORÍFICO', type: 'fridge' };
-    fridge.geometry = new THREE.BoxGeometry(.08,1.95,.82);
-    fridge.position.set(7.08,1.075,4.65);
     box(level,5.8,.78,.8,2.0,.12,1.0,M.wood);
     // Casa de banho com duche, sanita e lavatório.
     box(level,6.75,.02,-6.65,2.65,.06,2.65,M.tile,false);
@@ -180,8 +179,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     else addApartmentFurniture(level,variant);
     addWindowsAndBalcony(level);
     if (floorIndex > 0) {
-      addDoor(level,doorList,-1.95,-5.0,.95,floorIndex,0,1.35);
-      addDoor(level,doorList,5.0,-5.95,.9,floorIndex,Math.PI/2,1.35);
+      addDoor(level,doorList,-1.95,-5.0,2.6,floorIndex,0,1.35);
+      addDoor(level,doorList,5.0,-3.7,.9,floorIndex,Math.PI/2,1.35);
     }
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
