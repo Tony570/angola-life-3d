@@ -481,7 +481,12 @@ services = createServices({
   }
 });
 
-const taxiTransport = createTaxiTransport({ scene, world, player, services, game });\n\nwindow.addEventListener('angolaLife3D:clothingPurchase', event => {\n  const item = event.detail?.name;\n  if (item) player.equipClothing(item);\n});
+const taxiTransport = createTaxiTransport({ scene, world, player, services, game });
+
+window.addEventListener('angolaLife3D:clothingPurchase', event => {
+  const item = event.detail?.name;
+  if (item) player.equipClothing(item);
+});
 
 function createCityBuildingColliders(buildings = []) {
   const colliders = [];
