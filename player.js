@@ -681,123 +681,86 @@ export class Player {
     const canvas = document.querySelector('canvas');
     if (!canvas) return;
 
+    // O ecrã fica reservado à câmara: um toque não desloca o jogador
+    // nem dispara movimentos acidentais.
     canvas.style.touchAction = 'none';
+    canvas.style.userSelect = 'none';
+    canvas.addEventListener('contextmenu', event => event.preventDefault());
 
-    const pointerPosition = e => ({
-      x: e.clientX,
-      y: e.clientY
-    });
-
-    const getPinchDistance = () => {
+    const positionOf = event => ({ x: event.clientX, y: event.clientY });
+    const pinchDistance = () => {
       const points = [...this.cameraPointers.values()];
       if (points.length < 2) return 0;
-
-      return Math.hypot(
-        points[0].x - points[1].x,
-        points[0].y - points[1].y
-      );
+      return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
     };
 
-    canvas.addEventListener('pointerdown', e => {
-      if (e.target !== canvas) return;
+    const finishPointer = event => {
+      if (!this.cameraPointers.has(event.pointerId)) return;
+      this.cameraPointers.delete(event.pointerId);
+      this.pointerStart.delete(event.pointerId);
+      if (this.cameraPointers.size < 2) this.lastPinchDistance = 0;
+      this.cameraDragging = this.cameraPointers.size === 1;
+    };
 
-      e.preventDefault();
-      canvas.setPointerCapture(e.pointerId);
-
-      this.cameraPointers.set(e.pointerId, pointerPosition(e));
-      this.pointerStart.set(e.pointerId, pointerPosition(e));
-
-      if (this.cameraPointers.size === 1) {
-        this.cameraDragging = true;
-      }
-
-      if (this.cameraPointers.size === 2) {
-        this.lastPinchDistance = getPinchDistance();
+    canvas.addEventListener('pointerdown', event => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      event.preventDefault();
+      try { canvas.setPointerCapture(event.pointerId); } catch (_) {}
+      const point = positionOf(event);
+      this.cameraPointers.set(event.pointerId, point);
+      this.pointerStart.set(event.pointerId, point);
+      this.cameraDragging = this.cameraPointers.size === 1;
+      if (this.cameraPointers.size >= 2) {
+        this.lastPinchDistance = pinchDistance();
         this.cameraDragging = false;
       }
-    });
+    }, { passive: false });
 
-    canvas.addEventListener('pointermove', e => {
-      if (!this.cameraPointers.has(e.pointerId)) return;
-
-      e.preventDefault();
-
-      const previous = this.cameraPointers.get(e.pointerId);
-      const current = pointerPosition(e);
-
-      this.cameraPointers.set(e.pointerId, current);
+    canvas.addEventListener('pointermove', event => {
+      if (!this.cameraPointers.has(event.pointerId)) return;
+      event.preventDefault();
+      const previous = this.cameraPointers.get(event.pointerId);
+      const current = positionOf(event);
+      this.cameraPointers.set(event.pointerId, current);
 
       if (this.cameraPointers.size === 1 && this.cameraDragging) {
-        const start = this.pointerStart.get(e.pointerId);
-
-        const moved = Math.hypot(
-          current.x - start.x,
-          current.y - start.y
-        );
-
-        if (moved > 7) {
-          this.cameraYawOffset -= (current.x - previous.x) * 0.006;
-
+        const start = this.pointerStart.get(event.pointerId);
+        const totalMovement = start
+          ? Math.hypot(current.x - start.x, current.y - start.y)
+          : 0;
+        if (totalMovement > 3) {
+          this.cameraYawOffset -= (current.x - previous.x) * 0.0065;
+          this.cameraYawOffset = Math.atan2(
+            Math.sin(this.cameraYawOffset),
+            Math.cos(this.cameraYawOffset)
+          );
           this.cameraPitch = THREE.MathUtils.clamp(
-            this.cameraPitch + (current.y - previous.y) * 0.004,
-            -0.35,
-            0.65
+            this.cameraPitch + (current.y - previous.y) * 0.0045,
+            -0.28,
+            0.62
           );
         }
-      }
-
-      if (this.cameraPointers.size >= 2) {
-        const newDistance = getPinchDistance();
-
-        if (this.lastPinchDistance > 0) {
+      } else if (this.cameraPointers.size >= 2) {
+        const nextDistance = pinchDistance();
+        if (this.lastPinchDistance > 0 && nextDistance > 0) {
           this.cameraDistance = THREE.MathUtils.clamp(
-            this.cameraDistance +
-              (this.lastPinchDistance - newDistance) * 0.025,
+            this.cameraDistance + (this.lastPinchDistance - nextDistance) * 0.022,
             this.cameraMinDistance,
             this.cameraMaxDistance
           );
         }
-
-        this.lastPinchDistance = newDistance;
+        this.lastPinchDistance = nextDistance;
       }
-    });
+    }, { passive: false });
 
-    const releasePointer = e => {
-      const start = this.pointerStart.get(e.pointerId);
-      const current = pointerPosition(e);
+    canvas.addEventListener('pointerup', finishPointer);
+    canvas.addEventListener('pointercancel', finishPointer);
+    canvas.addEventListener('lostpointercapture', finishPointer);
 
-      if (start && this.cameraPointers.size === 1) {
-        const moved = Math.hypot(
-          current.x - start.x,
-          current.y - start.y
-        );
-
-        if (moved < 10 && !this.currentVehicle && !this.sitting) {
-          this.setDestinationFromScreen(e.clientX, e.clientY);
-        }
-      }
-
-      this.cameraPointers.delete(e.pointerId);
-      this.pointerStart.delete(e.pointerId);
-
-      if (this.cameraPointers.size === 0) {
-        this.cameraDragging = false;
-        this.lastPinchDistance = 0;
-      } else if (this.cameraPointers.size === 1) {
-        this.lastPinchDistance = 0;
-        this.cameraDragging = true;
-      }
-    };
-
-    canvas.addEventListener('pointerup', releasePointer);
-    canvas.addEventListener('pointercancel', releasePointer);
-    canvas.addEventListener('lostpointercapture', releasePointer);
-
-    canvas.addEventListener('wheel', e => {
-      e.preventDefault();
-
+    canvas.addEventListener('wheel', event => {
+      event.preventDefault();
       this.cameraDistance = THREE.MathUtils.clamp(
-        this.cameraDistance + e.deltaY * 0.01,
+        this.cameraDistance + event.deltaY * 0.012,
         this.cameraMinDistance,
         this.cameraMaxDistance
       );
@@ -994,7 +957,7 @@ export class Player {
     this.updateCamera();
   }
 
-  updateCamera() {
+  updateCamera(delta = 1 / 60) {
     const target = this.currentVehicle
       ? this.currentVehicle.group.position
       : this.group.position;
@@ -1007,12 +970,15 @@ export class Player {
       ? Math.max(this.cameraDistance, 8)
       : THREE.MathUtils.clamp(
           this.cameraDistance,
-          this.indoor ? 2.5 : this.cameraMinDistance,
+          this.indoor ? 2.35 : this.cameraMinDistance,
           this.cameraMaxDistance
         );
 
-    const pitch = this.cameraHeightAngle + this.cameraPitch;
-
+    const pitch = THREE.MathUtils.clamp(
+      this.cameraHeightAngle + this.cameraPitch,
+      -0.12,
+      0.9
+    );
     const horizontalDistance = distance * Math.cos(pitch);
     const verticalDistance = distance * Math.sin(pitch);
 
@@ -1022,8 +988,9 @@ export class Player {
       target.z + Math.cos(yaw) * horizontalDistance
     );
 
-    this.camera.position.lerp(this.cameraDesired, 0.18);
-
+    // Suavização independente da taxa de fotogramas.
+    const smoothing = 1 - Math.exp(-12 * Math.max(0, Math.min(delta, 0.1)));
+    this.camera.position.lerp(this.cameraDesired, smoothing);
     this.camera.lookAt(
       target.x,
       target.y + (this.currentVehicle ? 1.5 : 1.35),
