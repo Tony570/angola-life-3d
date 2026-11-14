@@ -182,7 +182,9 @@ export class Player {
       eyes: appearance.eyes || '#3b2418',
       hairstyle: appearance.hairstyle || 'curto'
     };
+    if (appearance.clothing) this.clothing = { ...appearance.clothing };
     this.applyAppearance();
+    this.applyClothing();
   }
 
   applyAppearance() {
@@ -234,12 +236,19 @@ export class Player {
 
   applyClothing() {
     if (!this.model || !this.clothing) return;
-    const palette = {
-      top: 0x2877a8,
-      bottom: 0x26344c,
-      shoes: 0x202020,
-      outfit: 0x8e3154,
-      outer: 0x394c45
+    const colorFor = (name, slot) => {
+      const value = String(name || '').toLowerCase();
+      if (/branc/.test(value)) return 0xf1eee7;
+      if (/pret|negro/.test(value)) return 0x202020;
+      if (/vermelh|red/.test(value)) return 0xb52e35;
+      if (/azul|jeans/.test(value)) return 0x285d91;
+      if (/verde/.test(value)) return 0x286344;
+      if (/amarel|dourad/.test(value)) return 0xd6a52e;
+      if (/african|estampad/.test(value)) return 0x9a3c32;
+      if (slot === 'bottom') return 0x26344c;
+      if (slot === 'shoes') return 0x282828;
+      if (slot === 'outfit') return 0x8e3154;
+      return 0x2877a8;
     };
     const patterns = {
       top: /shirt|top|torso|upper|tshirt|camisa|roupa_superior/,
@@ -256,7 +265,7 @@ export class Player {
         const source = Array.isArray(object.material) ? object.material : [object.material];
         const changed = source.map(material => {
           const clone = material.clone();
-          if (clone.color) clone.color.setHex(palette[slot]);
+          if (clone.color) clone.color.setHex(colorFor(this.clothing[slot], slot));
           return clone;
         });
         object.material = Array.isArray(object.material) ? changed : changed[0];
