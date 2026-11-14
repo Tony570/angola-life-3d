@@ -46,7 +46,74 @@ app.innerHTML = `
 
 const game = document.querySelector('#game');
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#101b20');
+// Céu diurno realista de Luanda: azul profundo no alto, horizonte quente e nuvens suaves.
+scene.background = new THREE.Color('#9bc9e6');
+scene.fog = new THREE.Fog('#c6dfeb', 210, 680);
+
+const skyCanvas = document.createElement('canvas');
+skyCanvas.width = 2048;
+skyCanvas.height = 1024;
+const skyContext = skyCanvas.getContext('2d');
+const skyGradient = skyContext.createLinearGradient(0, 0, 0, 1024);
+skyGradient.addColorStop(0, '#145b9d');
+skyGradient.addColorStop(0.32, '#3f91c9');
+skyGradient.addColorStop(0.62, '#8fc5e3');
+skyGradient.addColorStop(0.82, '#d9d9d0');
+skyGradient.addColorStop(1, '#f3c99b');
+skyContext.fillStyle = skyGradient;
+skyContext.fillRect(0, 0, 2048, 1024);
+
+// Nuvens cumuliformes claras, com bordas difusas e sombras muito subtis.
+for (let cloud = 0; cloud < 34; cloud++) {
+  const cx = ((cloud * 317) % 2300) - 120;
+  const cy = 330 + ((cloud * 97) % 310);
+  const width = 95 + ((cloud * 43) % 125);
+  const height = 22 + ((cloud * 17) % 34);
+  const puffCount = 5 + (cloud % 5);
+  for (let puff = 0; puff < puffCount; puff++) {
+    const px = cx + (puff - puffCount / 2) * width * 0.22;
+    const py = cy + Math.sin(puff * 1.7 + cloud) * height * 0.32;
+    const radius = height * (0.75 + ((puff * 13 + cloud) % 30) / 55);
+    const puffGradient = skyContext.createRadialGradient(px, py, 2, px, py, radius * 1.8);
+    puffGradient.addColorStop(0, 'rgba(255,255,255,0.48)');
+    puffGradient.addColorStop(0.58, 'rgba(255,255,255,0.25)');
+    puffGradient.addColorStop(1, 'rgba(255,255,255,0)');
+    skyContext.fillStyle = puffGradient;
+    skyContext.beginPath();
+    skyContext.ellipse(px, py, radius * 1.65, radius, 0, 0, Math.PI * 2);
+    skyContext.fill();
+  }
+}
+const skyTexture = new THREE.CanvasTexture(skyCanvas);
+skyTexture.colorSpace = THREE.SRGBColorSpace;
+skyTexture.mapping = THREE.EquirectangularReflectionMapping;
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(950, 40, 24),
+  new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide, depthWrite: false, fog: false })
+);
+skyDome.renderOrder = -1000;
+scene.add(skyDome);
+
+// Sol quente e halo atmosférico no horizonte.
+const sunCanvas = document.createElement('canvas');
+sunCanvas.width = 256;
+sunCanvas.height = 256;
+const sunContext = sunCanvas.getContext('2d');
+const sunGlow = sunContext.createRadialGradient(128, 128, 8, 128, 128, 126);
+sunGlow.addColorStop(0, 'rgba(255,250,225,1)');
+sunGlow.addColorStop(0.16, 'rgba(255,239,190,0.96)');
+sunGlow.addColorStop(0.38, 'rgba(255,218,145,0.42)');
+sunGlow.addColorStop(1, 'rgba(255,205,130,0)');
+sunContext.fillStyle = sunGlow;
+sunContext.fillRect(0, 0, 256, 256);
+const sunTexture = new THREE.CanvasTexture(sunCanvas);
+const sunDisc = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: sunTexture, color: 0xffffff, transparent: true, depthWrite: false, fog: false
+}));
+sunDisc.position.set(-390, 245, -720);
+sunDisc.scale.set(145, 145, 1);
+sunDisc.renderOrder = -900;
+scene.add(sunDisc);
 
 const camera = new THREE.PerspectiveCamera(
   65,
@@ -81,9 +148,9 @@ renderer.toneMappingExposure = 1.08;
 renderer.shadowMap.enabled = false;
 game.prepend(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight('#f4f8ff', '#78634e', 2.25));
-const sun = new THREE.DirectionalLight('#fff3dc', 1.85);
-sun.position.set(-40, 70, 35);
+scene.add(new THREE.HemisphereLight('#e8f5ff', '#8b765d', 2.05));
+const sun = new THREE.DirectionalLight('#fff0d2', 1.7);
+sun.position.set(-390, 245, -720);
 sun.castShadow = false;
 scene.add(sun);
 
@@ -689,6 +756,8 @@ let promptAccumulator = 0;
 let renderAccumulator = 0;
 function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
+  // Brisa suave: as nuvens deslocam-se lentamente sobre a cidade.
+  skyDome.rotation.y += delta * 0.00055;
 
   if (started && !services.isOpen()) {
     player.update(delta);
