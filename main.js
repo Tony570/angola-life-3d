@@ -201,8 +201,10 @@ function goToFloor(floor) {
   activeHouse.currentFloor = next;
   setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
-  player.cameraDistance = 8.0;
-  player.cameraHeightAngle = 0.34;
+  // Câmara interior próxima, semelhante à experiência de entrar num café no Avakin Life.
+  // Mantém o personagem e o espaço visíveis sem recuar para paredes ou áreas exteriores.
+  player.cameraDistance = 3.8;
+  player.cameraHeightAngle = 0.30;
   player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 7.2);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
