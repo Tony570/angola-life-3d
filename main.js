@@ -106,12 +106,12 @@ app.innerHTML = `
 
   <div id="joystick"><div id="joystick-knob"></div></div>
 
-  <div id="mobile-controls">
-    <button data-key="w">▲</button>
+  <div id="mobile-controls" data-mode="walking">
+    <button data-key="w" aria-label="Avançar">▲</button>
     <div>
-      <button data-key="a">◀</button>
-      <button data-key="s">▼</button>
-      <button data-key="d">▶</button>
+      <button data-key="a" aria-label="Esquerda">◀</button>
+      <button data-key="s" aria-label="Recuar">▼</button>
+      <button data-key="d" aria-label="Direita">▶</button>
     </div>
   </div>
 
@@ -1619,29 +1619,54 @@ actionButton.addEventListener('click', interact);
 // Os destinos do mapa servem para consulta e orientação;
 // não fazem teletransporte.
 
-document.querySelectorAll('[data-key]').forEach(button => {
-  const key = button.dataset.key;
-
-  button.addEventListener('pointerdown', event => {
-    event.preventDefault();
-
-    if (player.sitting || services.isOpen()) return;
-
-    player.keys[key] = true;
-    button.classList.add('pressed');
-  });
-
-  const release = () => {
-    player.keys[key] = false;
-    button.classList.remove('pressed');
-  };
-
-  button.addEventListener('pointerup', release);
-  button.addEventListener('pointerleave', release);
-  button.addEventListener('pointercancel', release);
+const mobileControls = document.querySelector('#mobile-controls');
+mobileControls.addEventListener('pointerdown', event => {
+  const button = event.target.closest('[data-key]');
+  if (!button) return;
+  event.preventDefault();
+  if (player.sitting || services.isOpen()) return;
+  player.keys[button.dataset.key] = true;
+  button.classList.add('pressed');
 });
+function releaseMobileControl(event) {
+  const button = event.target.closest?.('[data-key]');
+  if (!button) return;
+  player.keys[button.dataset.key] = false;
+  button.classList.remove('pressed');
+}
+mobileControls.addEventListener('pointerup', releaseMobileControl);
+mobileControls.addEventListener('pointercancel', releaseMobileControl);
+mobileControls.addEventListener('pointerleave', releaseMobileControl);
+
+let mobileControlMode = '';
+function updateMobileVehicleControls() {
+  const mode = player.currentVehicle ? 'driving' : 'walking';
+  if (mode === mobileControlMode) return;
+  mobileControlMode = mode;
+  mobileControls.dataset.mode = mode;
+  if (mode === 'driving') {
+    mobileControls.innerHTML = `
+      <button data-key="w" aria-label="Acelerar">ACELERAR ▲</button>
+      <div>
+        <button data-key="a" aria-label="Virar à esquerda">◀</button>
+        <button data-key="s" aria-label="Travão e marcha atrás">TRAVÃO ▼</button>
+        <button data-key="d" aria-label="Virar à direita">▶</button>
+      </div>`;
+    document.querySelector('#help').textContent = 'CARRO: ACELERAR · TRAVÃO / MARCHA-ATRÁS · ESQUERDA / DIREITA · E: SAIR';
+  } else {
+    mobileControls.innerHTML = `
+      <button data-key="w" aria-label="Avançar">▲</button>
+      <div>
+        <button data-key="a" aria-label="Esquerda">◀</button>
+        <button data-key="s" aria-label="Recuar">▼</button>
+        <button data-key="d" aria-label="Direita">▶</button>
+      </div>`;
+    document.querySelector('#help').textContent = 'JOYSTICK: MOVER · E: INTERAGIR / SAIR DO CARRO · CLIQUE NO FUNCIONÁRIO: SERVIÇO';
+  }
+}
 
 function updateActionButton() {
+  updateMobileVehicleControls();
   if (taxiTransport.isTravelling()) {
     actionButton.textContent = '🚕 EM VIAGEM';
     return;
