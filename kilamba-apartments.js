@@ -4,7 +4,9 @@ import * as THREE from 'three';
 // quatro pisos residenciais, elevador, escadas e apartamentos T2.
 export function createHouseSystem(scene, world = { buildings: [] }) {
   const houses = [];
-  const FLOOR_HEIGHT = 3.05;
+  const FLOOR_HEIGHT = 3.8;
+  const INTERIOR_SCALE_XZ = 1.12;
+  const INTERIOR_SCALE_Y = 1.2;
   const FLOOR_COUNT = 5;
   const mat = (color, roughness=.82, metalness=0) => new THREE.MeshStandardMaterial({color,roughness,metalness});
   const M = {
@@ -182,6 +184,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
   function addApartmentFloor(parent,floorIndex,variant,doorList) {
     const level=new THREE.Group();
     level.position.y=floorIndex*FLOOR_HEIGHT;
+    level.scale.set(INTERIOR_SCALE_XZ, INTERIOR_SCALE_Y, INTERIOR_SCALE_XZ);
     parent.add(level);
     addFloorShell(level);
     if(floorIndex===0) addReceptionLobby(level,variant);
@@ -227,11 +230,11 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       }
       for(const z of [-1.7,1.8]) box(shaft,7.88,y+.15,z,.08,1.0,.08,M.metal);
     }
-    const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,17.2,.18,17.2,M.wall,false);
+    const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,19.3,.22,19.3,M.wall,false);
     const colliders=[];
     const add=(x,z,w,d)=>colliders.push({
-      minX:building.x+x-w/2,maxX:building.x+x+w/2,
-      minZ:building.z+z-d/2,maxZ:building.z+z+d/2
+      minX:building.x+(x-w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(x+w/2)*INTERIOR_SCALE_XZ,
+      minZ:building.z+(z-d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(z+d/2)*INTERIOR_SCALE_XZ
     });
     add(-8.35,0,.35,17); add(8.35,0,.35,17); add(0,-8.35,17,.35);
     add(-5.2,8.35,6.3,.35); add(5.2,8.35,6.3,.35);
@@ -241,7 +244,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     add(5,-6.6,.2,3.2); add(5,-1.4,.2,2); add(7,-6.6,2.6,.2);
     for (const door of doors) {
       const c=door.userData.houseDoorCollider;
-      colliders.push({minX:building.x+c.x-c.w/2,maxX:building.x+c.x+c.w/2,minZ:building.z+c.z-c.d/2,maxZ:building.z+c.z+c.d/2,_houseDoor:true,floor:c.floor,door});
+      colliders.push({minX:building.x+(c.x-c.w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(c.x+c.w/2)*INTERIOR_SCALE_XZ,minZ:building.z+(c.z-c.d/2)*INTERIOR_SCALE_XZ,maxZ:building.z+(c.z+c.d/2)*INTERIOR_SCALE_XZ,_houseDoor:true,floor:c.floor,door});
     }
     return {group:root,roof,interiorX:building.x,interiorZ:building.z,colliders,doors,floorCount:FLOOR_COUNT,floorHeight:FLOOR_HEIGHT};
   }
