@@ -275,9 +275,8 @@ export async function createReceptionist(parent, job = {}, index = 0) {
 
   npc.root.position.y = Number(job.y) || 0;
   npc.root.rotation.y = Number(job.rotationY) || 0;
-  // Os pisos interiores são ampliados 1,70x; esta compensação conserva
-  // a mesma altura de 2,5 m do jogador e dos restantes habitantes.
-  npc.root.scale.setScalar(1 / 1.7);
+  // O interior agora usa a mesma escala real do edifício exterior.
+  // O modelo normalizado mantém os 2,5 m de altura do jogador.
   return npc;
 }
 
