@@ -99,7 +99,7 @@ export function createKilambaDistrict(scene) {
     }
 
     // Passadeiras nos cruzamentos e marcas de cedência.
-    const accessRoads=[-65,-39,-13,13,39,65];
+    // Reutiliza a lista de ruas de ligação definida acima.
     for (const x of accessRoads) {
       for (const z of [-67,0,67]) {
         for(let n=-3;n<=3;n++) {
