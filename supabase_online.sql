@@ -7,10 +7,7 @@ drop policy if exists profiles_insert on public.profiles;
 drop policy if exists profiles_update on public.profiles;
 drop policy if exists profiles_insert_own on public.profiles;
 drop policy if exists profiles_read_authenticated on public.profiles;
-
-create policy profiles_read_authenticated
-  on public.profiles for select
-  to authenticated using (true);
+-- A política profiles_read já existente continua a permitir a leitura autenticada.
 
 revoke insert, update, delete on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
