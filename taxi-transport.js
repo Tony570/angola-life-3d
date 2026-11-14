@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { attachRealCar } from './vehicle-models.js';
 
 const DISTRICTS = [
   { name: 'Ingombota', x: 0, z: 0 },
@@ -163,30 +162,6 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
     return total;
   }
 
-  function createTaxi(stop) {
-    const group = new THREE.Group();
-    group.position.set(stop.x + 4.2, 0, stop.z + 3.2);
-    group.rotation.y = Math.atan2(-4.2, -3.2);
-    scene.add(group);
-
-    const roofSign = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.22, 0.34), goldMaterial);
-    roofSign.position.set(0, 1.9, -0.2);
-    group.add(roofSign);
-    attachRealCar(group, { width: 2.3, length: 4.5, height: 1.65, paintColor: 0x15945f });
-
-    const taxi = {
-      group,
-      speed: 0,
-      occupied: false,
-      isTaxi: true,
-      stop,
-      stationId: stop.id,
-      modelName: 'Táxi 3D'
-    };
-    taxis.push(taxi);
-    world.vehicles.push(taxi);
-  }
-
   function createStop(stop) {
     const group = new THREE.Group();
     const concrete = new THREE.MeshStandardMaterial({ color: 0xb8b7ad, roughness: 0.9 });
@@ -233,12 +208,7 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
   }
 
   buildRoadGraph();
-  for (let index = 0; index < stops.length; index++) {
-    const stop = stops[index];
-    createStop(stop);
-    // Mantém duas paragens por bairro, mas apenas uma viatura em cada bairro.
-    if (index % 2 === 0) createTaxi(stop);
-  }
+  for (const stop of stops) createStop(stop);
 
   const panel = document.createElement('section');
   panel.id = 'taxi-panel';
