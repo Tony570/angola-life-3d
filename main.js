@@ -93,7 +93,7 @@ const houses = createHouseSystem(scene, world);
 
 const player = new Player(scene, camera, world.vehicles);
 player.setColliders(world.colliders);
-player.setCameraOccluders(world.buildings.map(building => building.group));
+// A câmara fica livre para mostrar a cidade; não bloquear a vista com fachadas dos edifícios.
 
 const moneyDisplay = document.querySelector('.money');
 let services = null;
