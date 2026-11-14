@@ -394,7 +394,6 @@ export function createMultiplayer({ scene, player, online } = {}) {
     if (loaderState.channel) await supabase.removeChannel(loaderState.channel).catch(() => {});
     loaderState.channel = null;
     loaderState.userId = null;
-    window.removeEventListener('angolaLife3D:chatBubble', onLocalChatBubble);
     pendingChatBubbles.clear();
     for (const id of [...remotePlayers.keys()]) removeRemote(id);
   }
