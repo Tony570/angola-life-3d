@@ -774,3 +774,69 @@ button:focus-visible {
 .phone-chat-line.mine strong {
   color: #ffe0a0;
 }
+
+
+/* Painel e comandos específicos para condução */
+#driving-hud {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: 82px;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 15px;
+  border: 1px solid #e9b94e88;
+  border-radius: 14px;
+  background: rgba(10, 24, 25, 0.92);
+  color: #fff;
+  box-shadow: 0 5px 18px #0007;
+  font-family: Arial, sans-serif;
+}
+#driving-hud.visible { display: flex; }
+#driving-hud > span:first-child {
+  color: #d8e4dc;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+#driving-hud strong {
+  color: #ffda83;
+  font-size: 27px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+#driving-hud small { color: #ffda83; font-size: 9px; font-weight: 900; }
+#driving-hud .driving-gear {
+  margin-left: 5px;
+  padding-left: 12px;
+  border-left: 1px solid #ffffff35;
+  color: #d8e4dc;
+  font-size: 10px;
+  font-weight: 800;
+}
+#driving-gear { color: #8fe0a2; font-size: 15px; }
+#mobile-controls[data-mode="driving"] button {
+  min-width: 48px;
+  width: auto;
+  height: 48px;
+  padding: 0 11px;
+  border-radius: 13px;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+#mobile-controls[data-mode="driving"] > button:first-child {
+  min-width: 126px;
+  background: #a66b24;
+  border-color: #ffda83;
+}
+#mobile-controls[data-mode="driving"] div button[data-key="s"] {
+  min-width: 100px;
+  background: #813c35;
+}
+@media (max-width: 700px) {
+  #driving-hud { top: 112px; }
+  #mobile-controls[data-mode="driving"] { right: 10px; bottom: 24px; }
+}
