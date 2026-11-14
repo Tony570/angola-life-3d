@@ -311,6 +311,18 @@ function createWardrobePanel() {
           </nav>
           <div class="wardrobe-section active" data-wardrobe-section="clothes">
             <div class="wardrobe-section-heading"><div><small>COLEÇÃO</small><h3>As minhas roupas</h3></div><span>0 peças iniciais</span></div>
+            <div class="wardrobe-shirt-preview" aria-label="Exemplo visual de uma camisa ainda não adquirida">
+              <div class="wardrobe-shirt-art">
+                <svg viewBox="0 0 220 190" role="img" aria-label="Ilustração de uma camisa">
+                  <defs><linearGradient id="shirtFabric" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f5f2"/><stop offset="1" stop-color="#aebbb8"/></linearGradient></defs>
+                  <path d="M76 24 91 13 Q110 29 129 13 L145 24 195 49 176 91 151 79 151 174 69 174 69 79 44 91 25 49Z" fill="url(#shirtFabric)" stroke="#e6eee9" stroke-width="4" stroke-linejoin="round"/>
+                  <path d="M91 13 Q110 47 129 13 L119 52 101 52Z" fill="#d0d9d5" stroke="#8d9c97" stroke-width="2"/>
+                  <path d="M110 53V169" stroke="#8d9c97" stroke-width="2" stroke-dasharray="4 5"/>
+                  <circle cx="110" cy="75" r="2.5" fill="#64756e"/><circle cx="110" cy="94" r="2.5" fill="#64756e"/><circle cx="110" cy="113" r="2.5" fill="#64756e"/>
+                </svg>
+              </div>
+              <div><strong>CAMISA</strong><span>Exemplo de peça da futura loja</span><small>AINDA NÃO ADQUIRIDA</small></div>
+            </div>
             <div id="owned-clothes-list"></div>
             <p class="wardrobe-future-note">A loja de roupas será criada numa próxima etapa. Só poderás usar peças que comprares.</p>
           </div>
