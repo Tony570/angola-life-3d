@@ -459,7 +459,7 @@ world.buildings = (world.buildings || []).filter(building => {
   return true;
 });
 
-const houses = createHouseSystem(scene);
+const houses = createHouseSystem(scene, world);
 const player = new Player(scene, camera, world.vehicles);
 
 const moneyDisplay = document.querySelector('.money');
@@ -1352,7 +1352,7 @@ function exitHouse() {
 
   const house = currentHouse;
 
-  house.interior.visible = false;
+  if (house.interior) house.interior.visible = false;
   setInteriorView(house, false);
 
   player.setIndoor(false);
@@ -1361,7 +1361,7 @@ function exitHouse() {
   scene.fog = outsideFog;
   player.setColliders(exteriorColliders);
   player.group.visible = true;
-  player.teleport(house.x, house.z + 8);
+  player.teleport(house.entranceX, house.entranceZ + 1.4);
   snapCameraToPlayer();
 
   actionButton.textContent = '🏠 ENTRAR EM CASA';
@@ -1374,6 +1374,7 @@ function enterHouse(house) {
     player.exitVehicle();
   }
 
+  house.ensureInterior();
   currentHouse = house;
   player.moveTarget = null;
 
@@ -1401,10 +1402,10 @@ function findNearestHouse() {
   const playerZ = player.group.position.z;
 
   for (const house of houses) {
-    const dx = playerX - house.x;
-    const dz = playerZ - (house.z + 6.2);
+    const dx = playerX - house.entranceX;
+    const dz = playerZ - house.entranceZ;
 
-    if (Math.abs(dx) > 2.1 || dz < 0.25 || dz > 4.2) continue;
+    if (Math.abs(dx) > 3.2 || dz < -2.4 || dz > 3.2) continue;
 
     const distance = Math.hypot(dx, dz);
 
@@ -1434,13 +1435,13 @@ function tryAutoEnterHouse() {
   const playerZ = player.group.position.z;
 
   for (const house of houses) {
-    const dx = playerX - house.x;
-    const distanceFromDoor = playerZ - (house.z + 6.2);
+    const dx = playerX - house.entranceX;
+    const distanceFromDoor = playerZ - house.entranceZ;
 
     if (
-      Math.abs(dx) <= 2.1 &&
-      distanceFromDoor >= 0.35 &&
-      distanceFromDoor <= 2.0
+      Math.abs(dx) <= 3.2 &&
+      distanceFromDoor >= -1.5 &&
+      distanceFromDoor <= 2.2
     ) {
       enterHouse(house);
       return;
