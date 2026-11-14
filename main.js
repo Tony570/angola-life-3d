@@ -138,8 +138,14 @@ const startButton = document.querySelector('#start-game');
 const bankButton = document.querySelector('#bank-button');
 const interactButton = document.querySelector('#interact-button');
 const mobileControls = document.querySelector('#mobile-controls');
-// Os controlos direcionais ficam visíveis em telemóveis; o canvas é reservado à câmara.
-if (isMobile) mobileControls.style.display = 'flex';
+// Deteção por UA e por ponteiro: alguns navegadores Android não identificam
+// corretamente o modelo do aparelho no userAgent.
+const hasTouchControls = isMobile || window.matchMedia('(pointer: coarse)').matches;
+if (hasTouchControls) {
+  mobileControls.style.display = 'flex';
+  mobileControls.style.zIndex = '50';
+  mobileControls.style.pointerEvents = 'auto';
+}
 let started = false;
 
 function openBank() {
@@ -581,24 +587,49 @@ startButton.addEventListener('click', () => {
   player.update(0);
 });
 
-mobileControls.addEventListener('pointerdown', event => {
-  const button = event.target.closest('[data-key]');
-  if (!button) return;
-  event.preventDefault();
-  try { button.setPointerCapture(event.pointerId); } catch (_) {}
-  player.keys[button.dataset.key] = true;
+// Cada botão gere o seu próprio toque. A libertação é global para evitar
+// que uma tecla fique presa quando o Android termina o gesto fora do botão.
+const activeMobilePointers = new Map();
+function pressMobileControl(button, pointerId) {
+  const key = button.dataset.key;
+  if (!key) return;
+  player.keys[key] = true;
   button.classList.add('pressed');
-});
-
-function releaseMobileControl(event) {
-  const button = event.target.closest?.('[data-key]');
-  if (!button) return;
-  player.keys[button.dataset.key] = false;
-  button.classList.remove('pressed');
+  if (pointerId !== undefined) activeMobilePointers.set(pointerId, { key, button });
 }
-
-mobileControls.addEventListener('pointerup', releaseMobileControl);
-mobileControls.addEventListener('pointercancel', releaseMobileControl);
+function releaseAllMobileControls() {
+  for (const { key, button } of activeMobilePointers.values()) {
+    player.keys[key] = false;
+    button.classList.remove('pressed');
+  }
+  activeMobilePointers.clear();
+  mobileControls.querySelectorAll('[data-key].pressed').forEach(button => {
+    player.keys[button.dataset.key] = false;
+    button.classList.remove('pressed');
+  });
+}
+mobileControls.querySelectorAll('[data-key]').forEach(button => {
+  button.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    try { button.setPointerCapture(event.pointerId); } catch (_) {}
+    pressMobileControl(button, event.pointerId);
+  }, { passive: false });
+  button.addEventListener('pointerup', releaseAllMobileControls);
+  button.addEventListener('pointercancel', releaseAllMobileControls);
+  button.addEventListener('lostpointercapture', releaseAllMobileControls);
+  // Compatibilidade com navegadores Android antigos que ainda emitem Touch Events.
+  button.addEventListener('touchstart', event => {
+    event.preventDefault();
+    pressMobileControl(button);
+  }, { passive: false });
+  button.addEventListener('touchend', releaseAllMobileControls, { passive: true });
+  button.addEventListener('touchcancel', releaseAllMobileControls, { passive: true });
+});
+window.addEventListener('pointerup', releaseAllMobileControls);
+window.addEventListener('pointercancel', releaseAllMobileControls);
+window.addEventListener('touchend', releaseAllMobileControls, { passive: true });
+window.addEventListener('touchcancel', releaseAllMobileControls, { passive: true });
+window.addEventListener('blur', releaseAllMobileControls);
 
 const clock = new THREE.Clock();
 
