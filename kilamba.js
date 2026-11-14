@@ -4,15 +4,17 @@ export function createKilambaDistrict(scene) {
   const world = { vehicles: [], trafficVehicles: [], npcs: [], buildings: [], colliders: [], destinations: [], updateTraffic() {} };
   const mat = (color, roughness = 0.82, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
   const M = {
-    ground: mat(0x879078), grass: mat(0x668052), asphalt: mat(0x30363b, 0.96),
+    ground: mat(0x879078), grass: mat(0x668052), asphalt: mat(0x30363b, .96),
     sidewalk: mat(0xc8c5bc), concrete: mat(0xb7b4ac), cream: mat(0xe7dfcf),
     white: mat(0xf1eee6), sand: mat(0xc9b99d), terracotta: mat(0xa94f3e),
-    red: mat(0x963f35), charcoal: mat(0x353b3e), glass: new THREE.MeshPhysicalMaterial({
-      color: 0x8fc2cf, roughness: 0.2, metalness: 0.08, transparent: true, opacity: 0.72
-    }), metal: mat(0x50595c, 0.42, 0.55), rail: mat(0x343b3e, 0.42, 0.45),
+    red: mat(0x963f35), charcoal: mat(0x353b3e),
+    glass: new THREE.MeshPhysicalMaterial({ color: 0x8fc2cf, roughness: .16, metalness: .08, transparent: true, opacity: .48 }),
+    darkGlass: new THREE.MeshPhysicalMaterial({ color: 0x29434b, roughness: .2, metalness: .12, transparent: true, opacity: .68 }),
+    metal: mat(0x50595c, .42, .55), rail: mat(0x343b3e, .42, .45),
     wood: mat(0x795238), leaf: mat(0x347b4a), leafLight: mat(0x559354), trunk: mat(0x755038),
     yellow: mat(0xe0bd6c), whiteLine: mat(0xe8e5d9), roadLine: mat(0xe4c76b)
   };
+
   function box(parent,x,y,z,w,h,d,m,cast=true) {
     const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
     o.position.set(x,y+h/2,z); o.castShadow=cast; o.receiveShadow=true; parent.add(o); return o;
@@ -21,25 +23,21 @@ export function createKilambaDistrict(scene) {
     const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),m);
     o.position.set(x,y+h/2,z); o.castShadow=true; o.receiveShadow=true; parent.add(o); return o;
   }
-  function windowFrame(g,x,y,z,w=1.65,h=1.25) {
-    box(g,x,y,z,w,h,.08,M.glass,false);
-    for(const [px,py,pw,ph] of [[x-w/2-.045,y,.09,h+.16],[x+w/2+.045,y,.09,h+.16],[x,y-h/2-.04,w+.12,.09],[x,y+h/2+.04,w+.12,.09]]) box(g,px,py,z+.07,pw,ph,.12,M.white);
-    box(g,x,y,z+.13,.045,h,.05,M.rail,false);
-    box(g,x,y-h/2-.18,z+.12,w+.35,.12,.42,M.concrete);
+  function windowFrame(g,x,y,z,w=1.55,h=1.42) {
+    box(g,x,y,z,w,h,.075,M.glass,false);
+    for(const [px,py,pw,ph] of [[x-w/2-.045,y,.09,h+.16],[x+w/2+.045,y,.09,h+.16],[x,y-h/2-.045,w+.14,.09],[x,y+h/2+.045,w+.14,.09]]) box(g,px,py,z+.07,pw,ph,.12,M.white);
+    box(g,x,y,z+.135,.045,h,.045,M.rail,false);
+    box(g,x,y-h/2-.2,z+.13,w+.3,.12,.38,M.concrete);
   }
-  function balcony(g,x,y,z,w=2.65) {
-    box(g,x,y,z+.75,w+.5,.18,1.65,M.concrete);
-    box(g,x,y+.18,z+1.5,w+.5,.08,.08,M.rail);
-    for(let n=0;n<=8;n++) box(g,x-(w+.5)/2+n*(w+.5)/8,y+.18,z+1.5,.055,.82,.055,M.rail);
-    for(const px of [x-(w+.5)/2,x+(w+.5)/2]) box(g,px,y+.18,z+.78,.07,.82,1.45,M.rail);
+  function balcony(g,x,y,z,w=2.6) {
+    box(g,x,y,z+.62,w+.42,.16,1.35,M.concrete);
+    box(g,x,y+.18,z+1.25,w+.42,.08,.08,M.rail);
+    for(let n=0;n<=8;n++) box(g,x-(w+.42)/2+n*(w+.42)/8,y+.18,z+1.25,.045,.78,.045,M.rail);
+    for(const px of [x-(w+.42)/2,x+(w+.42)/2]) box(g,px,y+.18,z+.65,.06,.78,1.18,M.rail);
   }
   function palm(parent,x,z,s=1) {
     cylinder(parent,x,0,z,.16*s,.25*s,3.2*s,M.trunk,9);
-    for(let i=0;i<7;i++){
-      const a=Math.PI*2*i/7, leaf=new THREE.Mesh(new THREE.ConeGeometry(.22*s,2.3*s,5),i%2?M.leaf:M.leafLight);
-      leaf.position.set(x+Math.sin(a)*.78*s,3.1*s,z+Math.cos(a)*.78*s);
-      leaf.rotation.z=Math.cos(a)*.85; leaf.rotation.x=Math.sin(a)*.85; leaf.castShadow=true; parent.add(leaf);
-    }
+    for(let i=0;i<7;i++){ const a=Math.PI*2*i/7, leaf=new THREE.Mesh(new THREE.ConeGeometry(.22*s,2.3*s,5),i%2?M.leaf:M.leafLight); leaf.position.set(x+Math.sin(a)*.78*s,3.1*s,z+Math.cos(a)*.78*s); leaf.rotation.z=Math.cos(a)*.85; leaf.rotation.x=Math.sin(a)*.85; leaf.castShadow=true; parent.add(leaf); }
   }
   function streetLight(parent,x,z) {
     cylinder(parent,x,0,z,.055,.085,5.4,M.metal,8);
@@ -64,62 +62,104 @@ export function createKilambaDistrict(scene) {
     for(const x of [-8,8]) palm(scene,x,0,1.05);
     for(const x of [-4.5,4.5]) { box(scene,x,.18,0,2.2,.45,.55,M.wood); box(scene,x,.62,0,2.2,.12,.55,M.rail); }
   }
-  function apartment(index,x,z,facing) {
+
+  function apartment(index,x,z) {
     const g=new THREE.Group(), facade=index%3===0?M.cream:index%3===1?M.sand:M.white;
-    const accent=index%2===0?M.terracotta:M.red, w=15.5,d=12.5,floors=5,fh=3.05,h=floors*fh+.9;
-    const front=facing*d/2;
-    // Estrutura arquitetónica com vãos reais, em vez de um volume maciço.
+    const accent=index%2===0?M.terracotta:M.red;
+    const w=17, d=17, floors=5, fh=3.05, h=floors*fh+.45, front=d/2;
+    // Base, foundation and continuous side/rear walls: the building is a real shell, not a floating frame.
+    box(g,0,-.12,0,w+.5,.34,d+.5,M.concrete);
     box(g,-w/2+.18,0,0,.36,h,d,facade);
     box(g,w/2-.18,0,0,.36,h,d,facade);
-    box(g,0,0,-d/2+.18,w,h,.36,facade);
-    box(g,0,0,0,w,.28,d,M.concrete);
-    for(let floor=1;floor<floors;floor++) box(g,0,floor*fh-.12,0,w+.2,.24,d+.2,M.white);
-    for(const px of [-7.35,-3.35,3.35,7.35]) box(g,px,0,front,.28,h,.42,facade);
-    box(g,-w/2+.28,0,front+facing*.12,.42,h,.3,accent);
-    box(g,w/2-.28,0,front+facing*.12,.42,h,.3,accent);
-    box(g,0,0,front+facing*.2,w+.25,.32,.38,M.white);
-    box(g,0,h-.5,front+facing*.2,w+.25,.3,.38,accent);
-    for(let floor=1;floor<floors;floor++){
-      const y=floor*fh; box(g,0,y,0,w+.35,.16,d+.25,M.white);
-      box(g,0,y+.18,front+facing*.19,w+.25,.08,.28,accent);
-    }
-    for(let floor=0;floor<floors;floor++){
-      const y=floor*fh+1.55;
-      for(const wx of [-5,-1.75,1.75,5]) windowFrame(g,wx,y,front+facing*.22,1.55,1.28);
-      if(floor>0){ balcony(g,-3.35,floor*fh+.25,front+facing*.05,2.25); balcony(g,3.35,floor*fh+.25,front+facing*.05,2.25); }
-      else {
-        box(g,0,.15,front+facing*.25,2.2,2.55,.16,M.charcoal);
-        box(g,0,.15,front+facing*.36,1.9,2.35,.08,M.glass,false);
-        box(g,-4.2,.6,front+facing*.26,2.1,1.65,.14,M.glass,false);
-        box(g,4.2,.6,front+facing*.26,2.1,1.65,.14,M.glass,false);
+    box(g,0,0,-d/2+.18,w,.36,.36,facade);
+    for(let floor=0;floor<floors;floor++) {
+      const y=floor*fh;
+      box(g,0,y,w,.18,d,M.concrete);
+      box(g,0,y+.18,front-.12,w,.10,.42,M.white);
+      // Front ground floor has a generous glazed entrance and two solid side bays.
+      if(floor===0) {
+        box(g,-5.15,.18,front,6.7,2.72,.34,facade);
+        box(g,5.15,.18,front,6.7,2.72,.34,facade);
+        box(g,0,2.72,front,3.65,.34,.38,facade);
+        box(g,-1.72,.18,front+.04,.12,2.65,.18,M.white);
+        box(g,1.72,.18,front+.04,.12,2.65,.18,M.white);
+        // Double glass entrance doors, with visible frame and handles.
+        box(g,-.82,.12,front+.12,1.58,2.42,.07,M.darkGlass,false);
+        box(g,.82,.12,front+.12,1.58,2.42,.07,M.darkGlass,false);
+        box(g,0,.12,front+.18,.055,2.42,.08,M.metal);
+        for(const dx of [-.12,.12]) cylinder(g,dx,1.05,front+.27,.025,.025,.55,M.yellow,8);
+        for(const wx of [-5.15,5.15]) {
+          box(g,wx,.18,front+.04,2.45,2.35,.07,M.glass,false);
+          for(const dx of [-1.25,1.25]) box(g,wx+dx,.18,front+.10,.08,2.45,.12,M.white);
+        }
+      } else {
+        // Upper floor wall bands and piers around real window openings.
+        box(g,-7.55,y+.18,front,1.9,2.7,.34,facade);
+        box(g,7.55,y+.18,front,1.9,2.7,.34,facade);
+        for(const px of [-3.55,0,3.55]) box(g,px,y+.18,front,.55,2.7,.34,facade);
+        for(const wx of [-5.55,-1.78,1.78,5.55]) windowFrame(g,wx,y+1.62,front+.20,1.45,1.42);
+        balcony(g,-5.55,y+.2,front+.02,2.0);
+        balcony(g,5.55,y+.2,front+.02,2.0);
       }
+      // Accent band at every slab line.
+      box(g,0,y+.32,front+.22,w+.1,.09,.18,accent);
     }
-    box(g,-6.55,0,front+facing*.18,1.25,h-.6,.35,M.charcoal);
-    for(let floor=0;floor<floors;floor++) box(g,-6.55,floor*fh+.55,front+facing*.39,.82,1.55,.08,M.glass,false);
-    box(g,0,2.9,front+facing*1.15,5.5,.24,2,accent);
-    for(const px of [-2.35,2.35]) box(g,px,0,front+facing*1.75,.18,2.9,.18,M.white);
-    box(g,0,h,0,w+.55,.38,d+.55,M.white);
-    box(g,0,h+.38,-d/2+.22,w+.45,.75,.35,accent);
-    box(g,0,h+.38,d/2-.22,w+.45,.75,.35,accent);
-    for(const px of [-5.8,5.8]) { box(g,px,h+.38,-3.6,1,.8,1,M.charcoal); cylinder(g,px,h+1.15,-3.6,.04,.04,1,M.metal,8); }
-    for(let floor=0;floor<floors;floor++) for(const wx of [-5,5]) {
-      box(g,wx,floor*fh+.58,front+facing*.5,.62,.36,.3,M.white);
-      box(g,wx,floor*fh+.95,front+facing*.5,.48,.04,.28,M.metal);
+    // Architectural entrance portal, canopy, lighting and block identification.
+    box(g,-2.05,0,front+.45,.22,3.15,.28,M.white);
+    box(g,2.05,0,front+.45,.22,3.15,.28,M.white);
+    box(g,0,2.82,front+.65,4.55,.22,1.55,accent);
+    box(g,0,2.64,front+1.42,4.2,.08,.12,M.yellow);
+    box(g,0,3.18,front+.68,3.1,.18,.08,M.white);
+    const plaque=box(g,0,3.22,front+.74,2.9,.24,.06,M.charcoal);
+    const entranceLamp=new THREE.PointLight(0xffdba0,.65,11); entranceLamp.position.set(0,2.65,front+1.1); g.add(entranceLamp);
+    // Side windows make the block read as a lived-in building from oblique views.
+    for(let floor=0;floor<floors;floor++) for(const side of [-1,1]) {
+      const y=floor*fh+1.55;
+      box(g,side*(w/2-.035),y,-2.8, .08,1.35,1.8,M.glass,false);
+      box(g,side*(w/2-.10),y,-2.8, .12,1.48,.09,M.white);
+      box(g,side*(w/2-.10),y,-3.7, .12,.08,1.9,M.white);
+      box(g,side*(w/2-.10),y,-1.9, .12,.08,1.9,M.white);
     }
-    g.position.set(x,0,z); if(facing<0) g.rotation.y=Math.PI; scene.add(g);
-    const entranceX=x, entranceZ=z+(facing>0?d/2+1.7:-d/2-1.7), colliders=[];
+    // Roof parapet, top coping and service details.
+    box(g,0,h,w+.25,.42,d+.25,M.white);
+    box(g,0,h+.35,-d/2+.2,w+.2,.7,.32,accent);
+    box(g,0,h+.35,d/2-.2,w+.2,.7,.32,accent);
+    box(g,-w/2+.2,h+.35,0,.32,.7,d+.2,accent);
+    box(g,w/2-.2,h+.35,0,.32,.7,d+.2,accent);
+    box(g,-5.9,h+.72,-4.6,1.25,.55,1.3,M.charcoal);
+    box(g,5.9,h+.72,-4.6,1.25,.55,1.3,M.charcoal);
+    // Raised entry landing, steps, planters and low garden lights.
+    box(g,0,.08,front+2.0,5.6,.16,2.1,M.concrete);
+    for(let step=0;step<3;step++) box(g,0,-.04+step*.045,front+3.1+step*.48,5.0,.12,.52,M.concrete);
+    for(const px of [-7.15,7.15]) {
+      box(g,px,.12,front+1.35,1.45,.34,2.15,M.concrete);
+      for(let n=0;n<4;n++) {
+        const leaf=new THREE.Mesh(new THREE.ConeGeometry(.22,.9,6),M.leaf);
+        leaf.position.set(px+(n-1.5)*.2,.82,front+1.35+(n%2)*.3); leaf.rotation.z=(n-1.5)*.12; g.add(leaf);
+      }
+      const bollard=cylinder(g,px,.05,front+2.75,.07,.07,.72,M.metal,8);
+      const lamp=new THREE.PointLight(0xffdca0,.18,4); lamp.position.set(px,.8,front+2.75); g.add(lamp);
+    }
+    g.position.set(x,0,z); scene.add(g);
+
+    const entranceX=x, entranceZ=z+front+3.55, colliders=[];
     const wall=(cx,cz,ww,dd)=>colliders.push({minX:x+cx-ww/2,maxX:x+cx+ww/2,minZ:z+cz-dd/2,maxZ:z+cz+dd/2});
-    wall(-w/2,0,.5,d); wall(w/2,0,.5,d); wall(0,-d/2,w,.5);
-    wall(-w/4,facing*d/2,w/2-1.3,.5); wall(w/4,facing*d/2,w/2-1.3,.5);
-    const path=new THREE.Mesh(new THREE.BoxGeometry(3.5,.12,4.5),M.concrete);
-    path.position.set(x,.06,entranceZ-facing*.4); scene.add(path);
+    wall(-w/2,0,.42,d); wall(w/2,0,.42,d); wall(0,-d/2,w,.42);
+    // Keep the central doorway physically open.
+    wall(-5.15,front,6.7,.42); wall(5.15,front,6.7,.42);
+    const path=new THREE.Mesh(new THREE.BoxGeometry(4.4,.10,5.2),M.concrete);
+    path.position.set(x,.04,entranceZ-1.0); scene.add(path);
     return {name:'Bloco '+String.fromCharCode(65+index),type:'apartment',propertyType:'apartamento T2',district:'Kilamba',x,z,width:w,depth:d,entranceX,entranceZ,salePrice:0,forSale:true,group:g,colliders};
   }
+
   roads();
   const positions=[-52,-26,0,26,52]; let index=0;
   for(const z of [-31,31]) for(const x of positions) {
-    const b=apartment(index,x,z,z<0?1:-1); world.buildings.push(b); world.colliders.push(...b.colliders);
-    world.destinations.push({name:b.name+' · Kilamba',x:b.entranceX,z:b.entranceZ}); index++;
+    const building=apartment(index,x,z);
+    world.buildings.push(building);
+    world.colliders.push(...building.colliders);
+    world.destinations.push({name:building.name+' · Kilamba',x:building.entranceX,z:building.entranceZ});
+    index++;
   }
   return world;
 }
