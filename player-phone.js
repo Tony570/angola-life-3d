@@ -2,11 +2,6 @@ import { supabase } from './online.js';
 
 const CHANNEL_NAME = 'angola-life-3d-luanda-live';
 const FINE_AMOUNT = 5000;
-const OFFENSIVE_WORDS = [
-  'caralho', 'porra', 'merda', 'puta', 'puto',
-  'foda', 'idiota', 'otario', 'vagabundo', 'filho da puta'
-];
-
 export function createPlayerPhone({ game, online, services } = {}) {
   const topbar = game?.querySelector('#topbar');
   if (!topbar || !online) return { open() {}, close() {} };
@@ -109,8 +104,6 @@ export function createPlayerPhone({ game, online, services } = {}) {
   let activePeerName = '';
   let pendingOffer = null;
   let queuedCandidates = [];
-  let fineCounter = 0;
-  let fineInProgress = false;
 
   function showMessage(text) { message.textContent = text || ''; }
   function open() {
@@ -168,9 +161,6 @@ export function createPlayerPhone({ game, online, services } = {}) {
       channel = null;
     }
     connectedUserId = user.id;
-    try {
-      fineCounter = Number(localStorage.getItem('angolaLife3D_chat_offensive_count_' + user.id) || 0) || 0;
-    } catch { fineCounter = 0; }
     const nickname = online.getProfile()?.nickname || user.user_metadata?.nickname || 'Jogador';
     channel = supabase.channel(CHANNEL_NAME, {
       config: { presence: { key: user.id }, broadcast: { self: false } }
@@ -368,15 +358,6 @@ export function createPlayerPhone({ game, online, services } = {}) {
     renderPlayers();
   }
 
-  function normalizeText(value) {
-    return String(value || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9\\s]/g, ' ');
-  }
-
-  function offensiveCount(value) {
-    const words = normalizeText(value).split(/\\s+/).filter(Boolean);
-    return words.filter(word => OFFENSIVE_WORDS.includes(word)).length;
-  }
-
   function renderChatMessage(payload) {
     if (!payload?.text) return;
     const host = $('#phone-chat-messages');
@@ -402,24 +383,15 @@ export function createPlayerPhone({ game, online, services } = {}) {
       return;
     }
     const nickname = online.getProfile()?.nickname || 'Jogador';
+    const moderation = await online.registerPublicChatMessage(text);
     const payload = { nickname, text, from: currentUser().id, sentAt: Date.now() };
     renderChatMessage(payload);
     await channel.send({ type: 'broadcast', event: 'public-chat', payload });
 
-    fineCounter += offensiveCount(text);
-    try { localStorage.setItem('angolaLife3D_chat_offensive_count_' + currentUser().id, String(fineCounter)); } catch {}
-    if (fineCounter >= 10 && !fineInProgress) {
-      fineInProgress = true;
-      fineCounter = 0;
-      try {
-        const balance = await online.spendCredits(FINE_AMOUNT);
-        showMessage('A Polícia aplicou uma multa de 5.000 Kz por linguagem ofensiva. Saldo: ' + balance.toLocaleString('pt-PT') + ' Kz.');
-      } catch (error) {
-        showMessage('Foi registada uma infração verbal. A multa não foi cobrada: ' + (error.message || 'saldo ou ligação indisponível') + '.');
-      } finally {
-        try { localStorage.setItem('angolaLife3D_chat_offensive_count_' + currentUser().id, String(fineCounter)); } catch {}
-        fineInProgress = false;
-      }
+    if (Number(moderation?.fines_applied) > 0) {
+      showMessage('A Polícia aplicou ' + moderation.fines_applied + ' multa(s) de 5.000 Kz por linguagem ofensiva.');
+    } else if (Number(moderation?.offensive_words) > 0) {
+      showMessage('Aviso policial: ' + moderation.total_count + ' de 10 palavras ofensivas acumuladas.');
     }
   }
 
