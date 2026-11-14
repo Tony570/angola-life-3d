@@ -222,7 +222,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
   }
 
   function addLivingRoom(g, variant) {
-    const sofaMaterial = variant === 2 ? mat.red : mat.sofa;
+    const sofaPalette = [mat.sofa, mat.red, mat.green, mat.woodLight, mat.dark];
+    const sofaMaterial = sofaPalette[variant % sofaPalette.length];
 
     // Sofá
     box(g, -5.7, 0.28, 2.0, 3.8, 0.55, 1.15, sofaMaterial);
@@ -278,7 +279,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
   }
 
   function addKitchen(g, variant) {
-    const cabinet = variant === 2 ? mat.woodLight : mat.white;
+    const cabinet = variant % 2 === 0 ? mat.woodLight : mat.white;
 
     // Armários
     box(g, 5.5, 0.12, 5.8, 5.5, 0.95, 1.15, cabinet);
@@ -355,22 +356,31 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     }
   }
 
-  function createInterior(index) {
+  function createInterior(index, propertyType = 'casa de bairro') {
     const g = new THREE.Group();
-    const variant = index % 3;
+    const variant = index % 5;
+    const floorColors = [0xb18a65, 0xc8bba7, 0x9ca6a8, 0xe0ded5, 0xf0ece3];
+    const wallColors = [0xe9dfce, 0xd7c7ad, 0xe7e2d8, 0xf2eee5, 0xe5e1d8];
+    const floorMaterial = material(floorColors[variant], 0.82);
+    const wallMaterial = material(wallColors[variant], 0.9);
 
-    // Piso e áreas com materiais diferentes
-    box(g, 0, -0.16, 0, 18, 0.32, 18, mat.floor);
+    // Acabamentos interiores diferentes por casa e por categoria.
+    const typeFloor = String(propertyType).toLowerCase().includes('luxo') ? 0xf0ece3
+      : String(propertyType).toLowerCase().includes('musseque') ? 0x9b8068
+      : floorColors[variant];
+    floorMaterial.color.setHex(typeFloor);
+
+    box(g, 0, -0.16, 0, 18, 0.32, 18, floorMaterial);
     box(g, 5.5, 0.012, 5.5, 7.0, 0.035, 4.5, mat.tile, false);
     box(g, 7.2, 0.018, -7.0, 3.2, 0.035, 3.8, mat.tile, false);
 
     // Paredes exteriores
-    box(g, -9, 0, 0, 0.3, 4.2, 18, mat.wall);
-    box(g, 9, 0, 0, 0.3, 4.2, 18, mat.wall);
-    box(g, 0, 0, -9, 18, 4.2, 0.3, mat.wall);
-    box(g, -6.5, 0, 9, 5, 4.2, 0.3, mat.wall);
-    box(g, 6.5, 0, 9, 5, 4.2, 0.3, mat.wall);
-    box(g, 0, 3.7, 9, 8, 0.5, 0.3, mat.wall);
+    box(g, -9, 0, 0, 0.3, 4.2, 18, wallMaterial);
+    box(g, 9, 0, 0, 0.3, 4.2, 18, wallMaterial);
+    box(g, 0, 0, -9, 18, 4.2, 0.3, wallMaterial);
+    box(g, -6.5, 0, 9, 5, 4.2, 0.3, wallMaterial);
+    box(g, 6.5, 0, 9, 5, 4.2, 0.3, wallMaterial);
+    box(g, 0, 3.7, 9, 8, 0.5, 0.3, wallMaterial);
 
     // Divisões interiores
     box(g, -1.0, 0, -6.85, 0.16, 2.65, 4.1, mat.wallAlt);
@@ -386,6 +396,20 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     addKitchen(g, variant);
     addDining(g);
     addBathroom(g);
+
+    // Pequenos elementos decorativos diferentes tornam cada interior menos repetido.
+    const decorColors = [0x286447, 0x9a3c32, 0x315d83, 0xc59a50, 0x5b526f];
+    const wallArt = box(g, 0, 2.25, -8.72, 2.2, 1.25, 0.08, material(decorColors[variant]));
+    wallArt.castShadow = false;
+    if (variant === 1 || variant === 3) {
+      box(g, 7.7, 0.8, 0.1, 0.8, 1.6, 0.8, mat.green);
+      cylinder(g, 7.7, 2.35, 0.1, 0.55, 0.7, mat.leaf);
+    } else if (variant === 2 || variant === 4) {
+      box(g, -8.1, 0.2, -3.8, 0.65, 2.3, 0.65, mat.wood);
+      for (const y of [0.8, 1.35, 1.9]) {
+        box(g, -7.72, y, -3.8, 0.08, 0.05, 0.55, mat.gold);
+      }
+    }
     addInteriorLights(g);
 
     // Cobertura removível pelo sistema de entrada
@@ -470,7 +494,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
 
     house.ensureInterior = () => {
       if (house.interior) return house;
-      const inside = createInterior(index);
+      const inside = createInterior(index, house.propertyType);
       house.interior = inside.group;
       house.interiorRoof = inside.roof;
       house.interiorX = inside.interiorX;
