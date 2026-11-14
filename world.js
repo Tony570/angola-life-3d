@@ -1,6 +1,5 @@
 
 import * as THREE from 'three';
-import { attachRealCar } from './vehicle-models.js';
 import { createPeople } from './people.js';
 
 export function createWorld(scene) {
@@ -221,22 +220,6 @@ export function createWorld(scene) {
       }
 
       box(group, 0, 0.4, 2.0, 5.5, 0.9, 0.8, M.wood);
-    }
-
-    if (kind === 'car-dealer') {
-      // Exposição com modelos 3D reais, sem carroçarias montadas com cubos.
-      [-4.5, 0, 4.5].forEach((px, index) => {
-        const displayCar = new THREE.Group();
-        displayCar.position.set(px, 0.35, -1);
-        displayCar.rotation.y = index === 1 ? Math.PI : 0;
-        group.add(displayCar);
-        attachRealCar(displayCar, {
-          width: 2.25,
-          length: 4.1,
-          height: 1.55,
-          paintColor: [0xc62828, 0xeeeeee, 0x2255aa][index]
-        });
-      });
     }
 
     if (kind === 'hotel') {
@@ -667,47 +650,6 @@ export function createWorld(scene) {
     scene.add(sign);
   }
 
-  function makeCar(x, z, color, rotation = 0) {
-    const group = new THREE.Group();
-    group.position.set(x, 0, z);
-    group.rotation.y = rotation;
-    scene.add(group);
-    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6, paintColor: color });
-    const vehicle = { group, speed: 0, occupied: false, modelName: 'Ferrari 3D' };
-    world.vehicles.push(vehicle);
-    return group;
-  }
-
-  function makeTrafficCar(x, z, color, pathIndex = 0, route = null) {
-    const group = new THREE.Group();
-    group.position.set(x, 0, z);
-    scene.add(group);
-    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6, paintColor: color });
-    const vehicle = {
-      group, speed: 0, traffic: true, pathIndex,
-      path: (route || [[-70, -35], [70, -35], [70, 35], [-70, 35]])
-        .map(([px, pz]) => new THREE.Vector3(px, 0, pz))
-    };
-    world.trafficVehicles.push(vehicle);
-  }
-
-  function updateWorldTraffic(delta) {
-    for (const vehicle of world.trafficVehicles) {
-      const target = vehicle.path[vehicle.pathIndex];
-      const dx = target.x - vehicle.group.position.x;
-      const dz = target.z - vehicle.group.position.z;
-      const distance = Math.hypot(dx, dz);
-      const step = Math.min(distance, 7.5 * delta);
-      if (distance < 0.8) {
-        vehicle.pathIndex = (vehicle.pathIndex + 1) % vehicle.path.length;
-        continue;
-      }
-      vehicle.group.position.x += (dx / distance) * step;
-      vehicle.group.position.z += (dz / distance) * step;
-      vehicle.group.rotation.y = Math.atan2(-dx, -dz);
-    }
-  }
-
   function buildCity() {
     const facilities = [
       {
@@ -807,27 +749,7 @@ export function createWorld(scene) {
   // Habitantes
   createPeople(scene, world);
 
-  // Viaturas estacionadas para os jogadores conduzirem.
-  makeCar(5, 25, 0xc62828, 0);
-  makeCar(-42, 35, 0xeeeeee, Math.PI / 2);
-  makeCar(55, -70, 0x2255aa, Math.PI / 2);
-  makeCar(-72, 70, 0x252525, 0);
-
-  // Trânsito autónomo distribuído pelos eixos que ligam os bairros de Luanda.
-  const luandaTrafficRoute = [
-    [-390, -20], [-285, 65], [-155, 190], [20, 320],
-    [155, 195], [245, -115], [145, 55], [0, 0],
-    [-125, 35], [-255, -105], [-285, 65]
-  ];
-  const trafficStarts = [
-    [-390, -20], [-155, 190], [20, 320], [155, 195],
-    [245, -115], [145, 55], [-125, 35], [-255, -105]
-  ];
-  const trafficColors = [0xc62828, 0xeeeeee, 0x2255aa, 0x202020, 0xd6a52c, 0x347a58, 0x777777, 0x8b3434];
-  trafficStarts.forEach(([x, z], index) => {
-    makeTrafficCar(x, z, trafficColors[index], (index + 1) % luandaTrafficRoute.length, luandaTrafficRoute);
-  });
-
-  world.updateTraffic = updateWorldTraffic;
+  // Nesta etapa, a cidade fica sem viaturas estacionadas nem trânsito automóvel.
+  world.updateTraffic = () => {};
   return world;
 }
