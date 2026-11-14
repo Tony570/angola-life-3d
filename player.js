@@ -844,8 +844,8 @@ export class Player {
       const vehicle = this.currentVehicle;
 
       const forward =
-        (this.keys.s || this.keys.arrowdown ? 1 : 0) -
-      (this.keys.w || this.keys.arrowup ? 1 : 0);
+        (this.keys.w || this.keys.arrowup ? 1 : 0) -
+      (this.keys.s || this.keys.arrowdown ? 1 : 0);
 
       const sideways =
         (this.keys.d || this.keys.arrowright ? 1 : 0) -
@@ -873,8 +873,8 @@ export class Player {
     }
 
     const forward =
-      (this.keys.s || this.keys.arrowdown ? 1 : 0) -
-      (this.keys.w || this.keys.arrowup ? 1 : 0);
+      (this.keys.w || this.keys.arrowup ? 1 : 0) -
+      (this.keys.s || this.keys.arrowdown ? 1 : 0);
 
     const sideways =
       (this.keys.d || this.keys.arrowright ? 1 : 0) -
