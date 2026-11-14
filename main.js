@@ -93,6 +93,8 @@ const skyDome = new THREE.Mesh(
 );
 skyDome.renderOrder = -1000;
 scene.add(skyDome);
+const exteriorSceneBackground = scene.background;
+const interiorSceneBackground = new THREE.Color('#d8d0c2');
 
 // Sol quente e halo atmosférico no horizonte.
 const sunCanvas = document.createElement('canvas');
@@ -551,6 +553,10 @@ function enterHouse(house) {
     });
   }
   house.interior.visible = true;
+  // O céu e o sol exteriores nunca devem aparecer dentro do edifício.
+  skyDome.visible = false;
+  sunDisc.visible = false;
+  scene.background = interiorSceneBackground;
   if (house.interiorRoof) house.interiorRoof.visible = false;
   if (house.exterior) house.exterior.visible = false;
   house.previousCameraYawOffset = player.cameraYawOffset;
@@ -575,6 +581,10 @@ function leaveHouse() {
   if (!activeHouse) return;
   const house = activeHouse;
   house.interior.visible = false;
+  // Restaurar o céu real ao regressar à rua.
+  skyDome.visible = true;
+  sunDisc.visible = true;
+  scene.background = exteriorSceneBackground;
   if (house.interiorRoof) house.interiorRoof.visible = true;
   if (house.exterior) house.exterior.visible = true;
   activeHouse = null;
