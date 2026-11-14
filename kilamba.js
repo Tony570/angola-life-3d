@@ -55,79 +55,72 @@ export function createKilambaDistrict(scene) {
     const light=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),new THREE.MeshBasicMaterial({color:0xffe0ad})); light.position.set(x,5,z+.8); parent.add(light);
   }
   function roads() {
-    // Terreno urbano contínuo do bairro.
-    // A superfície do terreno fica abaixo das ruas e passeios; antes cobria-os por completo.
+    // Terreno contínuo, sem cobrir as ruas ou os acessos dos edifícios.
     box(scene,0,-.55,0,190,.30,170,M.ground,false);
 
-    // Avenida principal: duas faixas largas, bermas e separador ajardinado.
+    // Avenida principal do bairro: duas faixas, passeios e lancis.
     box(scene,0,-.02,0,190,.12,16,M.asphalt,false);
-    for (const z of [-10,10]) {
-      box(scene,0,.015,z,190,.16,2.8,M.sidewalk,false);
-      box(scene,0,.045,z-Math.sign(z)*1.95,190,.20,.14,M.concrete,false);
+    for (const z of [-9.8,9.8]) {
+      box(scene,0,.015,z,190,.16,2.6,M.sidewalk,false);
+      box(scene,0,.045,z-Math.sign(z)*1.35,190,.20,.14,M.concrete,false);
     }
-    box(scene,0,.035,0,190,.025,.22,M.whiteLine,false);
+    // Linha central e marcas de faixa, sem ilhas verdes sobre o asfalto.
+    box(scene,0,.052,0,190,.025,.16,M.whiteLine,false);
     for (let x=-88;x<=88;x+=12) {
       box(scene,x,.052,-4.6,5.2,.018,.12,M.roadLine,false);
       box(scene,x,.052,4.6,5.2,.018,.12,M.roadLine,false);
     }
 
-    // Ruas de ligação norte/sul, alinhadas com os espaços entre os blocos.
+    // Ruas secundárias contínuas: ligam as duas zonas residenciais à avenida.
     const accessRoads=[-65,-39,-13,13,39,65];
     for (const x of accessRoads) {
-      for (const segment of [[-61,-9],[9,61]]) {
-        const center=(segment[0]+segment[1])/2;
-        const length=segment[1]-segment[0];
-        box(scene,x,-.015,center,4.8,.12,length,M.asphalt,false);
-        for (const side of [-1,1]) {
-          box(scene,x+side*3.25,.015,center,1.7,.16,length,M.sidewalk,false);
-          box(scene,x+side*2.43,.045,center,.14,.20,length,M.concrete,false);
-          box(scene,x+side*3.25,.105,center,.045,.018,length-.8,M.whiteLine,false);
-        }
-        for(let z=segment[0]+5;z<segment[1]-2;z+=11) {
-          box(scene,x,.052,z,.12,.018,4.0,M.roadLine,false);
-        }
+      box(scene,x,-.015,0,5.2,.12,128,M.asphalt,false);
+      for (const side of [-1,1]) {
+        box(scene,x+side*3.55,.015,0,1.8,.16,128,M.sidewalk,false);
+        box(scene,x+side*2.62,.045,0,.14,.20,128,M.concrete,false);
+      }
+      for(let z=-59;z<=59;z+=12) {
+        if(Math.abs(z)<11) continue;
+        box(scene,x,.052,z,.12,.018,4.0,M.roadLine,false);
       }
     }
 
-    // Ruas transversais nas extremidades do bairro.
+    // Ruas de fecho a norte e a sul, com passeios contínuos.
     for (const z of [-67,67]) {
-      box(scene,0,-.01,z,190,.12,11,M.asphalt,false);
-      box(scene,0,.015,z-6.8,190,.16,2.0,M.sidewalk,false);
-      box(scene,0,.015,z+6.8,190,.16,2.0,M.sidewalk,false);
+      box(scene,0,-.01,z,190,.12,10,M.asphalt,false);
+      for (const side of [-1,1]) {
+        box(scene,0,.015,z+side*6.2,190,.16,2.0,M.sidewalk,false);
+        box(scene,0,.045,z+side*5.15,190,.20,.14,M.concrete,false);
+      }
       for(let x=-88;x<=88;x+=12) box(scene,x,.052,z,5.2,.018,.12,M.roadLine,false);
     }
 
-    // Passeios verdes entre as duas zonas residenciais.
-    for (const z of [-43,43]) {
-      box(scene,0,.02,z,170,.14,5.5,M.grass,false);
-      for(let x=-76;x<=76;x+=22) palm(scene,x,z,.9);
-    }
-
-    // Passadeiras nos cruzamentos e marcas de cedência.
-    // Reutiliza a lista de ruas de ligação definida acima.
+    // Passadeiras apenas nos cruzamentos reais.
     for (const x of accessRoads) {
       for (const z of [-67,0,67]) {
         for(let n=-3;n<=3;n++) {
           box(scene,x+n*.72,.075,z,.38,.035,4.9,M.whiteLine,false);
         }
-        box(scene,x,.045,z-4.0,4.8,.025,.18,M.roadLine,false);
-        box(scene,x,.045,z+4.0,4.8,.025,.18,M.roadLine,false);
       }
     }
 
-    // Iluminação pública ao longo das avenidas e acessos.
+    // Iluminação colocada nos passeios, afastada das entradas dos prédios.
     for(const x of [-70,70]) for(const z of [-54,-27,27,54]) streetLight(scene,x,z);
     for(const x of accessRoads) {
-      for(const z of [-49,49]) streetLight(scene,x+4.2,z);
+      for(const z of [-49,49]) streetLight(scene,x+4.3,z);
     }
 
-    // Pequeno largo central com bancos e palmeiras.
-    box(scene,0,.04,0,20,.16,8,M.grass,false);
-    box(scene,0,.13,0,11,.08,2.2,M.sidewalk,false);
-    for(const x of [-8,8]) palm(scene,x,0,1.05);
-    for(const x of [-4.5,4.5]) {
-      box(scene,x,.18,0,2.2,.45,.55,M.wood);
-      box(scene,x,.62,0,2.2,.12,.55,M.rail);
+    // Pequenos espaços verdes nas extremidades dos quarteirões.
+    // Não atravessam a avenida nem ficam em cima das entradas residenciais.
+    for (const [cx,cz] of [[-81,-25],[81,25]]) {
+      box(scene,cx,.035,cz,18,.12,16,M.grass,false);
+      box(scene,cx,.12,cz,10,.08,2.2,M.sidewalk,false);
+      for(const px of [cx-6,cx+6]) palm(scene,px,cz,1.0);
+      for(const pz of [cz-4,cz+4]) {
+        box(scene,cx,pz===cz-4?.18:.18,pz,2.2,.42,.55,M.wood);
+        box(scene,cx,.62,pz,2.2,.12,.55,M.rail);
+      }
+      for(const px of [cx-8,cx+8]) box(scene,px,.12,cz,.25,.24,15,M.concrete,false);
     }
   }
 
@@ -220,11 +213,13 @@ export function createKilambaDistrict(scene) {
     box(g,w/2-.2,h+.35,0,.32,.7,d+.2,accent);
     box(g,-5.9,h+.72,-4.6,1.25,.55,1.3,M.charcoal);
     box(g,5.9,h+.72,-4.6,1.25,.55,1.3,M.charcoal);
-    // Raised entry landing, steps, planters and low garden lights.
+    // Entrada residencial com escadaria, passeio de acesso e pequenos canteiros.
     box(g,0,.08,front+2.0,5.6,.16,2.1,M.concrete);
     for(let step=0;step<3;step++) box(g,0,-.04+step*.045,front+3.1+step*.48,5.0,.12,.52,M.concrete);
+    box(g,0,.025,front+5.45,4.4,.08,2.2,M.sidewalk,false);
     for(const px of [-7.15,7.15]) {
       box(g,px,.12,front+1.35,1.45,.34,2.15,M.concrete);
+      box(g,px,.34,front+1.35,1.22,.12,1.9,M.grass,false);
       for(let n=0;n<4;n++) {
         const leaf=new THREE.Mesh(new THREE.ConeGeometry(.22,.9,6),M.leaf);
         leaf.position.set(px+(n-1.5)*.2,.82,front+1.35+(n%2)*.3); leaf.rotation.z=(n-1.5)*.12; g.add(leaf);
