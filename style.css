@@ -735,3 +735,42 @@ button:focus-visible {
     bottom: 12px;
   }
 }
+
+
+/* Conversa social em balões, inspirada nos jogos de vida virtual. */
+#phone-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  background: linear-gradient(180deg, #101c20, #14251f);
+}
+.phone-chat-line {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  max-width: 88%;
+  padding: 8px 11px;
+  border: 1px solid #ffffff18;
+  border-radius: 13px 13px 13px 3px;
+  background: #263b35;
+  color: #f4f1e9;
+  overflow-wrap: anywhere;
+}
+.phone-chat-line strong {
+  color: #f2c66b;
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.phone-chat-line span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.phone-chat-line.mine {
+  align-self: flex-end;
+  border-radius: 13px 13px 3px 13px;
+  background: #315b49;
+}
+.phone-chat-line.mine strong {
+  color: #ffe0a0;
+}
