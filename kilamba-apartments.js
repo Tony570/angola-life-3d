@@ -78,6 +78,13 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,6.7,1.25,1.0,1.65,1.8,.12,deep);
     // Rodapé e frisos discretos do átrio.
     box(level,0,.08,1.0,15.6,.12,.2,accent,false);
+    // Iluminação quente real do lobby: os pontos de luz iluminam o chão e o balcão.
+    // Poucas luzes locais para preservar o desempenho em telemóveis.
+    for (const [x,z] of [[-4.8,2.0],[0.0,2.0],[4.8,2.0],[0.0,6.0]]) {
+      const glow = new THREE.PointLight(0xffd9a6, 1.05, 8.5, 2);
+      glow.position.set(x, 2.35, z);
+      level.add(glow);
+    }
     // Luzes embutidas quentes, sem excesso de objectos repetidos.
     for(const [x,z] of [[-5.5,1],[0,1],[5.5,1],[-5.5,6],[0,6],[5.5,6]]) {
       const lamp=new THREE.Mesh(new THREE.SphereGeometry(.075,10,8),new THREE.MeshBasicMaterial({color:0xffe4bd}));
