@@ -9,8 +9,9 @@ const MODEL_URLS = {
   female: 'https://models.codelove.in/models/female-adult-03.glb'
 };
 const HEIGHT = 2.5;
-const MAX_VISIBLE_PLAYERS = 12;
-const SHOW_DISTANCE = 260;
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const MAX_VISIBLE_PLAYERS = IS_MOBILE ? 8 : 12;
+const SHOW_DISTANCE = IS_MOBILE ? 180 : 260;
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 let assetsPromise = null;
 
@@ -135,6 +136,9 @@ export function createMultiplayer({ scene, player, online } = {}) {
   async function addRemote(id, data = {}) {
     if (!id || id === online.getUser()?.id || remotePlayers.has(id)) return;
     if (remotePlayers.size >= MAX_VISIBLE_PLAYERS) return;
+    const initialPosition = data.position || { x: 0, z: 0 };
+    const local = localPosition();
+    if (Math.hypot((Number(initialPosition.x) || 0) - local.x, (Number(initialPosition.z) || 0) - local.z) > SHOW_DISTANCE) return;
     const assetsLoaded = await ensureAssets();
     if (!loaderState.channel || loaderState.userId === null) return;
     const currentPresence = loaderState.channel.presenceState();
