@@ -106,6 +106,56 @@ export function addLuandaArchitectureDetails(scene, world) {
       addBox(group, -width * 0.34, roofY + 1.12, -depth * 0.3, 0.85, 0.045, 0.045, materials.metal);
       addBox(group, -width * 0.34, roofY + 0.88, -depth * 0.3, 0.55, 0.045, 0.045, materials.metal);
     }
+
+    // Identidade visual diferente para cada tipo de bairro de Luanda.
+    const property = building.propertyType || '';
+    const isMusseque = property.includes('musseque');
+    const isPopular = property.includes('bairro');
+    const isApartment = property.includes('apartamento');
+    const isLuxury = property.includes('luxo');
+    const isModern = property.includes('moderna');
+
+    if (isMusseque) {
+      // Chapas de cobertura e paredes de quintal típicas de construções simples.
+      addBox(group, 0, roofY - 0.16, 0, width + 0.55, 0.12, depth + 0.55, materials.metal);
+      addBox(group, -width / 2 - 0.55, 0.18, 0, 0.16, 1.25, depth + 2.2, materials.concrete);
+      addBox(group, width / 2 + 0.55, 0.18, 0, 0.16, 1.25, depth + 2.2, materials.concrete);
+      addBox(group, -width / 2 - 0.55, 0.18, -depth / 2 - 0.9, 0.16, 1.25, 1.8, materials.concrete);
+      addBox(group, width / 2 + 0.55, 0.18, -depth / 2 - 0.9, 0.16, 1.25, 1.8, materials.concrete);
+    } else if (isPopular) {
+      // Muros baixos, portão metálico e pequeno espaço de quintal.
+      addBox(group, -width / 2 - 1.1, 0.18, 0, 0.2, 1.05, depth + 4.2, materials.concrete);
+      addBox(group, width / 2 + 1.1, 0.18, 0, 0.2, 1.05, depth + 4.2, materials.concrete);
+      addBox(group, -width / 2 - 1.1, 0.18, -depth / 2 - 2.0, 0.2, 1.05, 1.2, materials.concrete);
+      addBox(group, width / 2 + 1.1, 0.18, -depth / 2 - 2.0, 0.2, 1.05, 1.2, materials.concrete);
+      addBox(group, 0, 0.2, -depth / 2 - 2.0, 2.8, 1.0, 0.12, materials.metal);
+      addBox(group, 0, 0.2, -depth / 2 - 2.0, 0.09, 1.0, 0.16, materials.dark);
+    } else if (isApartment) {
+      // Guardas de varanda nos edifícios com vários pisos.
+      for (let floor = 1; floor < floors; floor++) {
+        const balconyY = floor * 3.15 + 0.28;
+        addBox(group, 0, balconyY, front + 1.48, width * 0.78, 0.09, 0.12, materials.metal);
+        for (let rail = 0; rail < 9; rail++) {
+          const railX = (rail - 4) * (width * 0.78 / 8);
+          addBox(group, railX, balconyY, front + 1.48, 0.045, 0.82, 0.045, materials.metal);
+        }
+      }
+      addBox(group, -width / 2 - 0.45, 0.18, 0, 0.16, 0.9, depth + 2.0, materials.concrete);
+      addBox(group, width / 2 + 0.45, 0.18, 0, 0.16, 0.9, depth + 2.0, materials.concrete);
+    } else if (isLuxury || isModern) {
+      // Entrada de condomínio com portão, passeio e piscina em algumas vivendas.
+      addBox(group, 0, 0.12, front + 4.0, width + 5.2, 0.14, 4.4, materials.concrete);
+      addBox(group, -width / 2 - 2.4, 0.2, front + 2.2, 0.22, 1.65, 0.22, materials.concrete);
+      addBox(group, width / 2 + 2.4, 0.2, front + 2.2, 0.22, 1.65, 0.22, materials.concrete);
+      addBox(group, 0, 0.2, front + 2.2, 4.2, 1.25, 0.12, materials.metal);
+      if (isLuxury && index % 2 === 0) {
+        const water = new THREE.MeshStandardMaterial({
+          color: 0x3e9eae, roughness: 0.22, metalness: 0.12
+        });
+        addBox(group, width / 2 + 3.4, 0.12, -depth / 2 + 2.8, 3.8, 0.18, 6.2, water);
+        addBox(group, width / 2 + 3.4, 0.12, -depth / 2 - 0.45, 4.2, 0.16, 0.35, materials.concrete);
+      }
+    }
   });
 
   world.architectureDetails = homes.length;
