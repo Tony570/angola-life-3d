@@ -485,7 +485,13 @@ const taxiTransport = createTaxiTransport({ scene, world, player, services, game
 
 window.addEventListener('angolaLife3D:clothingPurchase', event => {
   const item = event.detail?.name;
-  if (item) player.equipClothing(item);
+  if (!item) return;
+  player.equipClothing(item);
+  const appearance = online.getProfile()?.appearance || player.appearance || {};
+  const clothing = { ...(appearance.clothing || {}), [player.clothingSlot(item)]: item };
+  online.saveAppearance({ ...appearance, clothing }).catch(error => {
+    console.warn('A roupa foi equipada, mas não foi possível guardá-la online:', error);
+  });
 });
 
 function createCityBuildingColliders(buildings = []) {
