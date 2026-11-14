@@ -341,7 +341,6 @@ export function createTaxiTransport({ scene, world, player, services, game }) {
         path,
         segment: 0,
         progress: 0,
-        distance,
         speed: 23
       };
       close();
