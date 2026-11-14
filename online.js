@@ -191,14 +191,16 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
 
   async function handleSession(nextSession) {
     session = nextSession;
+    profile = null;
+
     if (!session?.user) {
-      profile = null;
       accountButton.textContent = '👤 CONTA';
       logoutButton.hidden = true;
       onProfile(null);
       return;
     }
 
+    onProfile(null);
     try {
       await loadPlayerData();
       showMessage(`Sessão iniciada como ${profile.nickname}.`);
@@ -288,7 +290,7 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
   return {
     open,
     close,
-    isAuthenticated: () => Boolean(session?.user?.id),
+    isAuthenticated: () => Boolean(session?.user?.id && profile?.id === session.user.id),
     getUser: () => session?.user || null,
     getProfile: () => profile,
     loadPlayerData,
