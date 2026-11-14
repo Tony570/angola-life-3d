@@ -462,6 +462,40 @@ world.buildings = (world.buildings || []).filter(building => {
 const houses = createHouseSystem(scene, world);
 const player = new Player(scene, camera, world.vehicles);
 
+const navigationLine = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0.55, 0),
+    new THREE.Vector3(0, 0.55, 0)
+  ]),
+  new THREE.LineDashedMaterial({
+    color: 0xffd34e,
+    dashSize: 2.8,
+    gapSize: 1.4,
+    transparent: true,
+    opacity: 0.95
+  })
+);
+navigationLine.visible = false;
+navigationLine.frustumCulled = false;
+scene.add(navigationLine);
+
+const navigationBeacon = new THREE.Group();
+const beaconRing = new THREE.Mesh(
+  new THREE.RingGeometry(1.05, 1.42, 24),
+  new THREE.MeshBasicMaterial({ color: 0xffd34e, side: THREE.DoubleSide })
+);
+beaconRing.rotation.x = -Math.PI / 2;
+beaconRing.position.y = 0.12;
+navigationBeacon.add(beaconRing);
+const beaconStem = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.055, 0.055, 1.6, 8),
+  new THREE.MeshBasicMaterial({ color: 0xffd34e })
+);
+beaconStem.position.y = 0.95;
+navigationBeacon.add(beaconStem);
+navigationBeacon.visible = false;
+scene.add(navigationBeacon);
+
 const moneyDisplay = document.querySelector('.money');
 
 let services = null;
@@ -1215,6 +1249,26 @@ function getPlayerMapPosition() {
     : player.group.position;
 }
 
+function updateNavigationVisual() {
+  if (!selectedMapDestination) {
+    navigationLine.visible = false;
+    navigationBeacon.visible = false;
+    return;
+  }
+
+  const position = getPlayerMapPosition();
+  const target = selectedMapDestination;
+  navigationLine.geometry.dispose();
+  navigationLine.geometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(position.x, 0.62, position.z),
+    new THREE.Vector3(target.x, 0.62, target.z)
+  ]);
+  navigationLine.computeLineDistances();
+  navigationLine.visible = true;
+  navigationBeacon.position.set(target.x, 0, target.z);
+  navigationBeacon.visible = true;
+}
+
 function selectMapDestination(destination, button) {
   selectedMapDestination = destination;
   mapSelectedName.textContent = destination.name;
@@ -1231,12 +1285,14 @@ function selectMapDestination(destination, button) {
   });
 
   updatePhoneMap();
+  updateNavigationVisual();
 }
 
 function updatePhoneMap() {
   if (!mapPanel.classList.contains('visible')) return;
 
   const position = getPlayerMapPosition();
+  updateNavigationVisual();
 
   playerMarker.style.left = mapPercent(position.x) + '%';
   playerMarker.style.top = mapPercent(position.z) + '%';
