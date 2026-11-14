@@ -1659,7 +1659,7 @@ function updateActionButton() {
   }
 
   if (currentHouse) {
-    actionButton.textContent = '🚪 SAIR DE CASA';
+    actionButton.textContent = currentHouse.isCommercial ? '🚪 SAIR DO ESTABELECIMENTO' : '🚪 SAIR DE CASA';
     return;
   }
 
@@ -1668,8 +1668,9 @@ function updateActionButton() {
     return;
   }
 
-  if (findNearestHouse()) {
-    actionButton.textContent = '🏠 ENTRAR EM CASA';
+  const nearbyBuilding = findNearestHouse();
+  if (nearbyBuilding) {
+    actionButton.textContent = nearbyBuilding.isCommercial ? '🏬 ENTRAR NO ESTABELECIMENTO' : '🏠 ENTRAR EM CASA';
     return;
   }
 
