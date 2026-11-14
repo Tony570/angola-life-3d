@@ -326,6 +326,8 @@ receptionPricePanel.addEventListener('click',event=>{
     if(!online.isAuthenticated()){
       dialogue.textContent='Para concluir uma compra segura e guardar o apartamento na tua conta, primeiro tens de iniciar sessão.';
       extra.textContent='Abre CONTA no topo do ecrã, entra na tua conta e volta à recepção.';
+      const accountPanel=document.querySelector('#account-panel');
+      if(accountPanel) accountPanel.style.zIndex='140';
       online.open();
       return;
     }
