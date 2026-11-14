@@ -1,5 +1,6 @@
 
 import * as THREE from 'three';
+import { attachRealCar } from './vehicle-models.js';
 import { createPeople } from './people.js';
 
 export function createWorld(scene) {
@@ -625,35 +626,12 @@ export function createWorld(scene) {
 
   function makeCar(x, z, color, rotation = 0) {
     const group = new THREE.Group();
-    const body = mat(color, 0.35, 0.25);
-
-    box(group, 0, 0.35, 0, 2.2, 0.65, 4.2, body);
-    box(group, 0, 1, -0.25, 1.8, 0.75, 2.1, M.glass);
-    box(group, 0, 0.7, 1.25, 2, 0.2, 1.2, body);
-
-    for (const wx of [-1.05, 1.05]) {
-      for (const wz of [-1.35, 1.35]) {
-        const wheel = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.43, 0.43, 0.25, 16),
-          M.dark
-        );
-
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(wx, 0.4, wz);
-        group.add(wheel);
-      }
-    }
-
     group.position.set(x, 0, z);
     group.rotation.y = rotation;
     scene.add(group);
-
-    world.vehicles.push({
-      group,
-      speed: 0,
-      occupied: false
-    });
-
+    attachRealCar(group, { width: 2.25, length: 4.4, height: 1.6 });
+    const vehicle = { group, speed: 0, occupied: false, modelName: 'Ferrari 3D' };
+    world.vehicles.push(vehicle);
     return group;
   }
 
