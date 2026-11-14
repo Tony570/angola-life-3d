@@ -93,16 +93,40 @@ export function createKilambaDistrict(scene) {
           for(const dx of [-1.25,1.25]) box(g,wx+dx,.18,front+.10,.08,2.45,.12,M.white);
         }
       } else {
-        // Upper floor wall bands and piers around real window openings.
-        box(g,-7.55,y+.18,front,1.9,2.7,.34,facade);
-        box(g,7.55,y+.18,front,1.9,2.7,.34,facade);
-        for(const px of [-3.55,0,3.55]) box(g,px,y+.18,front,.55,2.7,.34,facade);
-        for(const wx of [-5.55,-1.78,1.78,5.55]) windowFrame(g,wx,y+1.62,front+.20,1.45,1.42);
+        // Fachada preenchida: paredes reais entre vãos, vergas, peitoris e pilares.
+        box(g,-7.55,y+.18,front,1.9,2.7,.38,facade);
+        box(g,7.55,y+.18,front,1.9,2.7,.38,facade);
+        for(const px of [-3.55,0,3.55]) box(g,px,y+.18,front,.55,2.7,.38,facade);
+        for(const wx of [-5.55,-1.78,1.78,5.55]) {
+          // Painéis de alvenaria abaixo e acima de cada janela.
+          box(g,wx,y+.53,front,1.9,.62,.38,facade);
+          box(g,wx,y+2.68,front,1.9,.48,.38,facade);
+          windowFrame(g,wx,y+1.62,front+.23,1.45,1.42);
+          // Peitoril saliente e acabamento superior da caixilharia.
+          box(g,wx,y+.88,front+.34,1.68,.11,.22,M.concrete);
+          box(g,wx,y+2.37,front+.31,1.66,.09,.16,M.white);
+          // Divisão central e duas folhas de janela.
+          box(g,wx,y+1.62,front+.31,.045,1.32,.045,M.rail,false);
+        }
         balcony(g,-5.55,y+.2,front+.02,2.0);
         balcony(g,5.55,y+.2,front+.02,2.0);
+        // Condutas e pequenas unidades de ar condicionado nas fachadas laterais.
+        for(const wx of [-3.55,3.55]) {
+          box(g,wx,y+1.18,front+.28,.72,.42,.48,M.white);
+          box(g,wx,y+1.18,front+.54,.48,.22,.035,M.metal,false);
+          for(let vent=0;vent<4;vent++) box(g,wx-.18+vent*.12,y+1.18,front+.57,.025,.15,.025,M.rail,false);
+        }
       }
       // Accent band at every slab line.
       box(g,0,y+.32,front+.22,w+.1,.09,.18,accent);
+    }
+    // Elementos de acabamento: molduras verticais, frisos e coroamento da fachada.
+    for(const px of [-8.05,8.05]) {
+      box(g,px,h/2,front+.19,.16,h-.2,.18,M.white);
+    }
+    for(let floor=1;floor<floors;floor++) {
+      const y=floor*fh;
+      box(g,0,y+.42,front+.27,w+.12,.055,.12,M.white);
     }
     // Architectural entrance portal, canopy, lighting and block identification.
     box(g,-2.05,0,front+.45,.22,3.15,.28,M.white);
