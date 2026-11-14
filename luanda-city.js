@@ -330,6 +330,8 @@ export function expandLuandaCity(scene, world) {
     [-285, 65, -390, -20], [-390, -20, -125, 35]
   ];
   arterial.forEach(([x1, z1, x2, z2]) => addRoad(x1, z1, x2, z2, 13));
+  // Rua da Direita: eixo comercial e pedonal no centro de Ingombota.
+  addRoad(-85, -32, 85, -32, 9, false);
 
   // Ruas locais em grelha curta, com ligações entre os dez bairros.
   for (const z of [-220, -105, 35, 190, 320]) addRoad(-420, z, 300, z, 9, false);
