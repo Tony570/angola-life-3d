@@ -61,13 +61,13 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level, -1.2, 0, -2.4, .16, 2.55, 5.8, M.wallAlt);
     box(level, -5.0, 0, -5.0, 6.1, 2.55, .16, M.wallAlt);
     box(level, 2.9, 0, -5.0, 4.2, 2.55, .16, M.wallAlt);
-    box(level, 5.0, 0, -6.6, .16, 2.55, 3.2, M.wallAlt);
+    box(level, 5.0, 0, -7.15, .16, 2.55, 2.1, M.wallAlt);\n    box(level, 5.0, 0, -5.45, .16, 2.55, .6, M.wallAlt);
     box(level, 5.0, 0, -1.4, .16, 2.55, 2.0, M.wallAlt);
     // Portas abertas entre sala, quartos, cozinha e casa de banho.
     box(level, -6.7, 0, -1.5, 3.0, 2.55, .16, M.wallAlt);
     box(level, -2.0, 0, -1.5, 1.5, 2.55, .16, M.wallAlt);
     box(level, 3.8, 0, -1.5, 2.2, 2.55, .16, M.wallAlt);
-    box(level, 7.0, 0, -6.6, 2.6, 2.55, .16, M.wallAlt);
+    box(level, 6.1, 0, -6.6, .8, 2.55, .16, M.wallAlt);\n    box(level, 7.75, 0, -6.6, 1.1, 2.55, .16, M.wallAlt);
 
     // Sala de estar e televisão.
     addSofa(level, -5.2, 3.2, variant % 2 ? M.red : M.sofa);
@@ -143,7 +143,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     // Núcleo vertical: caixa do elevador e escadaria em todos os pisos.
     const shaft = new THREE.Group();
     root.add(shaft);
-    box(shaft, -7.25, 0, .4, 1.75, FLOOR_HEIGHT * FLOOR_COUNT, 2.0, M.dark);
+    box(shaft, -8.08, 0, .4, .12, FLOOR_HEIGHT * FLOOR_COUNT, 2.0, M.dark);\n    box(shaft, -7.25, 0, -.56, 1.78, FLOOR_HEIGHT * FLOOR_COUNT, .12, M.dark);\n    box(shaft, -7.25, 0, 1.36, 1.78, FLOOR_HEIGHT * FLOOR_COUNT, .12, M.dark);
     for (let floor = 0; floor < FLOOR_COUNT; floor++) {
       const y = floor * FLOOR_HEIGHT;
       box(shaft, -7.25, y + .15, 1.48, 1.25, 2.35, .08, M.metal);
