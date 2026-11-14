@@ -107,8 +107,10 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
     #account-message.error {color:#ffb4a9}
     #account-logout[hidden],#nickname-label[hidden],#account-nickname[hidden] {display:none}
     @media(max-width:420px) {
-      #account-button {font-size:9px;padding:7px}
-      #topbar {gap:4px}
+      #topbar {gap:4px;padding-left:10px;padding-right:10px}
+      .brand {font-size:13px;letter-spacing:.5px}
+      .money {padding:7px 8px;font-size:10px}
+      #account-button {font-size:9px;padding:7px;margin-left:2px}
     }
   `;
   document.head.appendChild(style);
