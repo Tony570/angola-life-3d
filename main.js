@@ -1683,7 +1683,7 @@ function updateActionButton() {
   }
 }
 
-const NPC_UPDATE_INTERVAL = 1 / 30;
+const NPC_UPDATE_INTERVAL = 1 / 15;
 const UI_UPDATE_INTERVAL = 0.2;
 
 let npcAccumulator = 0;
