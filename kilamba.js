@@ -74,7 +74,7 @@ export function createKilambaDistrict(scene) {
     box(g,0,0,-d/2+.18,w,.36,.36,facade);
     for(let floor=0;floor<floors;floor++) {
       const y=floor*fh;
-      box(g,0,y,w,.18,d,M.concrete);
+      box(g,0,y,0,w,.18,d,M.concrete);
       box(g,0,y+.18,front-.12,w,.10,.42,M.white);
       // Front ground floor has a generous glazed entrance and two solid side bays.
       if(floor===0) {
@@ -121,7 +121,7 @@ export function createKilambaDistrict(scene) {
       box(g,side*(w/2-.10),y,-1.9, .12,.08,1.9,M.white);
     }
     // Roof parapet, top coping and service details.
-    box(g,0,h,w+.25,.42,d+.25,M.white);
+    box(g,0,h,0,w+.25,.42,d+.25,M.white);
     box(g,0,h+.35,-d/2+.2,w+.2,.7,.32,accent);
     box(g,0,h+.35,d/2-.2,w+.2,.7,.32,accent);
     box(g,-w/2+.2,h+.35,0,.32,.7,d+.2,accent);
