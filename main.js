@@ -1,6 +1,6 @@
 
 import * as THREE from 'three';
-import { createWorld } from './world.js';
+import { createWorld, updateWorldTraffic } from './world.js';
 import { expandLuandaCity } from './luanda-city.js';
 import { createLuandaStreetLife } from './luanda-street-life.js';
 import { addLuandaArchitectureDetails } from './luanda-architecture.js';
@@ -1699,6 +1699,7 @@ function animate() {
     }
 
     taxiTransport.update(delta);
+    world.updateTraffic?.(delta);
     multiplayer.update(delta);
     npcAccumulator += delta;
     uiAccumulator += delta;
