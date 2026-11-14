@@ -620,7 +620,9 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
     const itemSelect = content.querySelector('#transfer-item');
     const itemQuantityInput = content.querySelector('#transfer-quantity');
 
-    const transferableItems = inventory.filter(item => item.itemKey && item.quantity > 0);
+    const transferableItems = inventory.filter(
+      item => item.itemKey && item.quantity > 0 && item.category !== 'vehicle'
+    );
     if (!transferableItems.length) {
       itemSelect.innerHTML = '<option value="">Não tens objetos transferíveis</option>';
     } else {
@@ -742,6 +744,10 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
     });
 
     content.querySelector('#bank-card').addEventListener('click', async () => {
+      if (online?.isAuthenticated()) {
+        showMessage('A emissão de cartões bancários ainda não está disponível no modo online.');
+        return;
+      }
       if (!(await charge(2000))) {
         showMessage('Saldo insuficiente para emitir o cartão.');
         return;
