@@ -4,7 +4,7 @@ import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
 import { createKilambaDistrict } from './kilamba.js';
-import { createHouseSystem } from './houses.js';
+import { createHouseSystem } from './kilamba-apartments.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -138,7 +138,27 @@ function openBank() {
 bankButton.addEventListener('click', openBank);
 
 let activeHouse = null;
+let activeFloor = 0;
 const districtLocation = document.querySelector('#district-location');
+
+// Painel de elevador: rés-do-chão e quatro pisos residenciais.
+const elevatorPanel = document.createElement('section');
+elevatorPanel.id = 'elevator-panel';
+elevatorPanel.hidden = true;
+elevatorPanel.innerHTML = `
+  <div class="elevator-heading"><span>ELEVADOR</span><strong id="elevator-current-floor">RÉS-DO-CHÃO</strong></div>
+  <div class="elevator-floor-buttons">
+    <button type="button" data-floor="0">R/C</button>
+    <button type="button" data-floor="1">1</button>
+    <button type="button" data-floor="2">2</button>
+    <button type="button" data-floor="3">3</button>
+    <button type="button" data-floor="4">4</button>
+  </div>
+  <small>Escolhe o piso para subir ou descer.</small>
+`;
+game.appendChild(elevatorPanel);
+const elevatorLabel = elevatorPanel.querySelector('#elevator-current-floor');
+
 function nearestHouse() {
   if (activeHouse) return activeHouse;
   let nearest = null, distance = Infinity;
@@ -148,40 +168,70 @@ function nearestHouse() {
   }
   return distance <= 5.5 ? nearest : null;
 }
+function floorName(floor) { return floor === 0 ? 'RÉS-DO-CHÃO' : 'PISO '+floor; }
+function goToFloor(floor) {
+  if (!activeHouse) return;
+  const next = Math.max(0, Math.min(activeHouse.floorCount - 1, Number(floor) || 0));
+  activeFloor = next;
+  activeHouse.currentFloor = next;
+  player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
+  player.teleport(activeHouse.interiorX, 6.2);
+  elevatorLabel.textContent = floorName(next);
+  elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
+    button.classList.toggle('active', Number(button.dataset.floor) === next);
+  });
+  districtLocation.textContent = '🏢 KILAMBA · '+activeHouse.name.toUpperCase()+' · '+floorName(next);
+}
+elevatorPanel.addEventListener('click', event => {
+  const button = event.target.closest('[data-floor]');
+  if (button) goToFloor(button.dataset.floor);
+});
 function enterHouse(house) {
-  house.ensureInterior(); house.interior.visible=true;
-  if(house.interiorRoof) house.interiorRoof.visible=false;
-  activeHouse=house; player.setIndoor(true); player.setColliders(house.colliders);
-  player.teleport(house.interiorX,6.2);
-  interactButton.textContent='🚪 SAIR DE CASA';
-  districtLocation.textContent='🏠 KILAMBA · '+house.name.toUpperCase();
+  house.ensureInterior();
+  house.interior.visible = true;
+  if (house.interiorRoof) house.interiorRoof.visible = false;
+  activeHouse = house;
+  activeFloor = 0;
+  player.setIndoor(true);
+  player.setIndoorFloor(0.16);
+  player.setColliders(house.colliders);
+  player.teleport(house.interiorX, 6.2);
+  elevatorPanel.hidden = false;
+  goToFloor(0);
+  interactButton.textContent = '🚪 SAIR DO BLOCO';
 }
 function leaveHouse() {
-  if(!activeHouse) return;
-  const house=activeHouse; house.interior.visible=false;
-  if(house.interiorRoof) house.interiorRoof.visible=true;
-  activeHouse=null; player.setIndoor(false); player.setColliders(world.colliders);
-  player.teleport(house.entranceX,house.entranceZ+(house.entranceZ>house.z?1.2:-1.2));
-  interactButton.textContent='🏠 ENTRAR EM CASA';
-  districtLocation.textContent='🏙️ KILAMBA · BAIRRO RESIDENCIAL';
+  if (!activeHouse) return;
+  const house = activeHouse;
+  house.interior.visible = false;
+  if (house.interiorRoof) house.interiorRoof.visible = true;
+  activeHouse = null;
+  elevatorPanel.hidden = true;
+  player.setIndoor(false);
+  player.setColliders(world.colliders);
+  player.teleport(house.entranceX, house.entranceZ + (house.entranceZ > house.z ? 1.2 : -1.2));
+  player.cameraDistance = 7;
+  player.updateCamera();
+  interactButton.textContent = '🏠 ENTRAR EM CASA';
+  districtLocation.textContent = '🏙️ KILAMBA · BAIRRO RESIDENCIAL';
 }
 function interactWithHouse() {
-  if(services.isOpen()) return;
-  if(activeHouse) { leaveHouse(); return; }
-  const house=nearestHouse();
-  if(house) enterHouse(house);
+  if (services.isOpen()) return;
+  if (activeHouse) { leaveHouse(); return; }
+  const house = nearestHouse();
+  if (house) enterHouse(house);
   else {
-    interactButton.textContent='🏠 APROXIMA-TE DE UM BLOCO';
-    window.setTimeout(()=>{if(!activeHouse) interactButton.textContent='🏠 ENTRAR EM CASA';},1500);
+    interactButton.textContent = '🏠 APROXIMA-TE DE UM BLOCO';
+    window.setTimeout(() => { if (!activeHouse) interactButton.textContent = '🏠 ENTRAR EM CASA'; }, 1500);
   }
 }
-interactButton.addEventListener('click',interactWithHouse);
-player.onInteract=interactWithHouse;
+interactButton.addEventListener('click', interactWithHouse);
+player.onInteract = interactWithHouse;
 function updateHousePrompt() {
-  if(activeHouse || services.isOpen()) return;
-  const house=nearestHouse();
-  if(house) { interactButton.textContent='🏠 ENTRAR · '+house.name.toUpperCase(); districtLocation.textContent='🏢 KILAMBA · '+house.name.toUpperCase(); }
-  else { interactButton.textContent='🏠 ENTRAR EM CASA'; districtLocation.textContent='🏙️ KILAMBA · BAIRRO RESIDENCIAL'; }
+  if (activeHouse || services.isOpen()) return;
+  const house = nearestHouse();
+  if (house) { interactButton.textContent = '🏠 ENTRAR · '+house.name.toUpperCase(); districtLocation.textContent = '🏢 KILAMBA · '+house.name.toUpperCase(); }
+  else { interactButton.textContent = '🏠 ENTRAR EM CASA'; districtLocation.textContent = '🏙️ KILAMBA · BAIRRO RESIDENCIAL'; }
 }
 
 startButton.addEventListener('click', () => {
