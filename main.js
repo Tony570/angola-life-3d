@@ -34,12 +34,41 @@ app.innerHTML = `
     <button id="vehicle-button">🚗 INTERAGIR</button>
   </div>
 
-  <div id="map-panel">
-    <div class="map-heading">
-      <strong>MAPA DE LUANDA</strong>
-      <button id="close-map">✕</button>
+  <div id="map-panel" aria-hidden="true">
+    <div class="phone-map">
+      <div class="phone-top">
+        <span>ANGOLA LIFE</span>
+        <span>GPS ATIVO</span>
+      </div>
+      <div class="phone-heading">
+        <div>
+          <small>MAPA DA CIDADE</small>
+          <strong>Luanda, Angola</strong>
+        </div>
+        <button id="close-map" aria-label="Fechar mapa">✕</button>
+      </div>
+      <div class="map-status">
+        <span>● GPS ligado</span>
+        <span id="map-player-coords">A localizar...</span>
+      </div>
+      <div id="city-map">
+        <div class="map-road map-road-one"></div>
+        <div class="map-road map-road-two"></div>
+        <div class="map-road map-road-three"></div>
+        <div id="map-markers"></div>
+        <div id="player-marker"><span></span><b>TU</b></div>
+      </div>
+      <div class="map-selected">
+        <small>DESTINO SELECIONADO</small>
+        <strong id="map-selected-name">Escolhe um local</strong>
+        <span id="map-distance">Toca num ponto do mapa ou num local abaixo.</span>
+      </div>
+      <div class="map-list-heading">LOCAIS E SERVIÇOS</div>
+      <div id="map-destinations"></div>
+      <div class="phone-bottom">
+        <span>●</span> ANGOLA LIFE 3D <span>GPS</span>
+      </div>
     </div>
-    <div id="map-destinations"></div>
   </div>
 
   <div id="restaurant-panel" aria-hidden="true">
@@ -163,6 +192,199 @@ styles.textContent = `
 .restaurant-order>button:disabled {opacity:.45}
 .restaurant-order #restaurant-notice {
   margin-top:10px;color:#bce7c6;font-size:12px;line-height:1.45;
+}
+
+#map-panel{
+  position:absolute;
+  z-index:25;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+  background:#050b10b8;
+  backdrop-filter:blur(5px)
+}
+#map-panel.visible{display:flex}
+.phone-map{
+  width:min(92vw,390px);
+  max-height:min(88vh,760px);
+  overflow:auto;
+  padding:17px;
+  border:5px solid #26333a;
+  border-radius:30px;
+  background:linear-gradient(160deg,#142b2a,#0c171d);
+  color:#fff;
+  box-shadow:0 20px 70px #000b;
+  font-family:Arial,sans-serif
+}
+.phone-top{
+  display:flex;
+  justify-content:space-between;
+  padding:2px 5px 14px;
+  color:#e8bd5a;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1.5px
+}
+.phone-top span:last-child{color:#8fe0a2}
+.phone-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px
+}
+.phone-heading div{display:grid;gap:4px}
+.phone-heading small,.map-selected small{
+  font-size:9px;
+  letter-spacing:1.4px;
+  color:#9cb5ad;
+  font-weight:800
+}
+.phone-heading strong{font-size:20px}
+#close-map{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  background:#7d4037;
+  color:#fff;
+  font-size:18px
+}
+.map-status{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin:14px 0 9px;
+  color:#a9c9ba;
+  font-size:10px
+}
+#city-map{
+  position:relative;
+  height:230px;
+  overflow:hidden;
+  border:1px solid #ffffff22;
+  border-radius:17px;
+  background-color:#75866b;
+  background-image:
+    linear-gradient(35deg,transparent 47%,#ffffff12 48%,#ffffff12 51%,transparent 52%),
+    linear-gradient(120deg,transparent 47%,#ffffff12 48%,#ffffff12 51%,transparent 52%),
+    linear-gradient(#ffffff0b 1px,transparent 1px),
+    linear-gradient(90deg,#ffffff0b 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,25px 25px,25px 25px
+}
+.map-road{
+  position:absolute;
+  background:#303a3b;
+  border:2px solid #c8c4a4;
+  opacity:.95
+}
+.map-road-one{
+  height:17px;width:125%;left:-10%;top:48%;
+  transform:rotate(-20deg)
+}
+.map-road-two{
+  height:15px;width:120%;left:-10%;top:20%;
+  transform:rotate(34deg)
+}
+.map-road-three{
+  height:13px;width:115%;left:-8%;top:77%;
+  transform:rotate(8deg)
+}
+#map-markers{position:absolute;inset:0}
+.map-marker{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  padding:4px 6px;
+  border:1px solid #fff;
+  border-radius:8px;
+  background:#173c32;
+  color:#fff;
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap;
+  box-shadow:0 2px 7px #0007
+}
+.map-marker.active{
+  background:#e5ad35;
+  color:#18231d;
+  z-index:3
+}
+#player-marker{
+  position:absolute;
+  z-index:4;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  pointer-events:none
+}
+#player-marker span{
+  width:15px;
+  height:15px;
+  border:3px solid white;
+  border-radius:50%;
+  background:#268fff;
+  box-shadow:0 0 0 5px #268fff55
+}
+#player-marker b{
+  padding:2px 5px;
+  border-radius:5px;
+  background:#135c9b;
+  color:white;
+  font-size:8px
+}
+.map-selected{
+  display:grid;
+  gap:5px;
+  margin:12px 0;
+  padding:12px;
+  border-radius:12px;
+  background:#ffffff10
+}
+.map-selected strong{font-size:14px}
+.map-selected span{font-size:11px;color:#c0d1c9}
+.map-list-heading{
+  margin:12px 0 8px;
+  color:#e8bd5a;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1.3px
+}
+#map-destinations{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px
+}
+.destination{
+  min-height:42px;
+  padding:9px;
+  border:1px solid #ffffff15;
+  border-radius:9px;
+  text-align:left;
+  background:#24483c;
+  color:#fff;
+  font-size:10px;
+  line-height:1.25
+}
+.destination.active{
+  border-color:#e8bd5a;
+  background:#755a26
+}
+.phone-bottom{
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
+  padding:10px 4px 0;
+  border-top:1px solid #ffffff20;
+  color:#8da69c;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1px
+}
+@media(max-height:650px){
+  .phone-map{max-height:94vh;padding:12px}
+  #city-map{height:170px}
 }
 `;
 document.head.appendChild(styles);
@@ -326,6 +548,12 @@ const actionButton = document.querySelector('#vehicle-button');
 const mapButton = document.querySelector('#map-button');
 const mapPanel = document.querySelector('#map-panel');
 const destinations = document.querySelector('#map-destinations');
+const mapMarkers = document.querySelector('#map-markers');
+const playerMarker = document.querySelector('#player-marker');
+const mapPlayerCoords = document.querySelector('#map-player-coords');
+const mapSelectedName = document.querySelector('#map-selected-name');
+const mapDistance = document.querySelector('#map-distance');
+let selectedMapDestination = null;
 
 const restaurantPanel = document.querySelector('#restaurant-panel');
 const restaurantTitle = document.querySelector('#restaurant-title');
@@ -922,12 +1150,105 @@ function setInteriorView(house, inside) {
 }
 
 mapButton.addEventListener('click', () => {
-  mapPanel.classList.toggle('visible');
+  const opening = !mapPanel.classList.contains('visible');
+  mapPanel.classList.toggle('visible', opening);
+  mapPanel.setAttribute('aria-hidden', String(!opening));
+  if (opening) updatePhoneMap();
 });
 
 document.querySelector('#close-map').addEventListener('click', () => {
   mapPanel.classList.remove('visible');
+  mapPanel.setAttribute('aria-hidden', 'true');
 });
+
+function mapPercent(value) {
+  return THREE.MathUtils.clamp(((value + 120) / 240) * 100, 3, 97);
+}
+
+function getPlayerMapPosition() {
+  return player.currentVehicle
+    ? player.currentVehicle.group.position
+    : player.group.position;
+}
+
+function selectMapDestination(destination, button) {
+  selectedMapDestination = destination;
+  mapSelectedName.textContent = destination.name;
+
+  destinations.querySelectorAll('.destination').forEach(item => {
+    item.classList.toggle('active', item === button);
+  });
+
+  mapMarkers.querySelectorAll('.map-marker').forEach(marker => {
+    marker.classList.toggle(
+      'active',
+      marker.dataset.destination === destination.name
+    );
+  });
+
+  updatePhoneMap();
+}
+
+function updatePhoneMap() {
+  if (!mapPanel.classList.contains('visible')) return;
+
+  const position = getPlayerMapPosition();
+
+  playerMarker.style.left = mapPercent(position.x) + '%';
+  playerMarker.style.top = mapPercent(position.z) + '%';
+
+  mapPlayerCoords.textContent =
+    'X ' + position.x.toFixed(0) + ' · Z ' + position.z.toFixed(0);
+
+  if (selectedMapDestination) {
+    const distance = Math.round(Math.hypot(
+      selectedMapDestination.x - position.x,
+      selectedMapDestination.z - position.z
+    ));
+
+    mapDistance.textContent =
+      'Distância aproximada: ' + distance + ' m.';
+  } else {
+    mapDistance.textContent =
+      'Seleciona um local para ver a distância.';
+  }
+}
+
+function buildPhoneMap() {
+  destinations.innerHTML = '';
+  mapMarkers.innerHTML = '';
+
+  (world.destinations || []).forEach(destination => {
+    const button = document.createElement('button');
+
+    button.className = 'destination';
+    button.type = 'button';
+    button.textContent = '📍 ' + destination.name;
+
+    button.addEventListener('click', () => {
+      selectMapDestination(destination, button);
+    });
+
+    destinations.appendChild(button);
+
+    const marker = document.createElement('button');
+
+    marker.className = 'map-marker';
+    marker.type = 'button';
+    marker.textContent = '• ' + destination.name;
+    marker.dataset.destination = destination.name;
+    marker.style.left = mapPercent(destination.x) + '%';
+    marker.style.top = mapPercent(destination.z) + '%';
+
+    marker.addEventListener('click', () => {
+      selectMapDestination(destination, button);
+    });
+
+    mapMarkers.appendChild(marker);
+  });
+}
+
+buildPhoneMap();
 
 function exitRestaurant() {
   if (!currentRestaurant) return;
@@ -1143,26 +1464,8 @@ function interact() {
 player.onInteract = interact;
 actionButton.addEventListener('click', interact);
 
-(world.destinations || []).forEach(destination => {
-  const button = document.createElement('button');
-
-  button.className = 'destination';
-  button.textContent = '📍 ' + destination.name;
-
-  button.addEventListener('click', () => {
-    if (currentHouse) exitHouse();
-    if (currentRestaurant) exitRestaurant();
-
-    closeRestaurant();
-    services.close();
-
-    player.teleport(destination.x, destination.z);
-    snapCameraToPlayer();
-    mapPanel.classList.remove('visible');
-  });
-
-  destinations.appendChild(button);
-});
+// Os destinos do mapa servem para consulta e orientação;
+// não fazem teletransporte.
 
 document.querySelectorAll('[data-key]').forEach(button => {
   const key = button.dataset.key;
@@ -1263,6 +1566,7 @@ function animate() {
     if (uiAccumulator >= UI_UPDATE_INTERVAL) {
       uiAccumulator = 0;
       updateActionButton();
+      updatePhoneMap();
     }
   }
 
