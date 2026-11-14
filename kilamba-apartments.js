@@ -111,7 +111,12 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     // Paredes perimetrais, com porta larga na fachada da entrada.
     box(level,-8.35,0,0,.3,2.85,17,M.wall);
     box(level,8.35,0,0,.3,2.85,17,M.wall);
-    box(level,0,0,-8.35,17,2.85,.3,M.wall);
+    // Parede traseira com vãos verdadeiros para as quatro janelas.
+    box(level,0,0,-8.35,17,.42,.3,M.wall);
+    box(level,0,1.68,-8.35,17,1.17,.3,M.wall);
+    for(const [cx,width] of [[-7.05,2.45],[-4.2,1.55],[-.4,2.55],[3.75,1.0],[7.0,2.25]]) {
+      box(level,cx,.42,-8.35,width,1.26,.3,M.wall);
+    }
     box(level,-5.2,0,8.35,6.3,2.85,.3,M.wall);
     box(level,5.2,0,8.35,6.3,2.85,.3,M.wall);
     // Divisórias com vãos de passagem.
