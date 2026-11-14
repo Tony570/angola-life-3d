@@ -4,9 +4,9 @@ import * as THREE from 'three';
 // quatro pisos residenciais, elevador, escadas e apartamentos T2.
 export function createHouseSystem(scene, world = { buildings: [] }) {
   const houses = [];
-  const FLOOR_HEIGHT = 3.8;
-  const INTERIOR_SCALE_XZ = 1.12;
-  const INTERIOR_SCALE_Y = 1.2;
+  const FLOOR_HEIGHT = 5.0;
+  const INTERIOR_SCALE_XZ = 1.5;
+  const INTERIOR_SCALE_Y = 1.35;
   const FLOOR_COUNT = 5;
   const mat = (color, roughness=.82, metalness=0) => new THREE.MeshStandardMaterial({color,roughness,metalness});
   const M = {
@@ -64,8 +64,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,-3.75,2.12,1.0,3.75,.38,.12,M.wood);
     box(level,-3.75,2.20,.92,3.25,.09,.06,M.gold);
     // Área de espera com sofás, mesas e plantas.
-    addSofa(level,3.2,4.15,variant%2?M.red:M.sofa,.78);
-    addSofa(level,5.65,4.15,variant%2?M.red:M.sofa,.78);
+    addSofa(level,3.2,4.15,variant%2?M.red:M.sofa,1.05);
+    addSofa(level,6.25,4.15,variant%2?M.red:M.sofa,1.05);
     box(level,4.42,.27,5.25,1.35,.16,.7,M.woodLight);
     box(level,4.42,.43,5.25,1.25,.035,.62,M.white);
     plant(level,-7.1,5.65); plant(level,7.1,5.65);
@@ -74,14 +74,62 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       const x=-5.9+(n%4)*.55, y=.28+Math.floor(n/4)*.48;
       box(level,x,y,6.95,.43,.38,.16,n%3===0?M.gold:M.metal);
     }
-    box(level,0,1.55,-2.15,5.8,.9,.12,M.wallAlt);
-    box(level,0,2.05,-2.23,4.5,.12,.05,M.wood);
-    box(level,0,2.16,-2.25,3.9,.055,.035,M.gold);
+    box(level,0,1.55,-2.15,7.2,1.15,.12,M.wallAlt);
+    box(level,0,2.25,-2.23,5.6,.16,.05,M.wood);
+    box(level,0,2.42,-2.25,4.8,.07,.035,M.gold);
     // Iluminação quente do hall.
     for(const [x,z] of [[-5.5,1],[0,1],[5.5,1],[-5.5,6],[0,6],[5.5,6]]) {
       const lamp=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),new THREE.MeshBasicMaterial({color:0xffe4b1}));
       lamp.position.set(x,2.58,z); level.add(lamp);
       // A esfera luminosa substitui vários focos dinâmicos para reduzir o custo gráfico.
+    }
+  }
+  function addPremiumDetails(level, variant) {
+    // Tapetes, quadros, mesas laterais e elementos decorativos.
+    box(level,-5.1,.018,3.0,5.6,.035,4.4,variant%2?M.fabric:M.tile,false);
+    box(level,-5.1,.42,4.65,1.15,.78,.72,M.woodLight);
+    box(level,-5.1,.84,4.65,1.22,.08,.78,M.gold);
+    for (const x of [-7.6,-2.6]) {
+      box(level,x,1.55,-2.1,1.15,1.25,.12,M.wood);
+      box(level,x,1.62,-2.02,.92,1.0,.035,M.gold);
+      box(level,x,2.25,-2.0,.38,.08,.04,M.white);
+    }
+    // Sala de jantar completa.
+    box(level,1.0,.025,3.0,4.0,.035,3.3,M.fabric,false);
+    box(level,1.0,.82,3.0,2.6,.14,1.55,M.woodLight);
+    box(level,1.0,.91,3.0,2.48,.045,1.43,M.white,false);
+    for (const [x,z] of [[-.1,1.95],[2.1,1.95],[-.1,4.05],[2.1,4.05]]) {
+      box(level,x,.48,z,.68,.16,.68,M.sofa);
+      box(level,x,.9,z-.28,.68,.8,.12,M.sofa);
+      for (const dx of [-.24,.24]) for (const dz of [-.22,.22]) box(level,x+dx,.2,z+dz,.07,.4,.07,M.wood);
+    }
+    // Armários superiores, puxadores e acabamento da cozinha.
+    for (const x of [4.2,5.65,7.1]) {
+      box(level,x,2.0,1.75,1.25,.95,.55,M.wood);
+      box(level,x,2.0,1.44,1.12,.82,.045,M.woodLight);
+      box(level,x+.43,2.0,1.37,.055,.24,.05,M.gold);
+    }
+    box(level,5.8,1.12,3.72,4.2,.12,.25,M.gold);
+    // Cabeceiras, mesas de cabeceira e quadros dos quartos.
+    for (const [x,z] of [[-5,-6.6],[2.1,-6.55]]) {
+      box(level,x,.9,z-1.22,3.05,1.35,.18,M.woodLight);
+      for (const side of [-1,1]) {
+        box(level,x+side*1.85,.42,z,.62,.72,.58,M.wood);
+        cylinder(level,x+side*1.85,.78,z,.16,.32,M.gold);
+      }
+      box(level,x,1.8,z-1.38,1.5,.9,.08,M.wood);
+      box(level,x,1.84,z-1.32,1.28,.68,.035,M.fabric);
+    }
+    // Acessórios e divisória de vidro da casa de banho.
+    box(level,6.7,1.85,-7.8,2.5,.12,.12,M.gold);
+    box(level,6.7,.9,-7.72,1.5,.9,.08,M.glass,false);
+    for (const x of [5.9,6.5,7.1]) cylinder(level,x,.9,-7.35,.045,.55,M.metal);
+    // Plantas e candeeiros de chão.
+    for (const [x,z] of [[-7.2,6.3],[7.2,6.3],[-7.1,-2.8],[7.1,-2.8]]) plant(level,x,z);
+    for (const [x,z] of [[-7.0,3.2],[7.0,3.2]]) {
+      cylinder(level,x,0,z,.12,1.75,M.metal);
+      const shade=new THREE.Mesh(new THREE.ConeGeometry(.42,.48,12),M.gold);
+      shade.position.set(x,1.95,z); level.add(shade);
     }
   }
   function addApartmentFurniture(level,variant) {
@@ -189,6 +237,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     addFloorShell(level);
     if(floorIndex===0) addReceptionLobby(level,variant);
     else addApartmentFurniture(level,variant);
+    if (floorIndex > 0) addPremiumDetails(level,variant);
     addWindowsAndBalcony(level);
     if (floorIndex > 0) {
       addDoor(level,doorList,-1.95,-5.0,2.6,floorIndex,0,1.35);
@@ -230,7 +279,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       }
       for(const z of [-1.7,1.8]) box(shaft,7.88,y+.15,z,.08,1.0,.08,M.metal);
     }
-    const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,19.3,.22,19.3,M.wall,false);
+    const roof=box(root,0,FLOOR_HEIGHT*FLOOR_COUNT,0,28.8,.3,28.8,M.wall,false);
     const colliders=[];
     const add=(x,z,w,d)=>colliders.push({
       minX:building.x+(x-w/2)*INTERIOR_SCALE_XZ,maxX:building.x+(x+w/2)*INTERIOR_SCALE_XZ,
