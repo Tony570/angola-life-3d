@@ -1001,7 +1001,7 @@ export class Player {
 
     // A câmara não atravessa fachadas: testa a linha entre o jogador e a vista
     // pretendida e aproxima-a da parede mais próxima, mesmo junto às janelas.
-    if (!this.indoor && this.cameraOccluders.length) {
+    if (this.cameraOccluders.length) {
       this.cameraTarget.set(target.x, target.y + 1.2, target.z);
       this.cameraRayDirection.subVectors(this.cameraDesired, this.cameraTarget);
       const desiredDistance = this.cameraRayDirection.length();
