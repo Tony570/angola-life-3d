@@ -491,6 +491,8 @@ function enterHouse(house) {
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
+  // Dentro do hotel, a câmara deve parar nas paredes do próprio interior.
+  player.setCameraOccluders([house.interior]);
   player.cameraDistance = 8.0;
   player.cameraHeightAngle = 0.38;
   player.setIndoorFloor(0.16);
@@ -508,6 +510,8 @@ function leaveHouse() {
   if (house.interiorRoof) house.interiorRoof.visible = true;
   if (house.exterior) house.exterior.visible = true;
   activeHouse = null;
+  // Fora do hotel, a câmara volta a ficar livre para mostrar a cidade.
+  player.setCameraOccluders([]);
   elevatorPanel.hidden = true;
   homePanel.hidden = true;
   decorMode = false;
