@@ -359,6 +359,24 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
       return appearance;
     },
     loadPlayerData,
+    async purchaseKilambaApartment(propertyName, locationName) {
+      const { data, error } = await supabase.rpc('purchase_kilamba_apartment', {
+        p_property_name: propertyName,
+        p_location_name: locationName,
+        p_price: 500000
+      });
+      if (error) throw error;
+      return data;
+    },
+    async getOwnedProperties() {
+      if (!session?.user?.id) return [];
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id,property_name,property_type,location_name,interior_data')
+        .eq('owner_id', session.user.id);
+      if (error) throw error;
+      return data || [];
+    },
     async purchaseItem(itemKey, quantity = 1) {
       const { data, error } = await supabase.rpc('purchase_game_item', {
         p_item_key: itemKey,
