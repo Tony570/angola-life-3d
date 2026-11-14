@@ -229,6 +229,7 @@ export function createMultiplayer({ scene, player, online } = {}) {
       channel.subscribe(async status => {
         if (status === 'SUBSCRIBED') {
           const profile = online.getProfile() || {};
+          const appearance = profile.appearance || player.appearance || {};
           await channel.track({
             nickname: profile.nickname || user.user_metadata?.nickname || 'Jogador',
             appearance,
