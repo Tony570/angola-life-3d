@@ -177,7 +177,7 @@ const decorCatalog = homePanel.querySelector('#decor-catalog');
 let decorMode = false, decorRotation = 0, selectedDecor = 'plant';
 const decorMaterials = {wood:new THREE.MeshStandardMaterial({color:0x805638,roughness:.82}),green:new THREE.MeshStandardMaterial({color:0x39764a,roughness:.9}),pot:new THREE.MeshStandardMaterial({color:0xa65f3d,roughness:.9}),fabric:new THREE.MeshStandardMaterial({color:0x547b89,roughness:.95})};
 function createDecorObject(type) { const group=new THREE.Group(); if(type==='plant'){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.42,10),decorMaterials.pot);pot.position.y=.21;group.add(pot);const leaves=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),decorMaterials.green);leaves.position.y=.72;leaves.scale.set(.8,1.35,.8);group.add(leaves);}else if(type==='table'){const top=new THREE.Mesh(new THREE.BoxGeometry(1.15,.12,.8),decorMaterials.wood);top.position.y=.78;group.add(top);for(const x of [-.48,.48])for(const z of [-.3,.3]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.09,.75,.09),decorMaterials.wood);leg.position.set(x,.37,z);group.add(leg);}}else{const seat=new THREE.Mesh(new THREE.BoxGeometry(.8,.18,.72),decorMaterials.fabric);seat.position.y=.48;group.add(seat);const back=new THREE.Mesh(new THREE.BoxGeometry(.8,.72,.12),decorMaterials.fabric);back.position.set(0,.82,-.3);group.add(back);for(const x of [-.3,.3])for(const z of [-.25,.25]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.07,.42,.07),decorMaterials.wood);leg.position.set(x,.21,z);group.add(leg);}}group.userData.isPlayerDecoration=true;return group;}
-function placeDecoration(type=selectedDecor) {if(!activeHouse||!decorMode||player.sitting)return;const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-activeFloor*activeHouse.floorHeight)<.01);if(!level)return;const forward=new THREE.Vector3(Math.sin(player.group.rotation.y),0,Math.cos(player.group.rotation.y));const pos=player.group.position.clone().addScaledVector(forward,1.7);const x=pos.x-activeHouse.interiorX,z=pos.z-activeHouse.interiorZ;if(Math.abs(x)>8.5||Math.abs(z)>8.5)return;const item=createDecorObject(type);item.position.set(x/1.12,0,z/1.12);item.rotation.y=decorRotation;level.add(item);if(!activeHouse.decorations)activeHouse.decorations=[];activeHouse.decorations.push(item);}
+function placeDecoration(type=selectedDecor) {if(!activeHouse||!decorMode||player.sitting)return;const level=activeHouse.interior.children.find(child=>Math.abs(child.position.y-activeFloor*activeHouse.floorHeight)<.01);if(!level)return;const forward=new THREE.Vector3(Math.sin(player.group.rotation.y),0,Math.cos(player.group.rotation.y));const pos=player.group.position.clone().addScaledVector(forward,1.7);const x=pos.x-activeHouse.interiorX,z=pos.z-activeHouse.interiorZ;if(Math.abs(x)>12.5||Math.abs(z)>12.5)return;const item=createDecorObject(type);item.position.set(x/1.5,0,z/1.5);item.rotation.y=decorRotation;level.add(item);if(!activeHouse.decorations)activeHouse.decorations=[];activeHouse.decorations.push(item);}
 homePanel.addEventListener('click',event=>{const button=event.target.closest('button');if(!button)return;if(button.id==='close-home-tools')homePanel.hidden=true;if(button.id==='toggle-decor-mode'){decorMode=!decorMode;decorCatalog.hidden=!decorMode;button.textContent=decorMode?'✓ MODO DECORAÇÃO ATIVO':'🪴 MODO DECORAÇÃO';}if(button.dataset.decor){selectedDecor=button.dataset.decor;placeDecoration(selectedDecor);}if(button.id==='rotate-decor')decorRotation+=Math.PI/4;if(button.id==='remove-decor'&&activeHouse?.decorations?.length){const last=activeHouse.decorations.pop();last.parent?.remove(last);}});
 
 function nearestHouse() {
@@ -201,7 +201,9 @@ function goToFloor(floor) {
   activeHouse.currentFloor = next;
   setActiveHouseColliders();
   player.setIndoorFloor(next * activeHouse.floorHeight + 0.16);
-  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 6.95);
+  player.cameraDistance = 6.2;
+  player.cameraHeightAngle = 0.34;
+  player.teleport(activeHouse.interiorX, activeHouse.interiorZ + 10.4);
   elevatorLabel.textContent = floorName(next);
   elevatorPanel.querySelectorAll('[data-floor]').forEach(button => {
     button.classList.toggle('active', Number(button.dataset.floor) === next);
@@ -240,7 +242,7 @@ function enterHouse(house) {
   activeHouse = house;
   activeFloor = 0;
   player.setIndoor(true);
-  player.cameraDistance = 4.0;
+  player.cameraDistance = 6.2;
   player.cameraHeightAngle = 0.38;
   player.setIndoorFloor(0.16);
   player.setColliders(house.colliders.filter(item => !item._houseDoor || (item.floor === 0 && item.door.userData.houseDoorCollider.active)));
