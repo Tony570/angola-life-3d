@@ -306,7 +306,8 @@ function updateHousePrompt() {
   if (services.isOpen()) return;
   if (!activeHouse) {
     const doorwayHouse = nearestHouse();
-    if (doorwayHouse && Math.hypot(player.group.position.x - doorwayHouse.entranceX, player.group.position.z - doorwayHouse.entranceZ) <= 1.65) {
+    const actualDoorZ = doorwayHouse ? doorwayHouse.entranceZ - 3.55 : 0;
+    if (doorwayHouse && Math.hypot(player.group.position.x - doorwayHouse.entranceX, player.group.position.z - actualDoorZ) <= 1.65) {
       enterHouse(doorwayHouse);
       return;
     }
