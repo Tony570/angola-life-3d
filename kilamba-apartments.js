@@ -32,7 +32,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     }
   }
   function addSofa(g,x,z,color=M.sofa,scale=1) {
-    box(g,x,.26,z,2.55*scale,.48,.9,color);
+    const seat = box(g,x,.26,z,2.55*scale,.48,.9,color);
+    seat.userData.houseAction = { label: 'SENTAR NO SOFÁ', rotationY: Math.PI };
     box(g,x,.72,z-.36,2.55*scale,.55,.17,color);
     for(const side of [-1,1]) box(g,x+side*1.2*scale,.4,z,.16,.58,.9,color);
     for(const dx of [-.72,0,.72]) box(g,x+dx*scale,.78,z-.34,.48,.18,.12,M.fabric);
@@ -69,7 +70,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for(const [x,z] of [[-5.5,1],[0,1],[5.5,1],[-5.5,6],[0,6],[5.5,6]]) {
       const lamp=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),new THREE.MeshBasicMaterial({color:0xffe4b1}));
       lamp.position.set(x,2.58,z); level.add(lamp);
-      const light=new THREE.PointLight(0xffdfb0,.38,8); light.position.set(x,2.35,z); level.add(light);
+      // A esfera luminosa substitui vários focos dinâmicos para reduzir o custo gráfico.
     }
   }
   function addApartmentFurniture(level,variant) {
@@ -80,13 +81,15 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,-5.2,.72,-.38,2.35,1.35,.1,M.dark);
     box(level,-5.2,.03,3.0,4.8,.035,3.0,M.fabric,false);
     // Quarto principal.
-    box(level,-5.0,.18,-6.6,3.0,.35,2.7,M.wood);
+    const mainBed = box(level,-5.0,.18,-6.6,3.0,.35,2.7,M.wood);
+    mainBed.userData.houseAction = { label: 'SENTAR NA CAMA', rotationY: 0 };
     box(level,-5.0,.55,-6.6,2.9,.2,2.6,M.white);
     box(level,-5.0,.78,-7.55,2.8,.3,.65,M.fabric);
     box(level,-1.9,0,-6.5,1.0,2.35,1.5,M.woodLight);
     box(level,-1.85,.85,-4.95,1.2,.9,.55,M.wood);
     // Segundo quarto.
-    box(level,2.1,.18,-6.55,2.5,.35,2.5,M.wood);
+    const secondBed = box(level,2.1,.18,-6.55,2.5,.35,2.5,M.wood);
+    secondBed.userData.houseAction = { label: 'SENTAR NA CAMA', rotationY: 0 };
     box(level,2.1,.55,-6.55,2.4,.2,2.4,M.white);
     box(level,2.1,.78,-7.4,2.3,.28,.55,M.fabric);
     box(level,4.25,0,-4.7,1.0,2.25,.75,M.woodLight);
@@ -120,7 +123,9 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     box(level,-5.2,0,8.35,6.3,2.85,.3,M.wall);
     box(level,5.2,0,8.35,6.3,2.85,.3,M.wall);
     // Divisórias com vãos de passagem.
-    box(level,-1.2,0,-2.4,.16,2.55,5.8,M.wallAlt);
+    // Divisória com passagem larga: não fecha o percurso entre sala e cozinha.
+    box(level,-1.2,0,-4.5,.16,2.55,1.6,M.wallAlt);
+    box(level,-1.2,0,-.8,.16,2.55,1.6,M.wallAlt);
     box(level,-5.0,0,-5.0,6.1,2.55,.16,M.wallAlt);
     box(level,2.9,0,-5.0,4.2,2.55,.16,M.wallAlt);
     box(level,5.0,0,-7.15,.16,2.55,2.1,M.wallAlt);
@@ -155,8 +160,10 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     for(const [x,z] of [[-5,2],[-5,-6],[5,2],[6,-6],[0,5]]) {
       const bulb=new THREE.Mesh(new THREE.SphereGeometry(.09,8,8),new THREE.MeshBasicMaterial({color:0xffe2ae}));
       bulb.position.set(x,2.55,z); level.add(bulb);
-      const light=new THREE.PointLight(0xffdfb0,.28,7); light.position.set(x,2.35,z); level.add(light);
     }
+    const ceilingLight = new THREE.PointLight(0xffdfb0,.55,20);
+    ceilingLight.position.set(0,2.35,0);
+    level.add(ceilingLight);
     return level;
   }
   function createBuildingInterior(building,index) {
@@ -193,7 +200,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     });
     add(-8.35,0,.35,17); add(8.35,0,.35,17); add(0,-8.35,17,.35);
     add(-5.2,8.35,6.3,.35); add(5.2,8.35,6.3,.35);
-    add(-1.2,-2.4,.2,5.8); add(-5,-5,6.1,.2); add(2.9,-5,4.2,.2);
+    add(-1.2,-4.5,.2,1.6); add(-1.2,-.8,.2,1.6);
+    add(-5,-5,6.1,.2); add(2.9,-5,4.2,.2);
     add(-6.7,-1.5,3,.2); add(-2,-1.5,1.5,.2); add(3.8,-1.5,2.2,.2);
     add(5,-6.6,.2,3.2); add(5,-1.4,.2,2); add(7,-6.6,2.6,.2);
     return {group:root,roof,interiorX:building.x,interiorZ:building.z,colliders,floorCount:FLOOR_COUNT,floorHeight:FLOOR_HEIGHT};
