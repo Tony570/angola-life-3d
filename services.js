@@ -215,7 +215,16 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
   }
 
   function syncOnlineData(data) {
-    if (!data?.profile) return;
+    if (!data?.profile) {
+      balance = 0;
+      bankBalance = 0;
+      inventory = [];
+      onMoneyChange(balance);
+      updateBalanceDisplay();
+      if (currentService === 'market') renderInventory();
+      return;
+    }
+
     balance = Number(data.profile.money) || 0;
     bankBalance = Number(data.bankBalance) || 0;
     inventory = Array.isArray(data.inventory) ? data.inventory.map(item => ({ ...item })) : [];
