@@ -694,8 +694,6 @@ export function createWorld(scene) {
 
     facilities.forEach(makeBuilding);
 
-    makeOrdinaryBuilding(-25, -25, 18, 18, 5, 'office');
-    makeOrdinaryBuilding(25, -25, 18, 18, 5, 'office');
   }
 
   function makeCoast() {
