@@ -236,6 +236,7 @@ export class Player {
 
   applyClothing() {
     if (!this.model || !this.clothing) return;
+
     const colorFor = (name, slot) => {
       const value = String(name || '').toLowerCase();
       if (/branc/.test(value)) return 0xf1eee7;
@@ -248,27 +249,41 @@ export class Player {
       if (slot === 'bottom') return 0x26344c;
       if (slot === 'shoes') return 0x282828;
       if (slot === 'outfit') return 0x8e3154;
+      if (slot === 'outer') return 0x343b45;
       return 0x2877a8;
     };
+
     const patterns = {
-      top: /shirt|top|torso|upper|tshirt|camisa|roupa_superior/,
-      bottom: /pant|trouser|jean|short|skirt|bottom|calça/,
-      shoes: /shoe|boot|sneaker|footwear|feet|sapato/,
+      top: /shirt|top|torso|upper|tshirt|camisa|roupa_superior|outfit_top|upperbody/,
+      bottom: /pant|trouser|jean|short|skirt|bottom|calça|outfit_bottom|lowerbody/,
+      shoes: /shoe|boot|sneaker|footwear|feet|sapato|outfit_footwear/,
       outfit: /dress|vestido/,
-      outer: /jacket|coat|blazer|casaco/
+      outer: /jacket|coat|blazer|casaco|outerwear/
     };
+
     this.model.traverse(object => {
       if (!object.isMesh || !object.material) return;
-      const name = (object.name || '').toLowerCase();
+
+      const materials = Array.isArray(object.material)
+        ? object.material
+        : [object.material];
+      const objectName = (object.name || '').toLowerCase();
+      const materialNames = materials.map(material => (material.name || '').toLowerCase());
+      const combinedName = [objectName, ...materialNames].join(' ');
+
       for (const [slot, pattern] of Object.entries(patterns)) {
-        if (!this.clothing[slot] || !pattern.test(name)) continue;
-        const source = Array.isArray(object.material) ? object.material : [object.material];
-        const changed = source.map(material => {
+        const itemName = this.clothing[slot];
+        if (!itemName || !pattern.test(combinedName)) continue;
+
+        const tint = colorFor(itemName, slot);
+        const changed = materials.map(material => {
           const clone = material.clone();
-          if (clone.color) clone.color.setHex(colorFor(this.clothing[slot], slot));
+          if (clone.color) clone.color.setHex(tint);
           return clone;
         });
+
         object.material = Array.isArray(object.material) ? changed : changed[0];
+        object.userData.angolaLifeClothingSlot = slot;
         break;
       }
     });
