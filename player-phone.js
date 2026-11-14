@@ -100,6 +100,7 @@ export function createPlayerPhone({ game, online, services } = {}) {
     chat: $('#phone-chat')
   };
   let channel = null;
+  let liveReady = Promise.resolve(false);
   let connectedUserId = null;
   let presence = [];
   let peerConnection = null;
@@ -161,12 +162,15 @@ export function createPlayerPhone({ game, online, services } = {}) {
       $('#phone-online-players').textContent = 'Entra na tua conta para ver jogadores online.';
       return;
     }
-    if (channel && connectedUserId === user.id) return;
+    if (channel && connectedUserId === user.id) return liveReady;
     if (channel) {
       try { await supabase.removeChannel(channel); } catch {}
       channel = null;
     }
     connectedUserId = user.id;
+    try {
+      fineCounter = Number(localStorage.getItem('angolaLife3D_chat_offensive_count_' + user.id) || 0) || 0;
+    } catch { fineCounter = 0; }
     const nickname = online.getProfile()?.nickname || user.user_metadata?.nickname || 'Jogador';
     channel = supabase.channel(CHANNEL_NAME, {
       config: { presence: { key: user.id }, broadcast: { self: false } }
@@ -181,15 +185,20 @@ export function createPlayerPhone({ game, online, services } = {}) {
       })
       .on('broadcast', { event: 'voice-signal' }, ({ payload }) => handleSignal(payload))
       .on('broadcast', { event: 'public-chat' }, ({ payload }) => renderChatMessage(payload));
-    channel.subscribe(async status => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ nickname, online_at: new Date().toISOString() });
-        renderPlayers();
-        showMessage('Telemóvel ligado à rede de Luanda.');
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        showMessage('A ligação online foi interrompida. Tenta abrir novamente o telemóvel.');
-      }
+    liveReady = new Promise(resolve => {
+      channel.subscribe(async status => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ nickname, online_at: new Date().toISOString() });
+          renderPlayers();
+          showMessage('Telemóvel ligado à rede de Luanda.');
+          resolve(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          showMessage('A ligação online foi interrompida. Tenta abrir novamente o telemóvel.');
+          resolve(false);
+        }
+      });
     });
+    return liveReady;
   }
 
   function renderPlayers() {
@@ -244,7 +253,6 @@ export function createPlayerPhone({ game, online, services } = {}) {
     });
     activePeer = peerId;
     activePeerName = peerName;
-    queuedCandidates = [];
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
     peerConnection.onicecandidate = event => {
       if (event.candidate) sendSignal(peerId, { type: 'candidate', candidate: event.candidate.toJSON() });
@@ -267,7 +275,8 @@ export function createPlayerPhone({ game, online, services } = {}) {
   async function startCall(peerId, peerName) {
     if (activePeer) return;
     try {
-      await connectLive();
+      if (!(await connectLive())) throw new Error('Não foi possível ligar à rede de jogadores.');
+      queuedCandidates = [];
       await preparePeer(peerId, peerName);
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
@@ -287,6 +296,7 @@ export function createPlayerPhone({ game, online, services } = {}) {
         return;
       }
       pendingOffer = payload;
+      queuedCandidates = [];
       $('#phone-incoming').hidden = false;
       $('#phone-incoming-text').textContent = payload.fromName + ' está a ligar-te.';
       $('#phone-call-status').textContent = 'Chamada recebida.';
@@ -308,10 +318,13 @@ export function createPlayerPhone({ game, online, services } = {}) {
       queuedCandidates = [];
       return;
     }
-    if (signal.type === 'candidate' && activePeer === payload.from && peerConnection) {
+    if (signal.type === 'candidate') {
       const candidate = new RTCIceCandidate(signal.candidate);
-      if (peerConnection.remoteDescription) await peerConnection.addIceCandidate(candidate);
-      else queuedCandidates.push(candidate);
+      if (activePeer === payload.from && peerConnection && peerConnection.remoteDescription) {
+        await peerConnection.addIceCandidate(candidate);
+      } else if (activePeer === payload.from || pendingOffer?.from === payload.from) {
+        queuedCandidates.push(candidate);
+      }
     }
   }
 
@@ -384,8 +397,7 @@ export function createPlayerPhone({ game, online, services } = {}) {
       showMessage('Entra na tua conta para escrever no chat público.');
       return;
     }
-    await connectLive();
-    if (!channel) {
+    if (!(await connectLive()) || !channel) {
       showMessage('O chat ainda não está ligado ao servidor.');
       return;
     }
