@@ -214,13 +214,53 @@ elevatorPanel.addEventListener('click', event => {
   const button = event.target.closest('[data-floor]');
   if (button) goToFloor(button.dataset.floor);
 });
+function addReceptionistUniform(group, variant=0) {
+  if (!group || group.userData.hotelUniformApplied) return;
+  group.userData.hotelUniformApplied = true;
+  const navy = new THREE.MeshStandardMaterial({color:variant===0?0x14283f:0x24364b,roughness:.62});
+  const white = new THREE.MeshStandardMaterial({color:0xf5f3ed,roughness:.78});
+  const gold = new THREE.MeshStandardMaterial({color:0xb99554,metalness:.55,roughness:.32});
+  const black = new THREE.MeshStandardMaterial({color:0x171b20,roughness:.85});
+  const makeBox=(x,y,z,w,h,d,material)=>{
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    mesh.position.set(x,y,z); mesh.castShadow=false; mesh.receiveShadow=false; group.add(mesh); return mesh;
+  };
+  const makeCylinder=(x,y,z,r1,r2,h,material)=>{
+    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,10),material);
+    mesh.position.set(x,y,z); group.add(mesh); return mesh;
+  };
+  // Colete/blazer azul-marinho sobre a camisa, com lapelas claras.
+  makeBox(0,1.36,0,.62,.82,.34,navy);
+  makeBox(0,1.39,.177,.28,.73,.025,white);
+  makeBox(0,1.43,.198,.065,.48,.025,variant===0?gold:navy);
+  for(const side of [-1,1]) {
+    const lapel=makeBox(side*.13,1.56,.198,.13,.32,.035,white);
+    lapel.rotation.z=side*.22;
+    const sleeve=makeCylinder(side*.37,1.32,0,.105,.13,.72,navy);
+    sleeve.rotation.z=side*.08;
+    makeCylinder(side*.37,.94,0,.105,.105,.12,white);
+  }
+  // Calças sociais e sapatos escuros.
+  makeBox(-.16,.55,0,.22,.68,.27,navy);
+  makeBox(.16,.55,0,.22,.68,.27,navy);
+  makeBox(-.16,.16,.07,.25,.16,.4,black);
+  makeBox(.16,.16,.07,.25,.16,.4,black);
+  // Crachá dourado e botões do uniforme.
+  makeBox(-.19,1.58,.22,.13,.07,.025,gold);
+  for(const y of [1.25,1.4,1.55]) makeCylinder(.12,y,.205,.018,.018,.025,gold);
+  // Ombreiras discretas de concierge.
+  makeBox(-.27,1.73,0,.19,.055,.36,gold);
+  makeBox(.27,1.73,0,.19,.055,.36,gold);
+}
+
 function ensureHouseResidents(house) {
   if (!house || !house.interior || house.residentsCreated || !player.normalizedModel) return;
   house.residentsCreated = true;
   house.residents = [
-    player.createResident(house.interior, -4.2, 0.16, 2.3, Math.PI),
-    player.createResident(house.interior, 2.35, 0.16, 5.2, -Math.PI / 2)
+    player.createResident(house.interior, -3.75, 0.16, 2.15, Math.PI),
+    player.createResident(house.interior, 1.55, 0.16, 1.55, Math.PI)
   ].filter(Boolean);
+  house.residents.forEach((resident,index) => addReceptionistUniform(resident.group,index));
 }
 
 player.onModelReady = () => {
