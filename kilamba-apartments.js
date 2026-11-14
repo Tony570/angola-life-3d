@@ -326,18 +326,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     }
     addWindowsAndBalcony(level);
     if (floorIndex > 0) {
-      addDoor(level,doorList,-1.95,-5.0,2.6,floorIndex,0,1.35);
-      addDoor(level,doorList,5.0,-3.7,.9,floorIndex,Math.PI/2,1.35);
-
-      // Todos os apartamentos recebem decoração completa e uma paleta própria.
-      // A divisão fica 1,70x maior; os móveis mantêm dimensões humanas realistas.
-      const furniture = new THREE.Group();
-      level.add(furniture);
-      addApartmentFurniture(furniture,variant);
-      addPremiumDetails(furniture,variant);
-      for (const object of furniture.children) object.position.multiplyScalar(INTERIOR_SCALE_XZ);
-      furniture.scale.setScalar(1 / INTERIOR_SCALE_XZ);
-
+      // Pisos residenciais entregues vazios: paredes pintadas, chão limpo,
+      // janelas e iluminação. A mobília será colocada apenas pelo proprietário.
       const apartmentPalettes = [
         [0x3f7180,0xd6a34a,0xe6d8c4],
         [0x8b5264,0xd4a76a,0xe8dfd2],
@@ -352,7 +342,7 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
       const accentMaterial = mat(accentColor,.72);
       const detailMaterial = mat(detailColor,.48,.12);
       const lightMaterial = mat(lightColor,.82);
-      // Parede de destaque, rodapé colorido e tapete para dar identidade a cada casa.
+      // Pintura elegante e diferente em cada apartamento, sem móveis fixos.
       box(level,0,.08,-8.08,8.8,.14,.055,detailMaterial,false);
       box(level,0,1.48,-8.08,7.2,1.45,.045,accentMaterial,false);
       box(level,0,1.48,-8.045,6.9,1.18,.025,lightMaterial,false);
@@ -372,6 +362,8 @@ export function createHouseSystem(scene, world = { buildings: [] }) {
     const root=new THREE.Group();
     // The interior occupies the exact same coordinates as its exterior building.
     root.position.set(building.x,0,building.z);
+    root.userData.angolaLifeInterior = true;
+    root.userData.blockName = building.name || `Bloco ${index+1}`;
     root.visible=false;
     scene.add(root);
     const doors=[];
