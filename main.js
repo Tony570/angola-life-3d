@@ -13,6 +13,7 @@ import {
 } from './people.js';
 import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
+import { createTaxiTransport } from './taxi-transport.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -478,6 +479,8 @@ services = createServices({
       `💰 ${balance.toLocaleString('pt-PT')} Kz`;
   }
 });
+
+const taxiTransport = createTaxiTransport({ scene, world, player, services, game });
 
 function createCityBuildingColliders(buildings = []) {
   const colliders = [];
@@ -1448,6 +1451,11 @@ function tryAutoEnterHouse() {
 function interact() {
   if (!started) return;
 
+  if (taxiTransport.isOpen()) {
+    taxiTransport.close();
+    return;
+  }
+
   if (services.isOpen()) {
     services.close();
     return;
@@ -1487,6 +1495,14 @@ function interact() {
     return;
   }
 
+  if (player.currentVehicle?.isTaxi) return;
+
+  const nearbyTaxi = taxiTransport.findNearestTaxi();
+  if (nearbyTaxi) {
+    taxiTransport.open(nearbyTaxi);
+    return;
+  }
+
   player.toggleVehicle();
 }
 
@@ -1519,6 +1535,11 @@ document.querySelectorAll('[data-key]').forEach(button => {
 });
 
 function updateActionButton() {
+  if (taxiTransport.isOpen()) {
+    actionButton.textContent = '✕ FECHAR TÁXIS';
+    return;
+  }
+
   if (services.isOpen()) {
     actionButton.textContent = '✕ FECHAR SERVIÇO';
     return;
@@ -1554,8 +1575,12 @@ function updateActionButton() {
     return;
   }
 
-  if (player.currentVehicle) {
+  if (player.currentVehicle?.isTaxi) {
+    actionButton.textContent = '🚕 EM VIAGEM';
+  } else if (player.currentVehicle) {
     actionButton.textContent = '🚶 SAIR DO CARRO';
+  } else if (taxiTransport.findNearestTaxi()) {
+    actionButton.textContent = '🚕 ESCOLHER DESTINO';
   } else if (player.findNearestVehicle()) {
     actionButton.textContent = '🚗 ENTRAR NO CARRO';
   } else {
@@ -1573,11 +1598,12 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
 
   if (started) {
-    if (!services.isOpen() && !restaurantPanel.classList.contains('visible')) {
+    if (!services.isOpen() && !taxiTransport.isOpen() && !restaurantPanel.classList.contains('visible')) {
       player.update(delta);
       tryAutoEnterHouse();
     }
 
+    taxiTransport.update(delta);
     npcAccumulator += delta;
     uiAccumulator += delta;
 
