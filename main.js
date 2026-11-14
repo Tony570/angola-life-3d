@@ -9,6 +9,7 @@ import {
   updateRestaurantStaff
 } from './people.js';
 import { createServices } from './services.js';
+import { createOnlineAccount } from './online.js';
 import './style.css';
 
 const app = document.querySelector('#app');
@@ -456,8 +457,16 @@ const player = new Player(scene, camera, world.vehicles);
 
 const moneyDisplay = document.querySelector('.money');
 
-const services = createServices({
+let services = null;
+const online = createOnlineAccount({
+  onProfile(data) {
+    if (services) services.syncOnlineData(data);
+  }
+});
+
+services = createServices({
   game,
+  online,
   onMoneyChange(balance) {
     moneyDisplay.textContent =
       `💰 ${balance.toLocaleString('pt-PT')} Kz`;
@@ -1023,7 +1032,7 @@ document.querySelectorAll('[data-menu-tab]').forEach(button => {
   });
 });
 
-restaurantConfirm.addEventListener('click', () => {
+restaurantConfirm.addEventListener('click', async () => {
   if (!activeRestaurant || order.size === 0) return;
 
   const total = [...order.values()].reduce(
@@ -1035,9 +1044,18 @@ restaurantConfirm.addEventListener('click', () => {
     .map(item => `${item.name} x${item.quantity}`)
     .join(', ');
 
-  if (!services.charge(total)) {
+  try {
+    await services.purchaseOrder(
+      [...order.values()].map(item => ({
+        item_key: `restaurant:${item.name}`,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      }))
+    );
+  } catch (error) {
     restaurantNotice.textContent =
-      'Saldo insuficiente. Escolhe menos itens ou vai ao banco.';
+      error.message || 'Não foi possível concluir o pedido.';
     return;
   }
 
@@ -1113,6 +1131,11 @@ renderer.domElement.addEventListener('pointerdown', event => {
 });
 
 startButton.addEventListener('click', () => {
+  if (!online.isAuthenticated()) {
+    online.open();
+    return;
+  }
+
   started = true;
   welcome.classList.add('hidden');
   player.updateCamera();
