@@ -196,7 +196,15 @@ export class Player {
       if (!object.isMesh || !object.material) return;
       const name = (object.name || '').toLowerCase();
       let key = null;
-      if (/hair|cabelo|beard|barba/.test(name)) {\n        key = 'hair';\n        if (!object.userData.baseHairScale) object.userData.baseHairScale = object.scale.clone();\n        const styleScale = this.appearance.hairstyle === 'rapado' ? 0.78\n          : this.appearance.hairstyle === 'comprido' ? 1.18\n          : this.appearance.hairstyle === 'encaracolado' ? 1.08 : 1;\n        object.scale.copy(object.userData.baseHairScale);\n        object.scale.y *= styleScale;\n      }
+      if (/hair|cabelo|beard|barba/.test(name)) {
+        key = 'hair';
+        if (!object.userData.baseHairScale) object.userData.baseHairScale = object.scale.clone();
+        const styleScale = this.appearance.hairstyle === 'rapado' ? 0.78
+          : this.appearance.hairstyle === 'comprido' ? 1.18
+          : this.appearance.hairstyle === 'encaracolado' ? 1.08 : 1;
+        object.scale.copy(object.userData.baseHairScale);
+        object.scale.y *= styleScale;
+      }
       else if (/eye|iris|pupil|olho/.test(name)) key = 'eyes';
       else if (/skin|face|head|body|arm|hand|leg|neck|pele|rosto/.test(name)) key = 'skin';
       if (!key) return;
