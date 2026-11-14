@@ -600,6 +600,13 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
 
   if (started && !services.isOpen()) {
+    if (activeHouse) {
+      // Mantém a câmara no enquadramento interior, sem rodar para a fachada ou rua.
+      player.cameraYawOffset = Math.PI;
+      player.cameraPitch = 0;
+      player.cameraDistance = 3.8;
+      player.cameraHeightAngle = 0.22;
+    }
     player.update(delta);
     if (activeHouse?.residents) {
       for (const resident of activeHouse.residents) resident.mixer?.update(delta);
