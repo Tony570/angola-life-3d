@@ -594,12 +594,43 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
         type="number" min="1" placeholder="Introduz o valor">
       <button class="service-action" id="bank-deposit">DEPOSITAR</button>
       <button class="service-action" id="bank-withdraw">LEVANTAR</button>
-      <button class="service-action" id="bank-transfer">TRANSFERÊNCIA · 500 Kz</button>
+      <div class="service-inventory">
+        <strong>Transferir dinheiro para outro jogador</strong>
+        <label for="transfer-recipient">Nome do jogador destinatário</label>
+        <input class="service-input" id="transfer-recipient" maxlength="24" placeholder="Nome exato no jogo">
+        <label for="transfer-amount">Valor em Kz</label>
+        <input class="service-input" id="transfer-amount" type="number" min="1" placeholder="Valor a transferir">
+        <button class="service-action" id="bank-transfer">TRANSFERIR DINHEIRO</button>
+      </div>
+      <div class="service-inventory">
+        <strong>Transferir um objeto do inventário</strong>
+        <label for="transfer-item">Objeto</label>
+        <select class="service-input" id="transfer-item"></select>
+        <label for="transfer-quantity">Quantidade</label>
+        <input class="service-input" id="transfer-quantity" type="number" min="1" value="1">
+        <button class="service-action" id="bank-item-transfer">TRANSFERIR OBJETO</button>
+      </div>
       <button class="service-action" id="bank-card">PEDIR CARTÃO · 2.000 Kz</button>
       <button class="service-action" id="bank-loan">CONSULTAR EMPRÉSTIMO</button>
     `;
 
     const amountInput = content.querySelector('#bank-amount');
+    const recipientInput = content.querySelector('#transfer-recipient');
+    const transferAmountInput = content.querySelector('#transfer-amount');
+    const itemSelect = content.querySelector('#transfer-item');
+    const itemQuantityInput = content.querySelector('#transfer-quantity');
+
+    const transferableItems = inventory.filter(item => item.itemKey && item.quantity > 0);
+    if (!transferableItems.length) {
+      itemSelect.innerHTML = '<option value="">Não tens objetos transferíveis</option>';
+    } else {
+      transferableItems.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.itemKey;
+        option.textContent = `${item.name} · ${item.quantity}`;
+        itemSelect.appendChild(option);
+      });
+    }
 
     content.querySelector('#bank-deposit').addEventListener('click', async () => {
       const amount = Math.floor(Number(amountInput.value));
@@ -664,15 +695,50 @@ export function createServices({ game, onMoneyChange = () => {}, online = null }
     });
 
     content.querySelector('#bank-transfer').addEventListener('click', async () => {
-      if (!(await charge(500))) {
-        showMessage('Saldo insuficiente para pagar a taxa de transferência.');
+      const recipient = recipientInput.value.trim();
+      const amount = Math.floor(Number(transferAmountInput.value));
+
+      if (!online?.isAuthenticated()) {
+        showMessage('Inicia sessão para transferir dinheiro entre jogadores.');
+        return;
+      }
+      if (!recipient || !Number.isFinite(amount) || amount < 1) {
+        showMessage('Introduz o nome do jogador e um valor válido.');
         return;
       }
 
-      updateBalanceDisplay();
-      showMessage(
-        'Taxa de 500 Kz paga. A transferência para outro jogador ainda não está ligada ao modo online.'
-      );
+      try {
+        await online.transferMoney(recipient, amount);
+        syncOnlineData(await online.loadPlayerData());
+        renderBank();
+        showMessage(`Transferência de ${moneyFormat(amount)} enviada para ${recipient}.`);
+      } catch (error) {
+        showMessage(error.message || 'Não foi possível concluir a transferência.');
+      }
+    });
+
+    content.querySelector('#bank-item-transfer').addEventListener('click', async () => {
+      const recipient = recipientInput.value.trim();
+      const itemKey = itemSelect.value;
+      const quantity = Math.floor(Number(itemQuantityInput.value));
+
+      if (!online?.isAuthenticated()) {
+        showMessage('Inicia sessão para transferir objetos entre jogadores.');
+        return;
+      }
+      if (!recipient || !itemKey || !Number.isFinite(quantity) || quantity < 1) {
+        showMessage('Indica o destinatário, o objeto e a quantidade.');
+        return;
+      }
+
+      try {
+        const result = await online.transferItem(recipient, itemKey, quantity);
+        syncOnlineData(await online.loadPlayerData());
+        renderBank();
+        showMessage(`${result.quantity || quantity} unidade(s) de ${result.item_name || 'objeto'} enviada(s) para ${recipient}.`);
+      } catch (error) {
+        showMessage(error.message || 'Não foi possível transferir o objeto.');
+      }
     });
 
     content.querySelector('#bank-card').addEventListener('click', async () => {
