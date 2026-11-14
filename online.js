@@ -408,8 +408,7 @@ export function createOnlineAccount({ onProfile = () => {} } = {}) {
       });
       if (error) throw error;
       return data;
-    }
-    ,
+    },
     async registerPublicChatMessage(message) {
       const { data, error } = await supabase.rpc('register_public_chat_message', {
         p_message: message
