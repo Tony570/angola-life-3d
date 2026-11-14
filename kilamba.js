@@ -15,12 +15,21 @@ export function createKilambaDistrict(scene) {
     yellow: mat(0xe0bd6c), whiteLine: mat(0xe8e5d9), roadLine: mat(0xe4c76b)
   };
 
+  const geometryCache = new Map();
+  function cachedGeometry(key, create) {
+    if (!geometryCache.has(key)) geometryCache.set(key, create());
+    return geometryCache.get(key);
+  }
   function box(parent,x,y,z,w,h,d,m,cast=true) {
-    const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+    const key = `b:${w}:${h}:${d}`;
+    const geometry = cachedGeometry(key, () => new THREE.BoxGeometry(w,h,d));
+    const o=new THREE.Mesh(geometry,m);
     o.position.set(x,y+h/2,z); o.castShadow=cast; o.receiveShadow=true; parent.add(o); return o;
   }
   function cylinder(parent,x,y,z,rt,rb,h,m,n=10) {
-    const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,n),m);
+    const key = `c:${rt}:${rb}:${h}:${n}`;
+    const geometry = cachedGeometry(key, () => new THREE.CylinderGeometry(rt,rb,h,n));
+    const o=new THREE.Mesh(geometry,m);
     o.position.set(x,y+h/2,z); o.castShadow=true; o.receiveShadow=true; parent.add(o); return o;
   }
   function windowFrame(g,x,y,z,w=1.55,h=1.42) {
@@ -43,7 +52,7 @@ export function createKilambaDistrict(scene) {
     cylinder(parent,x,0,z,.055,.085,5.4,M.metal,8);
     box(parent,x,5.15,z+.42,.09,.08,.9,M.metal);
     box(parent,x,5.1,z+.82,.42,.14,.62,M.charcoal);
-    const light=new THREE.PointLight(0xffe0ad,.45,13); light.position.set(x,5,z+.8); parent.add(light);
+    const light=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),new THREE.MeshBasicMaterial({color:0xffe0ad})); light.position.set(x,5,z+.8); parent.add(light);
   }
   function roads() {
     box(scene,0,-.32,0,190,.55,170,M.ground,false);
@@ -135,7 +144,7 @@ export function createKilambaDistrict(scene) {
     box(g,0,2.64,front+1.42,4.2,.08,.12,M.yellow);
     box(g,0,3.18,front+.68,3.1,.18,.08,M.white);
     const plaque=box(g,0,3.22,front+.74,2.9,.24,.06,M.charcoal);
-    const entranceLamp=new THREE.PointLight(0xffdba0,.65,11); entranceLamp.position.set(0,2.65,front+1.1); g.add(entranceLamp);
+    const entranceLamp=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),new THREE.MeshBasicMaterial({color:0xffdba0})); entranceLamp.position.set(0,2.65,front+1.1); g.add(entranceLamp);
     // Side windows make the block read as a lived-in building from oblique views.
     for(let floor=0;floor<floors;floor++) for(const side of [-1,1]) {
       const y=floor*fh+1.55;
