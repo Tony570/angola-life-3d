@@ -1,6 +1,6 @@
 
 import * as THREE from 'three';
-import { createWorld, updateWorldTraffic } from './world.js';
+import { createWorld } from './world.js';
 import { expandLuandaCity } from './luanda-city.js';
 import { createLuandaStreetLife } from './luanda-street-life.js';
 import { addLuandaArchitectureDetails } from './luanda-architecture.js';
@@ -1458,7 +1458,7 @@ function exitHouse() {
   player.teleport(house.entranceX, house.entranceZ + 1.4);
   snapCameraToPlayer();
 
-  actionButton.textContent = '🏠 ENTRAR EM CASA';
+  actionButton.textContent = house.isCommercial ? '🏬 ENTRAR NO ESTABELECIMENTO' : '🏠 ENTRAR EM CASA';
 }
 
 function enterHouse(house) {
@@ -1483,7 +1483,7 @@ function enterHouse(house) {
   player.teleport(house.interiorX, house.interiorZ);
   snapCameraToPlayer();
 
-  actionButton.textContent = '🚪 SAIR DE CASA';
+  actionButton.textContent = house.isCommercial ? '🚪 SAIR DO ESTABELECIMENTO' : '🚪 SAIR DE CASA';
 }
 
 function findNearestHouse() {
