@@ -141,7 +141,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let user=null,profile=null,inventory=[],activeCategory='todos',avatar={gender:'male',skin:'#c98962',hair:'#241b18',shirt:'#3867a8',pants:'#26364b',hairStyle:'curto',eyes:'#35251f'};
 const gltfLoader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-const characterAssets={male:{model:'https://raw.githubusercontent.com/mrdoob/three.js/r161/examples/models/gltf/Soldier.glb'},female:{model:'https://raw.githubusercontent.com/mrdoob/three.js/r161/examples/models/gltf/Soldier.glb'}};
+const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
 function say(id,msg){$(id).textContent=msg}
 function setTab(which){$('login-form').classList.toggle('hidden',which!=='login');$('signup-form').classList.toggle('hidden',which!=='signup');$('tab-login').classList.toggle('active',which==='login');$('tab-signup').classList.toggle('active',which==='signup');$('tab-login').classList.toggle('secondary',which!=='login');$('tab-signup').classList.toggle('secondary',which!=='signup');say('auth-message','')}
@@ -237,7 +237,7 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
   const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;
   root.userData.modelBaseY=model.position.y;root.userData.characterModel=model;root.add(model);
   const idleClip=gltf.animations.find(clip=>/idle/i.test(clip.name));
-  const walkClip=gltf.animations.find(clip=>/^walk$/i.test(clip.name)||/walk/i.test(clip.name));
+  const walkClip=gltf.animations.find(clip=>/relaxed walk/i.test(clip.name))||gltf.animations.find(clip=>/^walk$/i.test(clip.name))||gltf.animations.find(clip=>/walk/i.test(clip.name));
   if(idleClip&&walkClip){
    const characterMixer=new THREE.AnimationMixer(model);
    const idleAction=characterMixer.clipAction(idleClip);
