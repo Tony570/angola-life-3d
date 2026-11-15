@@ -191,62 +191,52 @@ async function getWalkClipUrl(gender){
  return candidates[0].url;
 }
 function findGaitBones(model){
- const bones={};
- const sideOf=name=>/(left|(^|[^a-z])l([^a-z]|$)|_l_|[-.]l$)/i.test(name)?'L':/(right|(^|[^a-z])r([^a-z]|$)|_r_|[-.]r$)/i.test(name)?'R':null;
+ const bones={},base={};
+ const sideOf=n=>/(left|(^|[^a-z])l([^a-z]|$)|_l_|[-.]l$)/i.test(n)?'L':/(right|(^|[^a-z])r([^a-z]|$)|_r_|[-.]r$)/i.test(n)?'R':null;
  model.traverse(o=>{
   if(!o.isBone)return;
-  const n=o.name.toLowerCase(),side=sideOf(o.name);
-  if(!side)return;
-  if(/thigh|upleg|upper.?leg/.test(n))bones[side+'Thigh']=o;
-  else if(/calf|shin|lower.?leg|(^|[^a-z])leg([^a-z]|$)/.test(n))bones[side+'Calf']=o;
-  else if(/foot|ankle|toe/.test(n))bones[side+'Foot']=o;
-  else if(/upper.?arm|arm/.test(n)&&!/forearm|lower.?arm/.test(n))bones[side+'Arm']=o;
-  else if(/forearm|lower.?arm/.test(n))bones[side+'Forearm']=o;
+  const raw=o.name||'',n=raw.toLowerCase().replace(/mixamorig[:_ -]?/g,'');
+  const side=sideOf(n);
+  if(side){
+   if(/thigh|upleg|upper.?leg|hip.?joint/.test(n))bones[side+'Thigh']=o;
+   else if(/calf|shin|lower.?leg|leg.?lower/.test(n))bones[side+'Calf']=o;
+   else if(/foot|ankle|toe/.test(n))bones[side+'Foot']=o;
+   else if(/upper.?arm|arm$|shoulder/.test(n)&&!/forearm|lower.?arm/.test(n))bones[side+'Arm']=o;
+   else if(/forearm|lower.?arm/.test(n))bones[side+'Forearm']=o;
+   else if(/hand/.test(n))bones[side+'Hand']=o;
+  }
+  if(/hips|pelvis/.test(n))bones.Hips=o;
+  else if(/spine2|spine_2|chest|upper.?spine/.test(n))bones.Chest=o;
+  else if(/neck/.test(n))bones.Neck=o;
+  else if(/head/.test(n))bones.Head=o;
  });
- const base={};
- for(const [key,bone] of Object.entries(bones))base[key]=bone.rotation.clone();
- return {bones,base};
+ for(const [key,bone] of Object.entries(bones))base[key]={rotation:bone.rotation.clone(),position:bone.position.clone()};
+ return {bones,base,ready:!!(bones.LThigh&&bones.RThigh&&bones.LArm&&bones.RArm)};
 }
 function updateProceduralGait(root,phase,weight){
  const gait=root.userData.proceduralGait;if(!gait)return;
- const {bones,base}=gait;
- const swing=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
- const apply=(key,x,z=0)=>{const b=bones[key],r=base[key];if(b&&r){b.rotation.x=r.x+x*weight;b.rotation.z=r.z+z*weight}};
- apply('LThigh',swing*.40);apply('RThigh',opposite*.40);
- apply('LCalf',Math.max(0,-swing)*.72);apply('RCalf',Math.max(0,-opposite)*.72);
- apply('LFoot',Math.max(0,swing)*-.16);apply('RFoot',Math.max(0,opposite)*-.16);
- apply('LArm',opposite*.34);apply('RArm',swing*.34);
- apply('LForearm',.06+Math.max(0,swing)*.10);apply('RForearm',.06+Math.max(0,opposite)*.10);
+ const {bones,base}=gait,swing=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
+ const apply=(key,x,z=0)=>{const b=bones[key],r=base[key]?.rotation;if(b&&r){b.rotation.x=r.x+x*weight;b.rotation.z=r.z+z*weight}};
+ apply('LThigh',swing*.48);apply('RThigh',opposite*.48);
+ apply('LCalf',Math.max(0,-swing)*.82);apply('RCalf',Math.max(0,-opposite)*.82);
+ apply('LFoot',Math.max(0,swing)*-.20);apply('RFoot',Math.max(0,opposite)*-.20);
+ apply('LArm',opposite*.38);apply('RArm',swing*.38);
+ apply('LForearm',.04+Math.max(0,swing)*.08);apply('RForearm',.04+Math.max(0,opposite)*.08);
+ apply('Hips',0,Math.sin(phase*2)*.025);
+ apply('Chest',0,Math.sin(phase)*-.035);
+ apply('Head',0,Math.sin(phase)*-.012);
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
  root.position.set(position.x,position.y,position.z);target.add(root);
- gltfLoader.load(asset.model,async gltf=>{
+ gltfLoader.load(asset.model,gltf=>{
   const model=gltf.scene;
   model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.roughness=Math.max(.45,m.roughness??.8);m.needsUpdate=true})}}});
   const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
   const scale=0.36/(size.y||1);model.scale.setScalar(scale);
   const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;
   root.userData.modelBaseY=model.position.y;root.userData.characterModel=model;root.add(model);
-  if(!animateWalk)return;
-  root.userData.proceduralGait=findGaitBones(model);
-  try{
-   const walkUrl=await getWalkClipUrl(gender);
-   const [idleGltf,walkGltf]=await Promise.all([gltfLoader.loadAsync(asset.idle),gltfLoader.loadAsync(walkUrl)]);
-   if(!root.parent)return;
-   const idleClip=idleGltf.animations&&idleGltf.animations[0],walkClip=walkGltf.animations&&walkGltf.animations[0];
-   if(!idleClip||!walkClip)throw new Error('Os ficheiros não contêm os ciclos de animação esperados');
-   const boundCount=clip=>clip.tracks.filter(track=>THREE.PropertyBinding.findNode(model,track.name)).length;
-   const idleBound=boundCount(idleClip),walkBound=boundCount(walkClip);
-   if(walkBound<Math.max(2,Math.floor(walkClip.tracks.length*.5)))throw new Error('O clip Walk não corresponde ao esqueleto deste avatar ('+walkBound+'/'+walkClip.tracks.length+' ossos)');
-   const animationMixer=new THREE.AnimationMixer(model);
-   const idleAction=animationMixer.clipAction(idleClip),walkAction=animationMixer.clipAction(walkClip);
-   idleAction.setLoop(THREE.LoopRepeat);walkAction.setLoop(THREE.LoopRepeat);
-   idleAction.play();walkAction.play();walkAction.setEffectiveWeight(0);idleAction.setEffectiveWeight(idleBound?1:0);
-   root.userData.animationActions={idle:idleAction,walk:walkAction};
-   root.userData.proceduralGait=null;
-   onMixer(animationMixer);
-  }catch(error){console.warn('A usar caminhada procedural porque o clip externo não pôde ser aplicado:',error)}
+  if(animateWalk)root.userData.proceduralGait=findGaitBones(model);
  },undefined,error=>{console.error('Não foi possível carregar o modelo 3D:',error);root.removeFromParent()});
  return root
 }function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
@@ -350,7 +340,7 @@ if(kind==='room'&&houseAvatar){
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
- if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.55,.8,1.5))}walkPhase+=delta*(walking?8.5:0);if(houseAvatar.userData.proceduralGait)updateProceduralGait(houseAvatar,walkPhase,walking?Math.min(1,speed/.55):0);const bob=walking?Math.abs(Math.sin(walkPhase*2))*.018:0;model.position.y=(houseAvatar.userData.modelBaseY||0)+bob;model.rotation.z=walking?Math.sin(walkPhase)*.025:0}
+ if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.55,.8,1.5))}walkPhase+=delta*(walking?(5.8+speed*2.1):0);if(houseAvatar.userData.proceduralGait)updateProceduralGait(houseAvatar,walkPhase,walking?Math.min(1,speed/.45):0);const bob=walking?Math.abs(Math.sin(walkPhase*2))*.009:0;model.position.y=(houseAvatar.userData.modelBaseY||0)+bob;model.rotation.z=walking?Math.sin(walkPhase)*.012:0;model.rotation.x=walking?Math.cos(walkPhase*2)*.008:0}
  cameraTarget.set(0,0,0);
 }
 renderer.render(scene,camera)};animate();
