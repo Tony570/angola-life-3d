@@ -187,7 +187,7 @@ function addRoomDoor(def){
  const g=new THREE.Group(),north=def.side==='north',south=def.side==='south',east=def.side==='east';
  const x=north||south?def.center:(east?3.82:-3.82),z=north?-3.82:(south?3.82:def.center);
  g.position.set(x,0,z);g.rotation.y=(east||def.side==='west')?Math.PI/2:0;
- const frame=mat('#d2b58b'),panel=mat('#76543c');
+ const frame=mat('#d2b58b'),panel=new THREE.MeshStandardMaterial({color:'#76543c',roughness:.8,transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide});
  const d=new THREE.Mesh(new THREE.BoxGeometry(1.18,2.25,.12),panel);d.position.y=1.08;g.add(d);
  for(const px of [-.66,.66]){const side=new THREE.Mesh(new THREE.BoxGeometry(.12,2.45,.16),frame);side.position.set(px,1.2,0);g.add(side)}
  const top=new THREE.Mesh(new THREE.BoxGeometry(1.42,.13,.16),frame);top.position.set(0,2.42,0);g.add(top);
@@ -197,7 +197,7 @@ function addRoomDoor(def){
  g.userData={roomDoor:true,door:def};d.userData={roomDoor:true,door:def};target.add(g);roomDoorMeshes.push(g,d);
 }
 function addWallWithOpening(side,center){
- const wall=mat('#e7dfd2'),span=8,half=span/2,opening=1.55,left=center-opening/2,right=center+opening/2;
+ const wall=new THREE.MeshStandardMaterial({color:'#e7dfd2',roughness:.9,transparent:true,opacity:.10,depthWrite:false,side:THREE.DoubleSide}),span=8,half=span/2,opening=1.55,left=center-opening/2,right=center+opening/2;
  const segmentA=Math.max(0,left+half),segmentB=Math.max(0,half-right);
  if(side==='north'||side==='south'){
   const z=side==='north'?-4:4;
@@ -215,8 +215,8 @@ function buildRoom(name){
  box(8,.18,8,mat(floorColor),0,-.12,0);
  const exits=doorDefs[name]||[];
  const openings={north:null,south:null,east:null,west:null};exits.forEach(d=>openings[d.side]=d.center);
- for(const side of ['north','south','east','west']){if(side==='south')continue;/* Parede frontal aberta para a câmara mostrar o interior da divisão. */if(openings[side]===null){if(side==='north')box(8,3.6,.18,mat('#eee6d8'),0,1.65,-4);else if(side==='west')box(.18,3.6,8,mat('#e7dfd2'),-4,1.65,0);else box(.18,3.6,8,mat('#e7dfd2'),4,1.65,0)}else addWallWithOpening(side,openings[side])}
- box(8,.18,8,mat('#f7f3ea'),0,3.5,0);
+ for(const side of ['north','south','east','west']){if(side==='south')continue;/* Paredes transparentes para nunca taparem a visão do jogador. */const wall=new THREE.MeshStandardMaterial({color:'#e7dfd2',roughness:.9,transparent:true,opacity:.10,depthWrite:false,side:THREE.DoubleSide});if(openings[side]===null){if(side==='north')box(8,3.6,.18,wall,0,1.65,-4);else if(side==='west')box(.18,3.6,8,wall,-4,1.65,0);else box(.18,3.6,8,wall,4,1.65,0)}else addWallWithOpening(side,openings[side])}
+ /* Sem tecto: a câmara mantém sempre a vista aberta sobre o interior. */
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
  if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88)}
