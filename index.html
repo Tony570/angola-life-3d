@@ -375,6 +375,70 @@ function buildRoom(name){
  if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88)}
 }
 
+
+function buildVianaPoliceStation(){
+ // Esquadra simples de bairro, implantada no quarteirão esquerdo da avenida.
+ const wall=mat('#c8c0ad',.96),trim=mat('#e5dfcf',.9),roof=mat('#77756e',.95);
+ const dark=mat('#26343a',.55),metal=mat('#555b5c',.8),door=mat('#34434a',.8);
+ const concrete=mat('#9b9588',1),yard=mat('#9d886c',1);
+ // Pátio e pequeno passeio de entrada.
+ box(13,.08,12,yard,28,-.105,-27);
+ box(9.8,.12,7.2,concrete,28,-.025,-28);
+ // Corpo principal, com cobertura simples e beiral.
+ box(9,3.15,6.4,wall,28,1.55,-28);
+ box(9.35,.2,6.75,roof,28,3.22,-28);
+ box(9.05,.12,6.45,trim,28,3.08,-28);
+ // Porta frontal e duas janelas com caixilharia.
+ box(1.25,2.25,.12,door,28,1.12,-24.72);
+ box(.12,2.3,.18,trim,27.34,1.14,-24.7);
+ box(.12,2.3,.18,trim,28.66,1.14,-24.7);
+ box(1.45,.12,.18,trim,28,2.28,-24.7);
+ [-1,1].forEach(side=>{
+  const x=28+side*2.65;
+  box(1.55,1.05,.13,dark,x,1.95,-24.72);
+  box(1.72,.12,.2,trim,x,2.52,-24.68);
+  box(1.72,.12,.2,trim,x,1.38,-24.68);
+  box(.12,1.18,.2,trim,x-0.8,1.95,-24.68);
+  box(.12,1.18,.2,trim,x+0.8,1.95,-24.68);
+  box(.07,1.02,.22,metal,x,1.95,-24.65);
+  box(1.55,.07,.22,metal,x,1.95,-24.65);
+ });
+ // Pequena pala sobre a entrada.
+ box(2.35,.16,1.05,roof,28,2.58,-24.12);
+ box(.12,.9,.12,metal,27.05,2.08,-24.35);
+ box(.12,.9,.12,metal,28.95,2.08,-24.35);
+ // Placa legível da esquadra, feita com textura.
+ const canvas=document.createElement('canvas');canvas.width=768;canvas.height=128;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#173d31';ctx.fillRect(0,0,768,128);
+ ctx.strokeStyle='#e5dfbd';ctx.lineWidth=8;ctx.strokeRect(5,5,758,118);
+ ctx.fillStyle='#fff4d6';ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText('ESQUADRA DA POLÍCIA',384,66);
+ const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
+ const sign=new THREE.Mesh(new THREE.BoxGeometry(5.3,.9,.13),new THREE.MeshStandardMaterial({map:signTex,roughness:.8}));
+ sign.position.set(28,2.82,-24.68);target.add(sign);
+ // Muro baixo do recinto, com portão metálico à frente.
+ const fenceZ=-20.9,backZ=-33.7,leftX=21.5,rightX=34.5;
+ box(.22,1.05,backZ-fenceZ,concrete,leftX,.48,(backZ+fenceZ)/2);
+ box(.22,1.05,backZ-fenceZ,concrete,rightX,.48,(backZ+fenceZ)/2);
+ box(rightX-leftX,.95,.22,concrete,28,.43,backZ);
+ box(2.35,.95,.2,concrete,23.95,.43,fenceZ);
+ box(2.35,.95,.2,concrete,32.05,.43,fenceZ);
+ // Portão de duas folhas e barras verticais.
+ [-1,1].forEach(side=>{
+  const gx=28+side*.7;
+  box(.055,1.65,.07,metal,gx,.82,fenceZ);
+  for(let y=0;y<7;y++)box(.035,.07,.08,metal,gx,.22+y*.2,fenceZ);
+ });
+ box(2.9,.08,.1,metal,28,1.62,fenceZ);
+ // Dois postes de iluminação discretos no pátio.
+ [-1,1].forEach(side=>{
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.045,.06,3.1,8),metal);
+  pole.position.set(28+side*5.2,1.5,-29.5);target.add(pole);
+  const lamp=new THREE.Mesh(new THREE.BoxGeometry(.42,.16,.3),mat('#e6d8a0',.5));
+  lamp.position.set(28+side*5.2,3.08,-29.5);target.add(lamp);
+ });
+}
+
 function buildVianaStreets(){
  target.clear();roomDoorMeshes=[];activeRoomDoor=null;scene.background=new THREE.Color('#c8c0ae');
  // Bairro humilde de Viana: nesta fase só existem ruas, passeios, lancis e drenagem.
@@ -418,6 +482,7 @@ function buildVianaStreets(){
  [-42,-14,14,42].forEach(z=>{for(let k=-3;k<=3;k++){box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z-(mainWidth/2+1.2));box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z+(mainWidth/2+1.2))}});
  // Tampas de saneamento na estrada.
  [-35,0,35].forEach(z=>{const cover=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.025,16),mat('#686762',1));cover.position.set(mainRoad+2.2,-.035,z);target.add(cover);const rim=new THREE.Mesh(new THREE.TorusGeometry(.38,.025,5,16),mat('#858078',1));rim.rotation.x=Math.PI/2;rim.position.set(mainRoad+2.2,-.018,z);target.add(rim)});
+ buildVianaPoliceStation();
 }
 
 if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
