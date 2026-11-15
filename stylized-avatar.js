@@ -22,7 +22,7 @@ export function createStylizedAvatar(a={},options={}){
  const arms=[],legs=[];
  for(const side of [-1,1]){const arm=new THREE.Group();arm.position.set(side*.43,1.48,0);torso.add(arm);mesh(arm,'body-arm',new THREE.CapsuleGeometry(.115,.48,4,8),skin,[0,-.28,0]);ball(arm,'body-hand',skin,[0,-.57,.01],[.13,.14,.13]);arms.push(arm);}
  for(const side of [-1,1]){const leg=new THREE.Group();leg.position.set(side*.19,.83,0);root.add(leg);mesh(leg,'body-leg',new THREE.CapsuleGeometry(.15,.48,4,8),'#26344c',[0,-.28,0]);mesh(leg,'body-shoe',new THREE.BoxGeometry(.24,.13,.38),'#242424',[0,-.58,.1]);legs.push(leg);}
- root.userData.avatarParts={arms,legs,torso};root.userData.appearance={...a};return root;
+ root.avatarParts={arms,legs,torso};root.userData.appearance={...a};return root;
 }
 export function applyStylizedAppearance(root,a={}){if(!root)return;const v={...root.userData.appearance,...a};root.userData.appearance=v;root.traverse(o=>{if(!o.isMesh||!o.material)return;const n=o.name||'';const c=/hair/.test(n)?v.hair:/head|ear|nose|neck|arm|hand/.test(n)?v.skin:/shirt/.test(n)?(v.outfitColor||'#2877a8'):/leg/.test(n)?(v.bottomColor||'#26344c'):null;if(c)o.material.color.set(c);});}
 export const AVATAR_OPTIONS={skin:SKIN,hair:HAIR,hairstyles:STYLES};
