@@ -25,7 +25,9 @@ Publica a pasta/repositório num serviço de hosting estático compatível com V
 - Cena 3D leve, com cidade de demonstração e movimento por toque.
 - Registo/login e perfis ligados ao Supabase, depois de configurares as chaves e SQL.
 - Presença online e chat de sala através de Supabase Realtime, depois de ligares o backend.
-- Empregos, economia, casas, veículos, mapa completo navegável das 18 províncias, inventário e moderação ainda precisam de implementação. Os botões dessas funções estão identificados como funcionalidades futuras; não são anunciados como já operacionais.
+- Inventário inicial integrado ao jogo, com categorias, consumo de comida/água, equipamento de roupa e gravação local no dispositivo. Ainda não sincroniza o conteúdo do inventário entre dispositivos/contas.
+- Novos jogadores começam num apartamento mobilado de apresentação; a propriedade continua a ser atribuída apenas pelo fluxo de compra e guardada na conta online.
+- Empregos, economia completa, mapa navegável das 18 províncias e moderação ainda precisam de implementação.
 
 ## Segurança e produção
 Antes de abrir ao público: validar nomes e mensagens no servidor, adicionar rate limits/moderação, rever políticas RLS, proteger economia no backend (nunca confiar no saldo enviado pelo navegador), implementar recuperação de conta e testar carga, acessibilidade e compatibilidade móvel. Nunca publiques a chave `service_role` no frontend.
