@@ -215,7 +215,7 @@ function buildRoom(name){
  box(8,.18,8,mat(floorColor),0,-.12,0);
  const exits=doorDefs[name]||[];
  const openings={north:null,south:null,east:null,west:null};exits.forEach(d=>openings[d.side]=d.center);
- for(const side of ['north','south','east','west']){if(openings[side]===null){if(side==='north')box(8,3.6,.18,mat('#eee6d8'),0,1.65,-4);else if(side==='south')box(8,3.6,.18,mat('#e7dfd2'),0,1.65,4);else if(side==='west')box(.18,3.6,8,mat('#e7dfd2'),-4,1.65,0);else box(.18,3.6,8,mat('#e7dfd2'),4,1.65,0)}else addWallWithOpening(side,openings[side])}
+ for(const side of ['north','south','east','west']){if(side==='south')continue;/* Parede frontal aberta para a câmara mostrar o interior da divisão. */if(openings[side]===null){if(side==='north')box(8,3.6,.18,mat('#eee6d8'),0,1.65,-4);else if(side==='west')box(.18,3.6,8,mat('#e7dfd2'),-4,1.65,0);else box(.18,3.6,8,mat('#e7dfd2'),4,1.65,0)}else addWallWithOpening(side,openings[side])}
  box(8,.18,8,mat('#f7f3ea'),0,3.5,0);
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
