@@ -376,6 +376,99 @@ function buildRoom(name){
 }
 
 
+
+function buildVianaBuilding(name,x,z,front,opts={}){
+ const w=opts.w||9,d=opts.d||7,h=opts.h||3.35;
+ const wall=mat(opts.wall||'#c9c0ad',.96),trim=mat('#e4ddce',.9),roof=mat(opts.roof||'#77736b',.96);
+ const glass=mat('#263b43',.48),door=mat('#39464a',.82),frame=mat('#e8dfcd',.9),ground=mat('#a18b70',1),metal=mat('#505657',.82);
+ const face=z+front*(d/2+.075);
+ // Base e edifício de construção simples, com cobertura plana.
+ box(w+2,.07,d+2,ground,x,-.105,z);
+ box(w,.16,d,trim,x,-.015,z);
+ box(w,h,d,wall,x,h/2,z);
+ box(w+.28,.18,d+.28,roof,x,h+.08,z);
+ box(w+.12,.12,d+.12,trim,x,h-.04,z);
+ // Entrada principal e caixilharia na fachada voltada para a rua.
+ box(1.18,2.25,.13,door,x,.99,face);
+ [-1,1].forEach(side=>{
+  const wx=x+side*(w*.29);
+  box(1.55,1.12,.13,glass,wx,1.92,face);
+  box(1.72,.12,.2,frame,wx,2.52,face);
+  box(1.72,.12,.2,frame,wx,1.32,face);
+  box(.12,1.25,.2,frame,wx-.8,1.92,face);
+  box(.12,1.25,.2,frame,wx+.8,1.92,face);
+  box(.06,1.08,.22,metal,wx,1.92,face);
+  box(1.58,.06,.22,metal,wx,1.92,face);
+ });
+ // Moldura simples da porta.
+ box(1.34,.12,.18,frame,x,2.18,face);
+ box(.12,2.3,.18,frame,x-.67,1.1,face);
+ box(.12,2.3,.18,frame,x+.67,1.1,face);
+ // Letreiro próprio para cada estabelecimento.
+ const canvas=document.createElement('canvas');canvas.width=768;canvas.height=128;
+ const ctx=canvas.getContext('2d');ctx.fillStyle=opts.sign||'#244638';ctx.fillRect(0,0,768,128);
+ ctx.strokeStyle='#e7ddbd';ctx.lineWidth=8;ctx.strokeRect(5,5,758,118);
+ ctx.fillStyle='#fff4d8';ctx.font='bold 43px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText(name,384,66);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const sign=new THREE.Mesh(new THREE.BoxGeometry(Math.min(w-1,8.4),.72,.13),new THREE.MeshStandardMaterial({map:texture,roughness:.85}));
+ sign.position.set(x,h-.52,face+front*.09);target.add(sign);
+ // Pequeno alpendre sobre a entrada.
+ box(2.25,.14,.95,roof,x,h*.72,face+front*.45);
+ // Elementos específicos, mantendo escala e aspeto de bairro.
+ if(opts.kind==='hospital'){
+  const cx=x+w/2-1.15,cz=face+front*.12;
+  box(.28,1.05,.12,mat('#b63b35',.7),cx,3.05,cz);
+  box(.95,.28,.12,mat('#b63b35',.7),cx,3.05,cz);
+ }
+ if(opts.kind==='hotel'){
+  [-1,1].forEach(side=>[-1,1].forEach(row=>box(1.25,.95,.13,glass,x+side*2.55,3.65,z+front*(d/2+.08))));
+  box(w+.6,.12,d+.5,roof,x,4.25,z);
+  box(w+.3,.12,d+.2,trim,x,4.16,z);
+ }
+ if(opts.kind==='market'){
+  [-1,1].forEach(side=>box(2.1,.16,1.15,mat(side<0?'#a34c35':'#d2b35d',.9),x+side*2.7,2.85,face+front*.55));
+ }
+ if(opts.kind==='cars'){
+  [-1,1].forEach(side=>{
+   const cx=x+side*2.7,cz=z+front*(d/2+1.25);
+   box(2.25,.65,1.15,mat(side<0?'#9d3930':'#b5b8ba',.7),cx,.42,cz);
+   box(1.2,.48,.92,mat('#333b40',.55),cx,.94,cz);
+   [-1,1].forEach(a=>[-1,1].forEach(b=>{
+    const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.14,12),metal);
+    wheel.rotation.z=Math.PI/2;wheel.position.set(cx+a*.72,.24,cz+b*.43);target.add(wheel);
+   }));
+  });
+ }
+ if(opts.kind==='bar'){
+  box(w*.72,.22,.7,mat('#8b5739',.9),x,1.2,face+front*.62);
+  box(.12,.95,.12,metal,x-w*.3,.58,face+front*.62);
+  box(.12,.95,.12,metal,x+w*.3,.58,face+front*.62);
+ }
+ if(opts.kind==='party'){
+  box(1.4,.5,.12,mat('#d4b66e',.7),x,2.95,face+front*.12);
+ }
+}
+function buildVianaOtherBuildings(){
+ // Hospital no quarteirão esquerdo, junto à esquadra.
+ buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:9.5,d:7.8,h:3.5,wall:'#d4d0c4',sign:'#8b3935'});
+ // Empresa da pedreira, com fachada industrial simples.
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{w:9.4,d:7.6,h:3.4,wall:'#b8b0a0',sign:'#555b50'});
+ // Mercado de bairro, com toldos modestos.
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:9.4,d:7.6,h:3.25,wall:'#c7b58f',sign:'#8b4a32'});
+ // Stand/loja de automóveis, com duas viaturas em exposição.
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:9.4,d:7.6,h:3.35,wall:'#c7c0b3',sign:'#42525b'});
+ // Hotel pequeno, de dois pisos, sem acabamento luxuoso.
+ buildVianaBuilding('HOTEL',0,0,-1,{kind:'hotel',w:9.4,d:7.8,h:4.2,wall:'#c9bda9',sign:'#695744'});
+ // Bar simples de bairro.
+ buildVianaBuilding('BAR',-28,28,-1,{kind:'bar',w:8.8,d:7.2,h:3.25,wall:'#c7ad8e',sign:'#77402d'});
+ // Salão de festas.
+ buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:9.8,d:8,h:3.6,wall:'#c9c0b4',sign:'#63506c'});
+ // Dois pequenos estabelecimentos no mesmo quarteirão comercial.
+ buildVianaBuilding('SALÃO DE BELEZA',-3.4,28,-1,{w:5.7,d:6.8,h:3.2,wall:'#d2b9ae',sign:'#864e68'});
+ buildVianaBuilding('LOJA DE ROUPAS',3.4,28,-1,{w:5.7,d:6.8,h:3.2,wall:'#c7c0b2',sign:'#455c70'});
+}
+
 function buildVianaPoliceStation(){
  // Esquadra simples de bairro, implantada no quarteirão esquerdo da avenida.
  const wall=mat('#c8c0ad',.96),trim=mat('#e5dfcf',.9),roof=mat('#77756e',.95);
@@ -483,6 +576,7 @@ function buildVianaStreets(){
  // Tampas de saneamento na estrada.
  [-35,0,35].forEach(z=>{const cover=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.025,16),mat('#686762',1));cover.position.set(mainRoad+2.2,-.035,z);target.add(cover);const rim=new THREE.Mesh(new THREE.TorusGeometry(.38,.025,5,16),mat('#858078',1));rim.rotation.x=Math.PI/2;rim.position.set(mainRoad+2.2,-.018,z);target.add(rim)});
  buildVianaPoliceStation();
+ buildVianaOtherBuildings();
 }
 
 if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
