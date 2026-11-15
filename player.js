@@ -215,7 +215,7 @@ export class Player {
   }
 
   updateProceduralAnimation(delta, moving) {
-    const parts = this.normalizedModel?.userData?.avatarParts;
+    const parts = this.normalizedModel?.avatarParts;
     if (!parts || this.sitting) return;
     if (moving) this.walkPhase += delta * 8.5;
     const swing = moving ? Math.sin(this.walkPhase) * 0.48 : 0;
