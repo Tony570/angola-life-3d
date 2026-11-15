@@ -1,91 +1,15 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { createStylizedAvatar } from './stylized-avatar.js';
 import { supabase } from './online.js';
 
-const MODEL_URLS = {
-  male: 'https://models.codelove.in/models/male-adult-02.glb',
-  female: 'https://models.codelove.in/models/female-adult-03.glb'
-};
-const HEIGHT = 2.5;
 const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const MAX_VISIBLE_PLAYERS = IS_MOBILE ? 8 : 12;
 const SHOW_DISTANCE = IS_MOBILE ? 180 : 260;
-const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-let assetsPromise = null;
-
-function loadAssets() {
-  if (!assetsPromise) {
-    assetsPromise = Promise.all([
-      loader.loadAsync(MODEL_URLS.male),
-      loader.loadAsync(MODEL_URLS.female)
-    ]).then(([male, female]) => ({ male: male.scene, female: female.scene }));
-  }
-  return assetsPromise;
-}
 
 function hash(value) {
   let result = 0;
   for (const char of String(value)) result = (result * 31 + char.charCodeAt(0)) >>> 0;
   return result;
-}
-
-function normalizeModel(model) {
-  model.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(model);
-  const height = bounds.max.y - bounds.min.y;
-  if (!Number.isFinite(height) || height <= 0) throw new Error('Modelo de jogador inválido.');
-  const root = new THREE.Group();
-  root.scale.setScalar(HEIGHT / height);
-  root.position.y = -bounds.min.y * (HEIGHT / height);
-  root.add(model);
-  return root;
-}
-
-function applyAppearance(model, appearance = {}) {
-  const skin = new THREE.Color(appearance.skin || '#8d5524');
-  const hair = new THREE.Color(appearance.hair || '#21160f');
-  const eyes = new THREE.Color(appearance.eyes || '#3b2418');
-  const clothing = appearance.clothing || {};
-  const clothingPatterns = {
-    top: /shirt|top|torso|upper|tshirt|outfit_top/,
-    bottom: /pant|trouser|jean|short|skirt|bottom|outfit_bottom/,
-    shoes: /shoe|boot|sneaker|footwear|feet|outfit_footwear/,
-    outfit: /dress|vestido/,
-    outer: /jacket|coat|blazer|outerwear/
-  };
-  const colorFor = (item, slot) => {
-    const value = String(item || '').toLowerCase();
-    if (/branc/.test(value)) return 0xf1eee7;
-    if (/pret|negro/.test(value)) return 0x202020;
-    if (/vermelh/.test(value)) return 0xb52e35;
-    if (/azul|jeans/.test(value)) return 0x285d91;
-    if (/verde/.test(value)) return 0x286344;
-    if (/amarel|dourad/.test(value)) return 0xd6a52e;
-    if (/african|estampad/.test(value)) return 0x9a3c32;
-    return slot === 'bottom' ? 0x26344c : slot === 'shoes' ? 0x282828 : 0x2877a8;
-  };
-
-  model.traverse(object => {
-    if (!object.isMesh || !object.material) return;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    const name = [object.name, ...materials.map(item => item.name)].join(' ').toLowerCase();
-    let color = null;
-    if (/hair|cabelo|beard/.test(name)) color = hair;
-    else if (/eye|iris|pupil/.test(name)) color = eyes;
-    else if (/skin|face|head|body|arm|hand|leg|neck/.test(name)) color = skin;
-    const slot = Object.keys(clothingPatterns).find(key => clothing[key] && clothingPatterns[key].test(name));
-    const tint = slot ? colorFor(clothing[slot], slot) : null;
-    if (!color && tint === null) return;
-    const changed = materials.map(original => {
-      const material = original.clone();
-      if (color && material.color) material.color.copy(color);
-      if (tint !== null && material.color) material.color.setHex(tint);
-      return material;
-    });
-    object.material = Array.isArray(object.material) ? changed : changed[0];
-  });
 }
 
 function makeNameLabel(nickname) {
@@ -119,21 +43,12 @@ export function createMultiplayer({ scene, player, online } = {}) {
   let pruneTimer = 0;
   let lastSent = null;
   let lastAppearanceSignature = '';
-  let assets = null;
-  let loadingAssets = null;
   let chatChannel = null;
   let chatChannelReady = null;
 
   const localPosition = () => player.currentVehicle
     ? player.currentVehicle.group.position
     : player.group.position;
-
-  async function ensureAssets() {
-    if (assets) return assets;
-    if (!loadingAssets) loadingAssets = loadAssets();
-    assets = await loadingAssets;
-    return assets;
-  }
 
   function showChatBubble(root, message) {
     if (!root || !message) return;
@@ -196,15 +111,11 @@ export function createMultiplayer({ scene, player, online } = {}) {
     const initialPosition = data.position || { x: 0, z: 0 };
     const local = localPosition();
     if (Math.hypot((Number(initialPosition.x) || 0) - local.x, (Number(initialPosition.z) || 0) - local.z) > SHOW_DISTANCE) return;
-    const assetsLoaded = await ensureAssets();
     if (!loaderState.channel || loaderState.userId === null) return;
     const currentPresence = loaderState.channel.presenceState();
     if (!currentPresence[id]) return;
 
-    const gender = hash(id) % 2 === 0 ? 'male' : 'female';
-    const model = clone(assetsLoaded[gender]);
-    const normalized = normalizeModel(model);
-    applyAppearance(normalized, data.appearance || {});
+    const normalized = createStylizedAvatar(data.appearance || {});
     const root = new THREE.Group();
     root.add(normalized);
     root.add(makeNameLabel(data.nickname || 'Jogador'));
