@@ -22,7 +22,12 @@ app.innerHTML = `
   <div id="welcome" class="screen">
     <div class="welcome-content">
       <div class="logo">ANGOLA LIFE 3D</div>
-      <p>Começa a tua vida no Kilamba. A tua casa é o primeiro lugar da tua história.</p>
+      <p>Personaliza a tua personagem e começa a tua vida no Kilamba.</p>
+      <div class="avatar-creator">
+        <label>Estilo de cabelo<select id="avatar-hairstyle"><option value="curto">Curto</option><option value="espetado">Espetado</option><option value="encaracolado">Encaracolado</option><option value="comprido">Comprido</option><option value="rapado">Rapado</option><option value="afro">Afro</option></select></label>
+        <label>Cor do cabelo<select id="avatar-hair"><option value="#17120f">Preto</option><option value="#3b2418">Castanho</option><option value="#b9b9b9">Branco</option><option value="#d6a23a">Louro</option><option value="#8b3027">Ruivo</option><option value="#e8d8bd">Loiro claro</option></select></label>
+        <label>Tom de pele<select id="avatar-skin"><option value="#8d5524">Moreno</option><option value="#a96b42">Castanho</option><option value="#6f4028">Escuro</option><option value="#c58a61">Claro</option><option value="#e0ad83">Muito claro</option></select></label>
+      </div>
       <button id="start-game" type="button">ENTRAR NA MINHA CASA</button>
     </div>
   </div>
@@ -175,7 +180,7 @@ const online = createOnlineAccount({
     if (services) services.syncOnlineData(data);
     if (wardrobePanel) renderWardrobeProfile();
     if (data?.profile?.appearance) {
-      player.setAppearance(data.profile.appearance);
+      player.setAppearance({ ...readAvatarChoice(), ...data.profile.appearance });
     }
   }
 });
@@ -220,6 +225,12 @@ if (hasTouchControls) {
   mobileControls.style.pointerEvents = 'auto';
 }
 let started = false;
+const avatarControls = ['avatar-hairstyle','avatar-hair','avatar-skin'].map(id => document.getElementById(id));
+function readAvatarChoice() {
+  return { hairstyle: avatarControls[0]?.value || 'curto', hair: avatarControls[1]?.value || '#17120f', skin: avatarControls[2]?.value || '#8d5524' };
+}
+avatarControls.forEach(control => control?.addEventListener('change', () => player.setAppearance({ ...(player.appearance || {}), ...readAvatarChoice() })));
+player.setAppearance(readAvatarChoice());
 
 function openBank() {
   if (services.isOpen()) services.close();
