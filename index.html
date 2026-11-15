@@ -221,7 +221,7 @@ function buildRoom(name){
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
  if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88)}
 }
-if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:0,z:initialSpawn.z??1.65},m=>mixer=m);houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
+if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)})}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.34,1.35);camera.lookAt(0,.10,0)}
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
@@ -229,8 +229,8 @@ let dragging=false,lastX=0,lastY=0,moved=false,theta=0,phi=.23,distance=10.8,pin
 const cameraTarget=new THREE.Vector3(kind==='room'&&houseAvatar?houseAvatar.position.x:0,kind==='room'&&houseAvatar? .2: .12,kind==='room'&&houseAvatar?houseAvatar.position.z:0);
 function updateOrbit(){phi=THREE.MathUtils.clamp(phi,.08,.85);distance=THREE.MathUtils.clamp(distance,5,18);camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
 if(kind==='room')updateOrbit();
-const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3();
-const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-3.45,3.45),0,THREE.MathUtils.clamp(hit.z,-3.45,3.45))}};
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),.03),hit=new THREE.Vector3();
+const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-3.45,3.45),-.03,THREE.MathUtils.clamp(hit.z,-3.45,3.45))}};
 const onPointerDown=e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;};
 const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;lastX=e.clientX;lastY=e.clientY;if(kind==='room'&&moved){theta-=dx*.008;phi+=dy*.006;updateOrbit()}else if(kind!=='room'&&moved){target.rotation.y+=dx*.008}};
 const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
@@ -262,9 +262,9 @@ if(kind==='room'&&houseAvatar){
  if(Math.abs(houseAvatar.position.x)>=3.349)velocityX=0;if(Math.abs(houseAvatar.position.z)>=3.349)velocityZ=0;
  const speed=Math.hypot(velocityX,velocityZ),walking=speed>.08;
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
- houseAvatar.position.y=0;
+ houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
- if(model){if(walking)walkPhase+=delta*8.8;for(const item of houseAvatar.userData.walkBones||[]){const side=item.side===-1?-1:1;let targetX=item.base.x;if(walking){const stride=Math.sin(walkPhase)*side;if(item.limb==='leg')targetX+=item.knee?Math.max(0,-stride)*.42:stride*.62;else if(item.limb==='arm')targetX-=stride*.42;else if(item.limb==='foot')targetX+=Math.max(0,stride)*.16}item.bone.rotation.x+=(targetX-item.bone.rotation.x)*(1-Math.exp(-12*delta))}}
+ if(model){const gait=THREE.MathUtils.clamp(speed/1.8,0,1);if(walking)walkPhase+=delta*(5.8+speed*3.0);for(const item of houseAvatar.userData.walkBones||[]){const side=item.side===-1?-1:1;const stride=Math.sin(walkPhase)*side;let targetX=item.base.x;if(item.limb==='leg'){targetX+=item.knee?Math.max(0,stride)*.62:stride*.48}else if(item.limb==='arm'){targetX-=stride*.30}else if(item.limb==='foot'){targetX-=stride*.32}targetX=item.base.x+(targetX-item.base.x)*gait;item.bone.rotation.x+=(targetX-item.bone.rotation.x)*(1-Math.exp(-16*delta))}}
  cameraTarget.x=THREE.MathUtils.lerp(cameraTarget.x,houseAvatar.position.x,.14);cameraTarget.y=THREE.MathUtils.lerp(cameraTarget.y,.20,.10);cameraTarget.z=THREE.MathUtils.lerp(cameraTarget.z,houseAvatar.position.z,.14);updateOrbit();
 }
 renderer.render(scene,camera)};animate();
