@@ -8,6 +8,61 @@
 :root{--bg:#0c1220;--panel:#151e30;--panel2:#1c2940;--gold:#e6b85c;--muted:#9eabc0;--text:#f5f7fb;--line:#2a3850;--green:#68d6a0}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--gold);color:#172033}button.secondary{background:#263650;color:#eaf0fa;border:1px solid #3b4d69}button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:11px;background:#0d1728;color:white;outline:none}input:focus,select:focus{border-color:var(--gold)}label{display:block;color:#c6d0df;font-size:13px;margin:12px 0 6px}.hidden{display:none!important}.muted{color:var(--muted)}.small{font-size:12px}.brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.4px}.brand-mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,#f1cb79,#a66b25);display:grid;place-items:center;color:#172033;font-size:21px}.auth-wrap{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}.hero{padding:7vw;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(ellipse at 20% 30%,#354c6d 0,transparent 55%),linear-gradient(145deg,#101c30,#0b111d)}.hero h1{font-size:clamp(38px,6vw,76px);line-height:1.02;margin:30px 0 18px}.hero h1 span{color:var(--gold)}.hero p{max-width:470px;color:#bdc9da;font-size:17px}.auth-card{width:min(440px,90%);margin:auto;padding:34px;background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:0 25px 80px #0005}.tabs{display:flex;gap:8px;margin:24px 0}.tabs button{flex:1}.tabs .active{background:var(--gold);color:#172033}.auth-card h2{margin:8px 0}.notice{min-height:22px;color:var(--gold);font-size:13px;margin-top:10px}.app{height:100dvh;min-height:100dvh;overflow:hidden}.topbar{height:58px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;background:#111a2a;border-bottom:1px solid var(--line);position:relative;z-index:5}.top-actions{display:flex;align-items:center;gap:10px}.layout{display:grid;grid-template-columns:72px 1fr;height:calc(100dvh - 58px);min-height:0}.sidebar{background:#101a2a;border-right:1px solid var(--line);padding:12px 8px}.user-mini{display:none}.nav{display:grid;gap:9px}.nav button{width:100%;height:52px;text-align:center;background:transparent;color:#c3cede;border:1px solid transparent;padding:5px;font-size:0;border-radius:14px}.nav button:before{font-size:23px;display:block;line-height:1.6}.nav button[data-page=home]:before{content:'⌂'}.nav button[data-page=avatar]:before{content:'♙'}.nav button[data-page=inventory]:before{content:'▦'}.nav button[data-page=profile]:before{content:'◎'}.nav button.active,.nav button:hover{background:#202e45;border-color:#344762;color:white}.main{padding:14px 18px;min-width:0;height:100%;overflow:auto}.page-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.page-head h1{font-size:21px;margin:0}.grid-main{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}.scene{height:calc(100dvh - 112px);min-height:420px;border-radius:12px;overflow:hidden;background:#b9c4d0;position:relative}.scene canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}.scene-label,.scene-controls{z-index:1}.scene-label{position:absolute;left:15px;top:14px;background:#101827cc;padding:9px 12px;border-radius:10px;font-size:12px}.scene-controls{position:absolute;right:12px;bottom:12px;display:flex;gap:8px}.scene-controls button{padding:9px 12px}.profile-head{display:flex;align-items:center;gap:16px}.profile-avatar{width:76px;height:76px;border-radius:22px;background:#273852;display:grid;place-items:center;font-size:30px}.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}.stat{padding:13px;border-radius:13px;background:#0f1929}.stat strong{font-size:21px;display:block}.section-title{margin:0 0 12px;font-size:17px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.avatar-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}.avatar-stage{height:560px;border-radius:16px;overflow:hidden;background:linear-gradient(#b9c9d7,#e4e5df)}.avatar-options{display:grid;gap:12px}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{width:30px;height:30px;border-radius:50%;border:2px solid #ffffff66;padding:0}.swatch.selected{outline:2px solid var(--gold);outline-offset:2px}.inventory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px}.item{background:#101a2a;border:1px solid var(--line);border-radius:14px;padding:14px}.item-icon{height:85px;border-radius:11px;background:#202e45;display:grid;place-items:center;font-size:34px;margin-bottom:10px}.item button{width:100%;margin-top:10px;padding:9px}.category-row{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.category-row button{padding:9px 13px}.profile-layout{display:grid;grid-template-columns:300px 1fr;gap:18px}.pill{display:inline-block;padding:5px 9px;border-radius:30px;background:#263650;color:#d7e3f4;font-size:11px}.footer-note{margin-top:18px;color:#91a0b7;font-size:12px}
 @media(max-width:850px){.auth-wrap{grid-template-columns:1fr}.hero{display:none}.app{height:100dvh}.topbar{height:50px;padding:0 12px}.layout{display:block;height:calc(100dvh - 50px)}.sidebar{position:fixed;z-index:10;left:0;right:0;bottom:0;height:58px;padding:4px 10px calc(4px + env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);background:#101a2a}.nav{grid-template-columns:repeat(4,1fr);gap:8px}.nav button{height:48px;padding:3px}.main{height:calc(100dvh - 108px);padding:8px 10px 12px;overflow:auto}.grid-main,.avatar-layout,.profile-layout{grid-template-columns:1fr}.grid-main>.panel:last-child{display:none}.scene{height:calc(100dvh - 145px);min-height:300px}.avatar-stage{height:calc(100dvh - 170px);min-height:360px}.page-head{margin:4px 2px 8px}.page-head h1{font-size:18px}.page-head .muted{font-size:11px}.panel{padding:8px}.topbar .brand span:last-child{display:none}.top-actions button{padding:7px 10px}.top-actions #top-username{display:none}}
+
+/* Nova interface inspirada na referência visual */
+#game{position:relative;background:#101827}
+#game .topbar{height:64px;background:linear-gradient(90deg,#18365b,#263d70);border-bottom:3px solid #d7ad53;box-shadow:0 4px 16px #0005}
+#game .topbar .brand-mark{border:3px solid #f3d27b;border-radius:50%;background:linear-gradient(145deg,#f8d783,#c07b2e)}
+#game .layout{display:block;height:calc(100dvh - 64px)}
+#game .sidebar{display:none}
+#game .main{height:100%;padding:0;overflow:hidden;background:#a8c6d8}
+#game .page-head{display:none}
+#game #page-home{height:100%}
+#game #page-home .grid-main{display:block;height:100%}
+#game #page-home .grid-main>.panel:first-child{height:100%;padding:0;border:0;border-radius:0;background:transparent}
+#game #page-home .grid-main>.panel:last-child{display:none}
+#game .scene{height:100%;min-height:0;border-radius:0;background:linear-gradient(#8db9d0,#d7e2d9)}
+#game .scene-label{left:50%;transform:translateX(-50%);top:12px;background:#12294cdd;color:#fff;border:1px solid #e2bd67}
+#game .scene-controls{display:none}
+#game #page-avatar,#game #page-inventory,#game #page-profile{position:absolute;z-index:8;inset:64px 0 0;background:#101827f2;padding:16px;overflow:auto}
+#game .panel{background:#172943;border-color:#385578}
+#game .nav{display:none}
+#life-hud{position:absolute;z-index:12;inset:0;pointer-events:none}
+#life-hud button,#life-hud .hud-card{pointer-events:auto}
+#life-player{position:absolute;left:14px;top:76px;display:flex;align-items:center;gap:9px;background:linear-gradient(100deg,#173e75,#372d75);border:3px solid #e9c15f;border-radius:42px;padding:5px 14px 5px 5px;box-shadow:0 4px 14px #0005;color:white}
+#life-face{width:54px;height:54px;border-radius:50%;background:linear-gradient(145deg,#d6a77c,#80533d);border:3px solid #f3d37d;display:grid;place-items:center;font-size:27px}
+#life-level{position:absolute;left:-7px;bottom:-3px;border-radius:50%;background:#2866bd;border:2px solid white;padding:3px 6px;font-weight:900;font-size:12px}
+#life-player strong{display:block;font-size:14px}#life-player small{color:#f8d98b;font-size:11px}
+#life-wallet{position:absolute;right:14px;top:76px;display:flex;gap:8px;align-items:center}
+.hud-chip{background:linear-gradient(100deg,#203e72,#354d91);border:2px solid #6287c7;border-radius:24px;padding:8px 13px;color:#fff;font-weight:900;box-shadow:0 3px 10px #0004}
+#life-left{position:absolute;left:14px;top:155px;display:grid;gap:9px}
+#life-right{position:absolute;right:14px;top:155px;display:grid;gap:9px}
+.life-icon{width:54px;height:54px;border-radius:18px;background:linear-gradient(145deg,#65c6ff,#2765c6);border:2px solid #8ed8ff;color:white;font-size:25px;box-shadow:0 4px 12px #0004;padding:0}
+.life-icon.pink{background:linear-gradient(145deg,#ef76d9,#a62ba7);border-color:#ffb0e8}
+#life-chat{position:absolute;right:14px;bottom:18px}
+#life-phone{position:absolute;right:14px;top:220px}
+#life-globe{position:absolute;left:14px;top:344px}
+#life-task{position:absolute;left:14px;top:218px}
+#life-friends{position:absolute;left:14px;top:281px}
+#life-menu{position:absolute;right:14px;top:155px}
+#life-panel{position:absolute;z-index:20;right:78px;bottom:16px;width:min(360px,calc(100vw - 100px));max-height:68vh;overflow:auto;background:#142743f5;border:2px solid #d6b45e;border-radius:18px;padding:14px;box-shadow:0 15px 45px #0008;color:white}
+#life-panel h3{margin:0 0 10px}#life-panel input{margin:5px 0}#life-panel button{margin:4px 2px;padding:9px 12px}
+.life-list{max-height:220px;overflow:auto}.life-row{padding:9px;border-bottom:1px solid #ffffff20;display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px}
+.life-muted{color:#b8c9df;font-size:12px}.life-chatlog{height:180px;overflow:auto;background:#0b192c;border-radius:10px;padding:8px;margin:8px 0;font-size:13px}
+.life-send{display:flex;gap:6px}.life-send input{min-width:0}.life-send button{white-space:nowrap}
+@media(max-width:700px){
+#game .topbar{height:48px;padding:0 10px}#game .layout{height:calc(100dvh - 48px)}
+#game .main{height:100%}#game #page-avatar,#game #page-inventory,#game #page-profile{inset:48px 0 0}
+#life-player{top:57px;left:8px;padding:3px 9px 3px 3px;gap:6px}
+#life-face{width:43px;height:43px;font-size:22px}#life-player strong{font-size:12px}#life-player small{font-size:9px}
+#life-wallet{top:58px;right:7px;gap:4px}.hud-chip{padding:6px 8px;font-size:11px}
+#life-left{left:7px;top:116px;gap:6px}#life-right{right:7px;top:116px;gap:6px}
+.life-icon{width:43px;height:43px;border-radius:14px;font-size:21px}
+#life-task{top:165px}#life-friends{top:214px}#life-globe{top:263px}
+#life-phone{top:165px}#life-chat{right:8px;bottom:12px}
+#life-panel{right:58px;bottom:10px;width:min(320px,calc(100vw - 76px));max-height:65vh}
+}
+
 </style>
 </head>
 <body>
@@ -20,6 +75,21 @@
  <div id="auth-message" class="notice" role="status"></div><p class="footer-note">Ao criares conta, o teu perfil e inventário ficam associados à tua conta.</p></div>
 </section>
 <section id="game" class="app hidden">
+<div id="life-hud">
+ <div id="life-player"><div id="life-face">🧑🏽</div><span id="life-level">1</span><div><strong id="life-name">Novo residente</strong><small>★ 0&nbsp;&nbsp; 🏠 1</small></div></div>
+ <div id="life-wallet"><span class="hud-chip">⚡ 100/100</span><span class="hud-chip">🪙 500</span></div>
+ <div id="life-left">
+  <button class="life-icon pink" id="life-task" title="Tarefas">▤</button>
+  <button class="life-icon" id="life-friends" title="Amigos">👥</button>
+  <button class="life-icon" id="life-globe" title="Explorar mundo">🌍</button>
+ </div>
+ <div id="life-right">
+  <button class="life-icon pink" id="life-menu" title="Opções">▦</button>
+  <button class="life-icon" id="life-phone" title="Telemóvel e rede social">📱</button>
+ </div>
+ <button class="life-icon pink" id="life-chat" title="Chat público">▰</button>
+ <div id="life-panel" class="hidden"></div>
+</div>
 <header class="topbar"><div class="brand"><div class="brand-mark">A</div><span>ANGOLA LIFE 3D</span></div><div class="top-actions"><span id="top-username" class="muted small"></span><button id="logout" class="ghost">Sair</button></div></header>
 <div class="layout"><aside class="sidebar"><div class="user-mini"><div class="avatar-dot"></div><div><strong id="side-name">Jogador</strong><span class="muted small">Residente</span></div></div><nav class="nav"><button data-page="home" class="active">⌂ Casa</button><button data-page="avatar">♙ Avatar</button><button data-page="inventory">▦ Inventário</button><button data-page="profile">◎ Perfil</button></nav></aside>
 <main class="main">
@@ -79,6 +149,24 @@ const icons={cabelo:'💇',roupa:'👕',calçado:'👟',acessório:'⌚'};
 function renderInventory(){const filtered=inventory.filter(x=>activeCategory==='todos'||x.category===activeCategory);$('inventory-count').textContent=inventory.length+' OBJECTOS';$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;$('inventory-grid').innerHTML='';if(!filtered.length){$('inventory-grid').innerHTML='<p class="muted">Ainda não tens objectos nesta categoria.</p>';return}filtered.forEach(item=>{const el=document.createElement('div');el.className='item';el.innerHTML='<div class="item-icon">'+(icons[item.category]||'📦')+'</div><strong></strong><div class="muted small"></div><button class="secondary"></button>';el.querySelector('strong').textContent=item.label;el.querySelector('.muted').textContent=item.category;const b=el.querySelector('button');b.textContent=item.equipped?'Equipado':'Equipar';b.disabled=item.equipped;b.onclick=()=>equip(item);$('inventory-grid').append(el)})}
 async function equip(item){const clear=await sb.from('inventory_items').update({equipped:false}).eq('user_id',user.id).eq('category',item.category);if(clear.error){alert(clear.error.message);return}const chosen=await sb.from('inventory_items').update({equipped:true}).eq('id',item.id).eq('user_id',user.id);if(chosen.error){alert(chosen.error.message);return}inventory=inventory.map(x=>({...x,equipped:x.id===item.id?true:(x.category===item.category?false:x.equipped)}));renderInventory()}
 document.querySelectorAll('#inventory-categories button').forEach(b=>b.onclick=()=>{activeCategory=b.dataset.cat;document.querySelectorAll('#inventory-categories button').forEach(x=>x.classList.toggle('secondary',x!==b));renderInventory()});
+
+function openLifePanel(title,html){const p=$('life-panel');p.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><h3>'+title+'</h3><button id="life-close" class="secondary">✕</button></div>'+html;p.classList.remove('hidden');$('life-close').onclick=()=>p.classList.add('hidden')}
+$('life-name').textContent=profile?.display_name||'Novo residente';
+$('life-task').onclick=()=>openLifePanel('Tarefas diárias','<p class="life-muted">Personaliza o teu avatar, visita a tua casa e conhece novos moradores.</p><div class="life-row">🎯 Completar o perfil <span>Em breve</span></div><div class="life-row">🏡 Explorar a casa <span>Disponível</span></div>');
+$('life-globe').onclick=()=>openLifePanel('Explorar o mundo','<p class="life-muted">O mapa da cidade será aberto aqui. A exploração pública está a ser preparada para a próxima fase.</p><button class="secondary" id="life-back-home">Voltar à casa</button>');
+$('life-back-home')?.addEventListener('click',()=>{$('life-panel').classList.add('hidden');showPage('home')});
+$('life-menu').onclick=()=>openLifePanel('Menu do jogo','<button class="secondary" id="life-open-avatar">👤 Personalizar avatar</button><button class="secondary" id="life-open-inventory">🎒 Inventário</button><button class="secondary" id="life-open-profile">⭐ Perfil</button>');
+$('life-open-avatar')?.addEventListener('click',()=>{ $('life-panel').classList.add('hidden');showPage('avatar')});
+$('life-open-inventory')?.addEventListener('click',()=>{ $('life-panel').classList.add('hidden');showPage('inventory')});
+$('life-open-profile')?.addEventListener('click',()=>{ $('life-panel').classList.add('hidden');showPage('profile')});
+async function loadWorldChat(){const {data,error}=await sb.from('world_chat_messages').select('id,message,created_at,user_id,profiles(display_name,username)').order('created_at',{ascending:true}).limit(60);if(error){return '<p class="life-muted">Chat indisponível neste momento.</p>'}return (data||[]).map(m=>'<div class="life-row"><span><b>'+escapeLife(m.profiles?.display_name||m.profiles?.username||'Morador')+'</b><br>'+escapeLife(m.message)+'</span><small>'+new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</small></div>').join('')}
+function escapeLife(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('life-chat').onclick=async()=>{openLifePanel('Chat público','<div id="life-chat-log" class="life-chatlog">A carregar mensagens…</div><div class="life-send"><input id="life-chat-input" maxlength="400" placeholder="Escreve uma mensagem…"><button id="life-chat-send">Enviar</button></div>');$('life-chat-log').innerHTML=await loadWorldChat();const log=$('life-chat-log');if(log)log.scrollTop=log.scrollHeight;$('life-chat-send').onclick=async()=>{const input=$('life-chat-input');const msg=input.value.trim();if(!msg||!user)return;const {error}=await sb.from('world_chat_messages').insert({user_id:user.id,message:msg});if(error){alert('Não foi possível enviar: '+error.message);return}input.value='';$('life-chat-log').innerHTML=await loadWorldChat();$('life-chat-log').scrollTop=$('life-chat-log').scrollHeight};$('life-chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')$('life-chat-send').click()})};
+$('life-phone').onclick=()=>openLifePanel('Telemóvel · Rede social','<input id="life-user-search" placeholder="Procurar moradores pelo nome…"><div id="life-user-results" class="life-list"><p class="life-muted">Escreve um nome para procurar jogadores.</p></div><div id="life-private-area"></div>');
+$('life-user-search')?.addEventListener('input',async e=>{const q=e.target.value.trim();if(q.length<2){$('life-user-results').innerHTML='<p class="life-muted">Escreve pelo menos 2 letras.</p>';return}const {data,error}=await sb.from('profiles').select('id,username,display_name').ilike('display_name','%'+q+'%').neq('id',user.id).limit(12);if(error){$('life-user-results').textContent='Pesquisa indisponível.';return}$('life-user-results').innerHTML=(data||[]).map(p=>'<div class="life-row"><span>'+escapeLife(p.display_name)+' <small>@'+escapeLife(p.username)+'</small></span><button data-user="'+p.id+'" data-name="'+escapeLife(p.display_name)+'">Abrir</button></div>').join('')||'<p class="life-muted">Nenhum morador encontrado.</p>';document.querySelectorAll('#life-user-results button[data-user]').forEach(b=>b.onclick=()=>openPrivateConversation(b.dataset.user,b.dataset.name))});
+async function openPrivateConversation(otherId,otherName){const area=$('life-private-area');area.innerHTML='<h3>'+escapeLife(otherName)+'</h3><div id="life-private-log" class="life-chatlog">A carregar…</div><div class="life-send"><input id="life-private-input" maxlength="2000" placeholder="Mensagem privada…"><button id="life-private-send">Enviar</button></div>';const refresh=async()=>{const {data,error}=await sb.from('private_messages').select('*').or('and(sender_id.eq.'+user.id+',recipient_id.eq.'+otherId+'),and(sender_id.eq.'+otherId+',recipient_id.eq.'+user.id+')').order('created_at').limit(80);if(error)return;const el=$('life-private-log');if(el){el.innerHTML=(data||[]).map(m=>'<div class="life-row"><span>'+(m.sender_id===user.id?'Tu':'Eles')+': '+escapeLife(m.message)+'</span></div>').join('');el.scrollTop=el.scrollHeight}};await refresh();$('life-private-send').onclick=async()=>{const input=$('life-private-input'),message=input.value.trim();if(!message)return;const {error}=await sb.from('private_messages').insert({sender_id:user.id,recipient_id:otherId,message});if(error){alert('Não foi possível enviar a mensagem.');return}input.value='';await refresh()}}
+$('life-friends').onclick=async()=>{const {data,error}=await sb.from('social_connections').select('id,status,requester_id,addressee_id').or('requester_id.eq.'+user.id+',addressee_id.eq.'+user.id).limit(40);if(error){openLifePanel('Amigos','<p class="life-muted">Não foi possível carregar os contactos.</p>');return}const ids=[...new Set((data||[]).map(x=>x.requester_id===user.id?x.addressee_id:x.requester_id))];let people=[];if(ids.length){const r=await sb.from('profiles').select('id,display_name,username').in('id',ids);people=r.data||[]}const html=(data||[]).map(x=>{const id=x.requester_id===user.id?x.addressee_id:x.requester_id;const p=people.find(y=>y.id===id);return '<div class="life-row"><span>'+escapeLife(p?.display_name||p?.username||'Morador')+'</span><b>'+escapeLife(x.status)+'</b></div>'}).join('');openLifePanel('Amigos e relações',html||'<p class="life-muted">Ainda não tens contactos. Usa o telemóvel para procurar moradores.</p>')};
+
 sb.auth.getSession().then(({data})=>{if(data.session)boot()});
 </script>
 </body></html>
