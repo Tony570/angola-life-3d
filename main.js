@@ -4,6 +4,7 @@ import { createServices } from './services.js';
 import { createOnlineAccount } from './online.js';
 import { createPlayerPhone } from './player-phone.js';
 import { createKilambaDistrict } from './kilamba.js';
+import { addLuandaArchitectureDetails } from './luanda-architecture.js';
 import { createHouseSystem } from './kilamba-apartments.js';
 import { createReceptionist } from './people.js';
 import './style.css';
@@ -164,6 +165,7 @@ scene.add(sun);
 
 // Bairro Kilamba: ruas, passeios, jardins e exatamente dez blocos habitáveis.
 const world = createKilambaDistrict(scene);
+addLuandaArchitectureDetails(scene, world);
 const houses = createHouseSystem(scene, world);
 
 const player = new Player(scene, camera, world.vehicles);
