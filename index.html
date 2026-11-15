@@ -321,6 +321,51 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.
 let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z)=>cityCollisionBoxes.some(c=>x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ);
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function createDetailedCar(color='#a83e36',police=false){
+ const g=new THREE.Group(),body=mat(color,.48),glass=mat('#263e4c',.28),rubber=mat('#171a1d',.96),hub=mat('#c1c8ca',.42),chrome=mat('#aeb9bf',.38);
+ const shell=(points,depth,material,bevel=.08)=>{
+  const shape=new THREE.Shape();shape.moveTo(points[0][0],points[0][1]);
+  for(let i=1;i<points.length;i++){const p=points[i];if(p.length===4)shape.quadraticCurveTo(p[0],p[1],p[2],p[3]);else shape.lineTo(p[0],p[1])}
+  shape.closePath();
+  const geo=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:true,bevelSegments:3,bevelSize:bevel,bevelThickness:bevel,curveSegments:10});
+  geo.translate(0,0,-depth/2);const mesh=new THREE.Mesh(geo,material);mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh;
+ };
+ // Carroçaria com capô, tejadilho e traseira arredondados.
+ shell([[-1.72,.27],[-1.78,.42],[-1.68,.68],[-1.48,.76],[1.42,.76],[1.68,.62],[1.76,.39],[1.68,.27]],1.34,body,.075);
+ // Cabine inclinada, com vidro escuro e perfil de automóvel.
+ shell([[-1.12,.72],[-.88,1.22],[-.66,1.34],[.55,1.34],[.98,.76]],.99,glass,.055);
+ // Faixa inferior, para-choques, grelha e faróis.
+ const addBox=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o};
+ addBox(.12,.12,1.3,chrome,1.7,.34,0);addBox(.12,.12,1.3,chrome,-1.7,.34,0);
+ addBox(.035,.22,.42,mat('#202a30',.8),1.79,.52,0);
+ [-1,1].forEach(side=>{addBox(.06,.16,.32,mat('#f6e9c2',.35),1.73,.64,side*.43);addBox(.045,.15,.28,mat('#b6322d',.4),-1.73,.63,side*.43)});
+ // Rodas com pneus de borracha, jantes metálicas e cubos.
+ [-1,1].forEach(side=>[-1,1].forEach(ax=>{
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.285,.285,.17,24),rubber);wheel.rotation.x=Math.PI/2;wheel.position.set(ax*1.12,.31,side*.69);wheel.castShadow=true;g.add(wheel);
+  const rim=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.18,20),hub);rim.rotation.x=Math.PI/2;rim.position.set(ax*1.12,.31,side*.69);g.add(rim);
+  const hubcap=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.19,16),chrome);hubcap.rotation.x=Math.PI/2;hubcap.position.set(ax*1.12,.31,side*.69);g.add(hubcap);
+ }));
+ // Janelas laterais, pilares e espelhos retrovisores.
+ [-1,1].forEach(side=>{
+  const windowMat=new THREE.MeshStandardMaterial({color:'#66808d',roughness:.25,metalness:.12});
+  const sideWindow=new THREE.Mesh(new THREE.PlaneGeometry(.62,.34),windowMat);sideWindow.position.set(-.12,.99,side*.505);sideWindow.rotation.y=side*Math.PI/2;g.add(sideWindow);
+  const rearWindow=new THREE.Mesh(new THREE.PlaneGeometry(.35,.34),windowMat);rearWindow.position.set(.66,1.0,side*.505);rearWindow.rotation.y=side*Math.PI/2;g.add(rearWindow);
+  const mirror=new THREE.Mesh(new THREE.SphereGeometry(.075,12,10),chrome);mirror.scale.set(1,.65,.7);mirror.position.set(-.92,.83,side*.62);g.add(mirror);
+ });
+ if(police){
+  const stripe=mat('#174b86',.48),red=mat('#d83b37',.38),blue=mat('#277ee8',.32);
+  [-1,1].forEach(side=>{
+   const panel=new THREE.Mesh(new THREE.BoxGeometry(1.85,.18,.025),stripe);panel.position.set(-.02,.68,side*.683);g.add(panel);
+   const labelCanvas=document.createElement('canvas');labelCanvas.width=512;labelCanvas.height=128;const ctx=labelCanvas.getContext('2d');ctx.fillStyle='#174b86';ctx.fillRect(0,0,512,128);ctx.fillStyle='#fff';ctx.font='bold 70px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('POLÍCIA',256,65);
+   const texture=new THREE.CanvasTexture(labelCanvas);texture.colorSpace=THREE.SRGBColorSpace;
+   const label=new THREE.Mesh(new THREE.PlaneGeometry(.95,.23),new THREE.MeshBasicMaterial({map:texture,transparent:true,side:THREE.DoubleSide}));label.position.set(-.02,.69,side*.7);label.rotation.y=side*Math.PI/2;g.add(label);
+  });
+  addBox(.72,.11,.28,stripe,0,1.4,0);
+  addBox(.27,.15,.25,red,-.2,1.48,0);addBox(.27,.15,.25,blue,.2,1.48,0);
+  addBox(.9,.12,.06,mat('#f1f2ee',.55),-.2,.88,.69);
+ }
+ return g;
+}
 const roomNames={sala:'SALA',quarto:'QUARTO',cozinha:'COZINHA',banheiro:'CASA DE BANHO',garagem:'GARAGEM',esquadra:'ESQUADRA DA POLÍCIA'};
 const doorDefs={
  sala:[{label:'QUARTO',dest:'quarto',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2},{label:'COZINHA',dest:'cozinha',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
@@ -553,23 +598,27 @@ function buildVianaOtherBuildings(){
 }
 
 function addPoliceOfficer(x,z,rotation=0,scale=1){
- const g=new THREE.Group(),uniform=mat('#123b70',.88),pants=mat('#102b4c',.9),skin=mat('#8b5a3e',.9),black=mat('#171d24',.95),gold=mat('#e4c15f',.7),shirt=mat('#1a477d',.9);
- const part=(w,h,d,m,px,py,pz)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w*scale,h*scale,d*scale),m);o.position.set(px*scale,py*scale,pz*scale);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
- const sphere=(radius,m,px,py,pz)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(radius*scale,12,10),m);o.position.set(px*scale,py*scale,pz*scale);o.castShadow=true;g.add(o);return o};
- part(.62,.82,.34,shirt,0,1.34,0);
- part(.62,.48,.36,pants,0,.68,0);
- part(.19,.72,.2,shirt,-.43,1.32,0).rotation.z=-.12;
- part(.19,.72,.2,shirt,.43,1.32,0).rotation.z=.12;
- part(.2,.68,.2,pants,-.18,.22,0);part(.2,.68,.2,pants,.18,.22,0);
- part(.25,.12,.36,black,-.18,-.12,.06);part(.25,.12,.36,black,.18,-.12,.06);
- sphere(.25,skin,0,1.98,0);
- part(.48,.12,.42,uniform,0,2.25,0);
- part(.56,.07,.48,black,0,2.18,.04);
- part(.62,.12,.38,black,0,1.02,.02);
- part(.12,.16,.035,gold,-.19,1.52,.19);
- part(.12,.08,.035,gold,.2,1.55,.19);
- part(.08,.22,.08,black,.35,1.05,.02);
- g.position.set(x,0,z);g.rotation.y=rotation;target.add(g);return g;
+ // Usa o mesmo avatar humano 3D do jogador, com uniforme policial.
+ const uniformLook={gender:'male',skin:'#985b42',hair:'#171412',eyes:'#35251f',shirt:'#123b70',pants:'#102b4c',hairStyle:'curto'};
+ const g=buildCharacter(target,uniformLook,{x,y:0,z},()=>{},false);
+ g.scale.setScalar(3.45*scale);
+ g.rotation.y=rotation;
+ const gold=mat('#d9b24f',.55),black=mat('#151b24',.88),blue=mat('#0b2d59',.82);
+ const sphere=(radius,material,px,py,pz)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(radius,18,14),material);m.position.set(px,py,pz);m.castShadow=true;g.add(m);return m};
+ const cylinder=(rt,rb,h,material,px,py,pz)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,20),material);m.position.set(px,py,pz);m.castShadow=true;g.add(m);return m};
+ // Boné policial arredondado e pala frontal.
+ cylinder(.075,.09,.045,blue,0,.485,0);
+ sphere(.083,blue,0,.505,-.006);
+ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.018,24,1,false,0,Math.PI),blue);brim.rotation.x=Math.PI/2;brim.position.set(0,.49,.075);g.add(brim);
+ // Distintivo, ombreiras e cinto com acessórios.
+ sphere(.018,gold,-.045,.355,.073);
+ sphere(.018,gold,.045,.355,.073);
+ const belt=new THREE.Mesh(new THREE.TorusGeometry(.067,.009,8,24),black);belt.rotation.x=Math.PI/2;belt.position.set(0,.245,0);g.add(belt);
+ const buckle=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,.012),gold);buckle.position.set(0,.245,.073);g.add(buckle);
+ const badge=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.008,6),gold);badge.rotation.x=Math.PI/2;badge.position.set(-.045,.36,.075);g.add(badge);
+ const radio=new THREE.Mesh(new THREE.BoxGeometry(.025,.055,.018),black);radio.position.set(.075,.31,.055);g.add(radio);
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+ return g;
 }
 function buildVianaPoliceStation(){
  // Recinto murado, com entrada controlada, edifício acessível e identificação policial.
@@ -652,21 +701,9 @@ function buildVianaPoliceStation(){
  addPoliceOfficer(26.25,-20.05,Math.PI,.98);
  addPoliceOfficer(29.75,-20.05,Math.PI,.98);
  // Viatura policial estacionada no exterior, junto à entrada.
- const car=new THREE.Group(),white=mat('#e8ecee',.55),blueCar=mat('#174b86',.58),glassCar=mat('#243b4c',.35),rubber=mat('#171a1d',1),hub=mat('#b9c1c7',.55),red=mat('#d83b37',.4),blueLight=mat('#277ee8',.35);
- const carPart=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);car.add(o);return o};
- carPart(3.5,.62,1.48,white,0,.62,0);
- carPart(1.85,.56,1.22,glassCar,-.05,1.16,0);
- carPart(1.0,.12,1.5,blueCar,1.05,.77,0);
- carPart(.13,.12,1.5,blueCar,-.98,.77,0);
- [-1,1].forEach(a=>[-1,1].forEach(b=>{
-  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.16,14),rubber);wheel.rotation.x=Math.PI/2;wheel.position.set(a*1.1,.32,b*.7);car.add(wheel);
-  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.17,12),hub);cap.rotation.x=Math.PI/2;cap.position.set(a*1.1,.32,b*.7);car.add(cap);
- }));
- carPart(.75,.13,.28,blueCar,0,1.48,0);
- carPart(.28,.16,.22,red,-.28,1.58,0);carPart(.28,.16,.22,blueLight,.28,1.58,0);
- carPart(.22,.2,.08,mat('#f5e8b6',.4),1.76,.7,.42);carPart(.22,.2,.08,mat('#f5e8b6',.4),1.76,.7,-.42);
+ const car=createDetailedCar('#e8ecee',true);
  car.position.set(32.2,0,-18.45);car.rotation.y=Math.PI/2;target.add(car);
- addCityCollision(32.2,-18.45,1.6,3.6,.2);
+ addCityCollision(32.2,-18.45,1.8,3.8,.2);
  // Postes de iluminação no pátio.
  [-1,1].forEach(side=>{
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.045,.06,3.1,8),metal);
@@ -825,11 +862,8 @@ function buildVianaStreets(){
  const binMat=mat('#3e6655',.9),binLid=mat('#263e35',.9);
  [[9,8],[-33,8],[35,36],[-5,-34],[60,8]].forEach(([x,z])=>{box(.72,.9,.62,binMat,x,.45,z);box(.78,.09,.68,binLid,x,.94,z)});
  const addParkedCar=(x,z,color,rot=0)=>{
-  const g=new THREE.Group(),body=mat(color,.65),glass=mat('#273b42',.42),rubber=mat('#202326',1),hub=mat('#aeb3b2',.65);
-  const chassis=new THREE.Mesh(new THREE.BoxGeometry(2.15,.62,1.05),body);chassis.position.y=.55;g.add(chassis);
-  const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.18,.48,.88),glass);cabin.position.set(-.08,1.04,0);g.add(cabin);
-  [-1,1].forEach(a=>[-1,1].forEach(b=>{const w=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.13,12),rubber);w.rotation.x=Math.PI/2;w.position.set(a*.68,.28,b*.43);g.add(w);const h=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.14,10),hub);h.rotation.x=Math.PI/2;h.position.set(a*.68,.28,b*.43);g.add(h)}));
-  g.position.set(x,0,z);g.rotation.y=rot;target.add(g);addCityCollision(x,z,2.35,1.25,.18);
+  const g=createDetailedCar(color,false);
+  g.position.set(x,0,z);g.rotation.y=rot;target.add(g);addCityCollision(x,z,2.45,1.45,.18);
  };
  addParkedCar(9,-9,'#a83e36',Math.PI/2);addParkedCar(-9,9,'#d0c8b6',Math.PI/2);addParkedCar(35,-8,'#426b86',Math.PI/2);addParkedCar(-35,8,'#b8a13d',Math.PI/2);
  buildVianaPoliceStation();
