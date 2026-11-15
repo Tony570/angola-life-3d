@@ -162,8 +162,51 @@ function fillProfile(){$('profile-display').textContent=profile.display_name;$('
 $('save-profile').onclick=async()=>{const username=$('profile-name').value.trim().toLowerCase().replace(/\s+/g,'_');const display_name=$('profile-display-input').value.trim();if(!username||!display_name){say('profile-message','Preenche os dois nomes.');return}const {data,error}=await sb.from('profiles').update({username,display_name,bio:$('profile-bio').value.trim(),updated_at:new Date().toISOString()}).eq('id',user.id).select().single();if(error){say('profile-message',error.message);return}profile=data;fillProfile();$('side-name').textContent=profile.display_name;say('profile-message','Perfil guardado com sucesso.')};
 function swatches(id,key){$(id).innerHTML='';palettes[key].forEach(color=>{const b=document.createElement('button');b.className='swatch'+(avatar[key]===color?' selected':'');b.style.background=color;b.title=color;b.onclick=()=>{avatar[key]=color;swatches(id,key);renderAvatar()};$(id).append(b)})}
 function setupAvatarControls(){$('avatar-gender').value=avatar.gender||'male';$('avatar-gender').onchange=e=>{avatar.gender=e.target.value;renderAvatar()};swatches('skin-swatches','skin');swatches('hair-swatches','hair');swatches('eye-swatches','eyes');swatches('shirt-swatches','shirt');swatches('pants-swatches','pants');$('hair-style').value=avatar.hairStyle;$('hair-style').onchange=e=>{avatar.hairStyle=e.target.value;renderAvatar()}}
-function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{}){const gender=look.gender==='female'?'female':'male';const asset=characterAssets[gender];const root=new THREE.Group();root.position.set(position.x,position.y,position.z);root.userData.walkBones=[];target.add(root);gltfLoader.load(asset.model,gltf=>{const model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.roughness=Math.max(.45,m.roughness??.8);m.needsUpdate=true})}}});const bounds=new THREE.Box3().setFromObject(model);const size=bounds.getSize(new THREE.Vector3());const scale=0.36/(size.y||1);model.scale.setScalar(scale);const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;root.userData.modelBaseY=model.position.y;model.traverse(o=>{if(!o.isBone)return;const n=(o.name||'').toLowerCase().replace(/[^a-z0-9]/g,'');let limb='';if(/foot|ankle|toe/.test(n))limb='foot';else if(/upleg|thigh|calf|shin|knee|lowerleg|leftleg|rightleg/.test(n))limb='leg';else if(/upperarm|lowerarm|forearm|shoulder|arm|hand/.test(n))limb='arm';if(limb){const side=/left/.test(n)?-1:(/right/.test(n)?1:(o.position.x<-.001?-1:1));const lowerLeg=limb==='leg'&&(/calf|shin|knee|lowerleg|leftleg|rightleg/.test(n)&&!/upleg|thigh/.test(n));root.userData.walkBones.push({bone:o,limb,side,base:o.rotation.clone(),knee:lowerLeg})}});root.userData.characterModel=model;root.add(model);},undefined,error=>{console.error('Não foi possível carregar o modelo 3D:',error);root.removeFromParent()});return root}
-function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
+let animationCatalogPromise=null;
+async function getWalkClipUrl(gender){
+ if(!animationCatalogPromise)animationCatalogPromise=fetch('https://models.codelove.in/catalog.json').then(r=>{if(!r.ok)throw new Error('Catálogo de animações indisponível');return r.json()});
+ const catalog=await animationCatalogPromise,candidates=[];
+ const genderPattern=gender==='female'?/(female|woman|f[_-])/i:/(^|[^a-z])(male|man)([^a-z]|$)|(^|[^a-z])m[_-]/i;
+ const visit=(node,context=[])=>{
+  if(typeof node==='string'){if(/\\.glb(?:$|[?#])/i.test(node)&&context.join(' ').toLowerCase().includes('walk')&&genderPattern.test(context.join(' ')))candidates.push({url:node,score:context.length});return}
+  if(Array.isArray(node)){node.forEach(v=>visit(v,context));return}
+  if(!node||typeof node!=='object')return;
+  const labels=Object.entries(node).filter(([,v])=>typeof v==='string').map(([k,v])=>k+' '+v);
+  const next=[...context,...Object.keys(node),...labels];
+  Object.values(node).forEach(v=>visit(v,next));
+ };
+ visit(catalog);
+ candidates.sort((a,b)=>b.score-a.score);
+ if(!candidates.length)throw new Error('Não encontrei a animação Walk para '+gender+' no catálogo');
+ return new URL(candidates[0].url,'https://models.codelove.in/').href;
+}
+function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
+ const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
+ root.position.set(position.x,position.y,position.z);target.add(root);
+ gltfLoader.load(asset.model,async gltf=>{
+  const model=gltf.scene;
+  model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.roughness=Math.max(.45,m.roughness??.8);m.needsUpdate=true})}}});
+  const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
+  const scale=0.36/(size.y||1);model.scale.setScalar(scale);
+  const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;
+  root.userData.modelBaseY=model.position.y;root.userData.characterModel=model;root.add(model);
+  if(!animateWalk)return;
+  try{
+   const walkUrl=await getWalkClipUrl(gender);
+   const [idleGltf,walkGltf]=await Promise.all([gltfLoader.loadAsync(asset.idle),gltfLoader.loadAsync(walkUrl)]);
+   if(!root.parent)return;
+   const idleClip=idleGltf.animations&&idleGltf.animations[0],walkClip=walkGltf.animations&&walkGltf.animations[0];
+   if(!idleClip||!walkClip)throw new Error('Os ficheiros não contêm os ciclos de animação esperados');
+   const animationMixer=new THREE.AnimationMixer(model);
+   const idleAction=animationMixer.clipAction(idleClip),walkAction=animationMixer.clipAction(walkClip);
+   idleAction.setLoop(THREE.LoopRepeat);walkAction.setLoop(THREE.LoopRepeat);
+   idleAction.play();walkAction.play();walkAction.setEffectiveWeight(0);idleAction.setEffectiveWeight(1);
+   root.userData.animationActions={idle:idleAction,walk:walkAction};
+   onMixer(animationMixer);
+  }catch(error){console.error('Falha ao preparar animação humana:',error)}
+ },undefined,error=>{console.error('Não foi possível carregar o modelo 3D:',error);root.removeFromParent()});
+ return root
+}function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
 host.querySelectorAll('canvas').forEach(c=>c.remove());
 const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':'#c8d6df');
 const camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.1,100);
@@ -221,7 +264,7 @@ function buildRoom(name){
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
  if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88)}
 }
-if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
+if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)})}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.34,1.35);camera.lookAt(0,.10,0)}
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
@@ -264,7 +307,7 @@ if(kind==='room'&&houseAvatar){
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
- if(model){const gait=THREE.MathUtils.clamp(speed/1.8,0,1);if(walking)walkPhase+=delta*(7.4+speed*3.0);for(const item of houseAvatar.userData.walkBones||[]){const side=item.side===-1?-1:1;const stride=Math.sin(walkPhase)*side;let offset=0;if(item.limb==='leg'){offset=item.knee?Math.max(0,-stride)*.72:stride*.52}else if(item.limb==='arm'){offset=-stride*.38}else if(item.limb==='foot'){offset=-stride*.22}const targetX=item.base.x+offset*gait;item.bone.rotation.x+=(targetX-item.bone.rotation.x)*(1-Math.exp(-18*delta))}}
+ if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.75,1.25))}}
  cameraTarget.x=THREE.MathUtils.lerp(cameraTarget.x,houseAvatar.position.x,.14);cameraTarget.y=THREE.MathUtils.lerp(cameraTarget.y,.20,.10);cameraTarget.z=THREE.MathUtils.lerp(cameraTarget.z,houseAvatar.position.z,.14);updateOrbit();
 }
 renderer.render(scene,camera)};animate();
