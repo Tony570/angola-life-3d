@@ -1,14 +1,8 @@
 
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { createStylizedAvatar, applyStylizedAppearance } from './stylized-avatar.js';
 
-const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
-const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
-const WALK_URL = 'https://models.codelove.in/animations/m_walk_neutral_01.glb';
-const HUMAN_HEIGHT = 2.5;
 
 export class Player {
   constructor(scene, camera, vehicles = []) {
