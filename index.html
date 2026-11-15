@@ -293,6 +293,19 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
   applyAvatarLook(model,look);
   const scaledBounds=new THREE.Box3().setFromObject(model);model.position.x-=(scaledBounds.min.x+scaledBounds.max.x)/2;model.position.z-=(scaledBounds.min.z+scaledBounds.max.z)/2;model.position.y-=scaledBounds.min.y;
   root.userData.modelBaseY=model.position.y;root.userData.characterModel=model;root.add(model);
+  if(root.userData.seatedOfficer){
+   // Pose sentada: ancas baixas, coxas à frente e joelhos dobrados; tronco direito.
+   const bones={};model.traverse(o=>{if(o.isBone)bones[o.name.toLowerCase()]=o});
+   const findBone=(...names)=>names.map(n=>bones[n.toLowerCase()]).find(Boolean);
+   const leftHip=findBone('mixamorigLeftUpLeg','leftupleg','leftthigh');
+   const rightHip=findBone('mixamorigRightUpLeg','rightupleg','rightthigh');
+   const leftKnee=findBone('mixamorigLeftLeg','leftleg','leftcalf');
+   const rightKnee=findBone('mixamorigRightLeg','rightleg','rightcalf');
+   const hips=findBone('mixamorigHips','hips');
+   if(leftHip)leftHip.rotation.x=-1.12;if(rightHip)rightHip.rotation.x=-1.12;
+   if(leftKnee)leftKnee.rotation.x=1.35;if(rightKnee)rightKnee.rotation.x=1.35;
+   if(hips)hips.position.y-=.035;
+  }
   const idleClip=gltf.animations.find(clip=>/idle/i.test(clip.name));
   const walkClip=gltf.animations.find(clip=>/relaxed walk/i.test(clip.name))||gltf.animations.find(clip=>/^walk$/i.test(clip.name))||gltf.animations.find(clip=>/walk/i.test(clip.name));
   if(idleClip&&walkClip){
@@ -451,10 +464,21 @@ function buildPoliceStationInterior(){
   box(.78,.72,.12,blue,x,.92,1.72);
   box(.08,.48,.08,metal,x-.3,.25,1.22);box(.08,.48,.08,metal,x+.3,.25,1.22);
  }
- // Dois polícias no balcão e um agente junto aos arquivos.
- addPoliceOfficer(-1.25,-2.05,0,.92);
- addPoliceOfficer(1.15,-2.05,0,.92);
- addPoliceOfficer(3.05,.05,Math.PI/2,.9);
+ // Duas cadeiras de trabalho, alinhadas com os computadores atrás do balcão.
+ [-1.25,1.15].forEach(x=>{
+  const seat=new THREE.Mesh(new THREE.CylinderGeometry(.22,.24,.09,18),blue);seat.position.set(x,.31,-2.05);target.add(seat);
+  const back=new THREE.Mesh(new THREE.BoxGeometry(.42,.36,.09),blue);back.position.set(x,.49,-2.29);target.add(back);
+  [-.14,.14].forEach(dx=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.28,8),metal);leg.position.set(x+dx,.14,-2.05);target.add(leg)});
+ });
+ // Os dois agentes diante dos computadores ficam sentados, com postura de atendimento.
+ addPoliceOfficer(-1.25,-2.05,0,1,false,true);
+ addPoliceOfficer(1.15,-2.05,0,1,false,true);
+ // Terceiro agente permanece de pé junto aos arquivos.
+ addPoliceOfficer(3.05,.05,Math.PI/2,1,false,false);
+ // Segundo computador para o posto de atendimento da direita.
+ box(.72,.5,.07,glass,1.15,1.51,-1.2);
+ box(.78,.06,.48,metal,1.15,1.2,-1.13);
+ box(.1,.22,.1,metal,1.15,1.34,-1.13);
  // Bandeira de Angola num suporte discreto.
  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,2.25,8),metal);pole.position.set(-3.25,1.25,-1.25);target.add(pole);
  box(.72,.42,.035,mat('#c52d35',.9),-2.88,2.02,-1.25);
@@ -597,26 +621,33 @@ function buildVianaOtherBuildings(){
  buildVianaBuilding('LOJA DE ROUPAS',3.4,28,-1,{kind:'clothes',w:5.7,d:6.8,h:3.2,wall:'#9bbfc0',trim:'#e0eeee',roof:'#486c70',sign:'#365960'});
 }
 
-function addPoliceOfficer(x,z,rotation=0,scale=1){
- // Usa o mesmo avatar humano 3D do jogador, com uniforme policial.
+function addPoliceOfficer(x,z,rotation=0,scale=1,armed=false,seated=false){
+ // Todos os agentes usam exactamente a escala-base do avatar do jogador (0.49 m no modelo).
  const uniformLook={gender:'male',skin:'#985b42',hair:'#171412',eyes:'#35251f',shirt:'#123b70',pants:'#102b4c',hairStyle:'curto'};
  const g=buildCharacter(target,uniformLook,{x,y:0,z},()=>{},false);
- g.scale.setScalar(3.45*scale);
+ g.scale.setScalar(1);
+ g.userData.seatedOfficer=seated;
  g.rotation.y=rotation;
  const gold=mat('#d9b24f',.55),black=mat('#151b24',.88),blue=mat('#0b2d59',.82);
  const sphere=(radius,material,px,py,pz)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(radius,18,14),material);m.position.set(px,py,pz);m.castShadow=true;g.add(m);return m};
  const cylinder=(rt,rb,h,material,px,py,pz)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,20),material);m.position.set(px,py,pz);m.castShadow=true;g.add(m);return m};
- // Boné policial arredondado e pala frontal.
- cylinder(.075,.09,.045,blue,0,.485,0);
- sphere(.083,blue,0,.505,-.006);
+ // Boné, distintivos, cinto e rádio ajustados à escala real do avatar.
+ cylinder(.075,.09,.045,blue,0,.485,0);sphere(.083,blue,0,.505,-.006);
  const brim=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.018,24,1,false,0,Math.PI),blue);brim.rotation.x=Math.PI/2;brim.position.set(0,.49,.075);g.add(brim);
- // Distintivo, ombreiras e cinto com acessórios.
- sphere(.018,gold,-.045,.355,.073);
- sphere(.018,gold,.045,.355,.073);
+ sphere(.018,gold,-.045,.355,.073);sphere(.018,gold,.045,.355,.073);
  const belt=new THREE.Mesh(new THREE.TorusGeometry(.067,.009,8,24),black);belt.rotation.x=Math.PI/2;belt.position.set(0,.245,0);g.add(belt);
  const buckle=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,.012),gold);buckle.position.set(0,.245,.073);g.add(buckle);
  const badge=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.008,6),gold);badge.rotation.x=Math.PI/2;badge.position.set(-.045,.36,.075);g.add(badge);
  const radio=new THREE.Mesh(new THREE.BoxGeometry(.025,.055,.018),black);radio.position.set(.075,.31,.055);g.add(radio);
+ if(armed){
+  // Pistola de serviço na mão direita, apontada para baixo em posição de guarda.
+  const gun=new THREE.Group();
+  const steel=mat('#252b31',.42),grip=mat('#111820',.9);
+  const slide=new THREE.Mesh(new THREE.BoxGeometry(.035,.035,.13),steel);slide.position.set(0,0,.035);gun.add(slide);
+  const handle=new THREE.Mesh(new THREE.BoxGeometry(.03,.075,.035),grip);handle.position.set(0,-.047,.005);handle.rotation.x=-.18;gun.add(handle);
+  const muzzle=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,.012,10),black);muzzle.rotation.x=Math.PI/2;muzzle.position.set(0,0,.105);gun.add(muzzle);
+  gun.position.set(.13,.205,.105);gun.rotation.x=-.12;g.add(gun);
+ }
  g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
  return g;
 }
@@ -697,9 +728,9 @@ function buildVianaPoliceStation(){
  const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
  const sign=new THREE.Mesh(new THREE.BoxGeometry(5.3,.9,.13),new THREE.MeshStandardMaterial({map:signTex,roughness:.8}));
  sign.position.set(28,2.82,-24.94);target.add(sign);
- // Dois agentes fardados de serviço no portão, um de cada lado.
- addPoliceOfficer(26.25,-20.05,Math.PI,.98);
- addPoliceOfficer(29.75,-20.05,Math.PI,.98);
+ // Guardas posicionados um de cada lado do portão, à escala do avatar e armados.
+ addPoliceOfficer(26.25,-21.65,0,1,true,false);
+ addPoliceOfficer(29.75,-21.65,0,1,true,false);
  // Viatura policial estacionada no exterior, junto à entrada.
  const car=createDetailedCar('#e8ecee',true);
  car.position.set(32.2,0,-18.45);car.rotation.y=Math.PI/2;target.add(car);
