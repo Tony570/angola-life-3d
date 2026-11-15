@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { createStylizedAvatar, applyStylizedAppearance } from './stylized-avatar.js';
 
 const MODEL_URL = 'https://models.codelove.in/models/male-adult-02.glb';
 const IDLE_URL = 'https://models.codelove.in/animations/m_idle_neutral_01.glb';
@@ -88,99 +89,14 @@ export class Player {
   }
 
   async createCharacter() {
-    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-
-    try {
-      const gltf = await loader.loadAsync(MODEL_URL);
-      const model = gltf.scene;
-
-      model.position.set(0, 0, 0);
-      model.rotation.set(0, 0, 0);
-      model.updateMatrixWorld(true);
-
-      const bounds = new THREE.Box3().setFromObject(model);
-      const originalHeight = bounds.max.y - bounds.min.y;
-
-      if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-        throw new Error('Altura do personagem inválida.');
-      }
-
-      const scaleFactor = HUMAN_HEIGHT / originalHeight;
-      const visualRoot = new THREE.Group();
-
-      visualRoot.rotation.y = 0;
-      visualRoot.scale.setScalar(scaleFactor);
-      visualRoot.position.y = -bounds.min.y * scaleFactor;
-      visualRoot.add(model);
-
-      this.group.add(visualRoot);
-      this.model = model;
-      this.normalizedModel = visualRoot;
-      this.applyAppearance();
-      this.applyClothing();
-
-      model.traverse(object => {
-        if (object.isMesh) {
-          object.castShadow = false;
-          object.receiveShadow = false;
-        }
-
-        if (object.isBone) {
-          const name = (object.name || '').toLowerCase();
-
-          const entry = {
-            bone: object,
-            rest: object.quaternion.clone()
-          };
-
-          if (/left.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*left|leg_l|thigh_l/.test(name)) {
-            this.proceduralBones.leftLeg.push(entry);
-          } else if (/right.*(upleg|upperleg|thigh|leg)|(?:upleg|upperleg|thigh|leg).*right|leg_r|thigh_r/.test(name)) {
-            this.proceduralBones.rightLeg.push(entry);
-          } else if (/left.*(arm|shoulder)|(?:arm|shoulder).*left|arm_l/.test(name)) {
-            this.proceduralBones.leftArm.push(entry);
-          } else if (/right.*(arm|shoulder)|(?:arm|shoulder).*right|arm_r/.test(name)) {
-            this.proceduralBones.rightArm.push(entry);
-          }
-        }
-      });
-
-      this.mixer = new THREE.AnimationMixer(visualRoot);
-
-      const results = await Promise.allSettled([
-        loader.loadAsync(IDLE_URL),
-        loader.loadAsync(WALK_URL)
-      ]);
-
-      if (results[0].status === 'fulfilled') {
-        const clip = results[0].value.animations[0];
-        this.idleClip = clip || null;
-
-        if (clip) {
-          this.idleAction = this.mixer.clipAction(clip);
-          this.idleAction.play();
-          this.currentAnimation = 'idle';
-        }
-      }
-
-      if (results[1].status === 'fulfilled') {
-        const clip = results[1].value.animations[0];
-
-        if (clip) {
-          this.walkAction = this.mixer.clipAction(clip);
-        }
-      }
-
-      if (!this.idleAction && this.walkAction) {
-        this.walkAction.play();
-        this.walkAction.paused = true;
-      }
-
-      console.log('Personagem carregado.');
-      if (typeof this.onModelReady === 'function') this.onModelReady();
-    } catch (error) {
-      console.error('Erro ao carregar personagem:', error);
-    }
+    const visualRoot = createStylizedAvatar(this.appearance || {});
+    this.group.add(visualRoot);
+    this.model = visualRoot;
+    this.normalizedModel = visualRoot;
+    this.applyAppearance();
+    this.applyClothing();
+    console.log('Personagem 3D estilizado carregado.');
+    if (typeof this.onModelReady === 'function') this.onModelReady();
   }
 
   createResident(parent, x, y, z, rotationY = 0) {
@@ -214,35 +130,7 @@ export class Player {
 
   applyAppearance() {
     if (!this.model || !this.appearance) return;
-    const colors = {
-      skin: new THREE.Color(this.appearance.skin),
-      hair: new THREE.Color(this.appearance.hair),
-      eyes: new THREE.Color(this.appearance.eyes)
-    };
-    this.model.traverse(object => {
-      if (!object.isMesh || !object.material) return;
-      const name = (object.name || '').toLowerCase();
-      let key = null;
-      if (/hair|cabelo|beard|barba/.test(name)) {
-        key = 'hair';
-        if (!object.userData.baseHairScale) object.userData.baseHairScale = object.scale.clone();
-        const styleScale = this.appearance.hairstyle === 'rapado' ? 0.78
-          : this.appearance.hairstyle === 'comprido' ? 1.18
-          : this.appearance.hairstyle === 'encaracolado' ? 1.08 : 1;
-        object.scale.copy(object.userData.baseHairScale);
-        object.scale.y *= styleScale;
-      }
-      else if (/eye|iris|pupil|olho/.test(name)) key = 'eyes';
-      else if (/skin|face|head|body|arm|hand|leg|neck|pele|rosto/.test(name)) key = 'skin';
-      if (!key) return;
-      const source = Array.isArray(object.material) ? object.material : [object.material];
-      const changed = source.map(material => {
-        const clone = material.clone();
-        if (clone.color) clone.color.copy(colors[key]);
-        return clone;
-      });
-      object.material = Array.isArray(object.material) ? changed : changed[0];
-    });
+    applyStylizedAppearance(this.model, this.appearance);
   }
 
   equipClothing(itemName) {
@@ -333,27 +221,15 @@ export class Player {
   }
 
   updateProceduralAnimation(delta, moving) {
-    if (!this.normalizedModel || this.sitting) return;
-
+    const parts = this.normalizedModel?.userData?.avatarParts;
+    if (!parts || this.sitting) return;
     if (moving) this.walkPhase += delta * 8.5;
-
-    const swing = moving ? Math.sin(this.walkPhase) * 0.62 : 0;
-    const armSwing = moving
-      ? Math.sin(this.walkPhase + Math.PI) * 0.38
-      : 0;
-
-    const apply = (entries, angle) => {
-      for (const entry of entries) {
-        this.proceduralEuler.set(angle, 0, 0);
-        this.proceduralQuaternion.setFromEuler(this.proceduralEuler);
-        entry.bone.quaternion.copy(entry.rest).multiply(this.proceduralQuaternion);
-      }
-    };
-
-    apply(this.proceduralBones.leftLeg, swing);
-    apply(this.proceduralBones.rightLeg, -swing);
-    apply(this.proceduralBones.leftArm, armSwing);
-    apply(this.proceduralBones.rightArm, -armSwing);
+    const swing = moving ? Math.sin(this.walkPhase) * 0.48 : 0;
+    parts.legs[0].rotation.x = swing;
+    parts.legs[1].rotation.x = -swing;
+    parts.arms[0].rotation.x = -swing * 0.7;
+    parts.arms[1].rotation.x = swing * 0.7;
+    parts.torso.rotation.z = moving ? Math.sin(this.walkPhase * 2) * 0.025 : 0;
   }
 
   sitAt(x, z, rotationY = 0) {
