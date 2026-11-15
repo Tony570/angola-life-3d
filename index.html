@@ -520,7 +520,82 @@ function hdesk(x,z,w=2.4){const g=new THREE.Group(),wood=mat('#d9c8ad'),white=ma
 function buildHospitalInterior(n){hospitalShell(n);const blue=mat('#3f7896'),steel=mat('#aab6bc'),pale=mat('#dce8ed');if(n==='hospital'){hdesk(0,-1.1,2.55);hchair(-.75,-2,'#537f98');hchair(.75,-2,'#537f98');hchair(-2.45,1.55);hchair(-1.25,1.55);hchair(0,1.55);hsph(1.05,.32,.07,blue,0,2.72,-3.82);const c=document.createElement('canvas');c.width=512;c.height=128;const q=c.getContext('2d');q.fillStyle='#285c78';q.fillRect(0,0,512,128);q.fillStyle='#fff';q.font='bold 48px Arial';q.textAlign='center';q.textBaseline='middle';q.fillText('RECEPÇÃO',256,66);const sign=new THREE.Mesh(new THREE.PlaneGeometry(2.7,.66),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sign.position.set(0,2.72,-3.76);target.add(sign);const look={gender:'female',skin:'#a86f55',hair:'#241b18',eyes:'#33231f',shirt:'#e8f0f1',pants:'#38566a',hairStyle:'curto'};const p=buildCharacter(target,look,{x:0,y:0,z:-1.65},()=>{},false);p.scale.setScalar(.9);p.rotation.y=Math.PI}
 if(n==='hospital-tratamento'){hbed(-1.9,-1.55);hbed(1.65,-1.55);hbed(-1.9,1.35);hcap(.25,.62,mat('#f7f8f6'),0,.82,2.65);for(const x of [-.18,.18])hcyl(.025,1.5,steel,x,1.55,2.65);hcyl(.04,.5,steel,0,2.3,2.65);hcap(.08,.5,mat('#6d9a76'),2.85,.55,1.65);hcyl(.025,2,steel,2.85,1.35,1.65);const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(-.2,2.5,-.2),new THREE.Vector3(.7,2.5,-.2),new THREE.Vector3(1.6,2.5,-.2),new THREE.Vector3(2.2,2.5,.1)]);target.add(new THREE.Mesh(new THREE.TubeGeometry(curve,24,.035,8,false),steel));for(let i=0;i<5;i++)hsph(.22,.9,.025,pale,.15+i*.38,1.5,-.2)}
 if(n==='hospital-consultorio'){hdesk(0,-1.6,2.2);hchair(-.1,-.55,'#426f88',Math.PI);hchair(1.55,.05);hchair(-1.55,.05);hbed(0,2,Math.PI/2);hsph(.62,.42,.08,blue,0,2.65,-3.82);const board=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.72),mat('#d8e9e9'));board.position.set(0,2.65,-3.74);target.add(board);const look={gender:'male',skin:'#8d604b',hair:'#25201d',eyes:'#34241f',shirt:'#f1f3f0',pants:'#39576a',hairStyle:'curto'};const p=buildCharacter(target,look,{x:0,y:0,z:-2.15},()=>{},false);p.scale.setScalar(.92);p.rotation.y=Math.PI}}
-function buildHospitalExterior(x,z,front,o){const w=o.w||9.5,d=o.d||7.8,h=o.h||3.5,wall=mat('#fbfbf8'),trim=mat('#fff'),glass=mat('#477080'),red=mat('#b52f35'),con=mat('#d9dddc'),face=z+front*(d/2+.06);const sh=new THREE.Shape(),rx=w/2,rz=d/2,r=.65;sh.moveTo(-rx+r,-rz);sh.lineTo(rx-r,-rz);sh.quadraticCurveTo(rx,-rz,rx,-rz+r);sh.lineTo(rx,rz-r);sh.quadraticCurveTo(rx,rz,rx-r,rz);sh.lineTo(-rx+r,rz);sh.quadraticCurveTo(-rx,rz,-rx,rz-r);sh.lineTo(-rx,-rz+r);sh.quadraticCurveTo(-rx,-rz,-rx+r,-rz);const geo=new THREE.ExtrudeGeometry(sh,{depth:h,bevelEnabled:true,bevelSegments:4,bevelSize:.12,bevelThickness:.12,curveSegments:12});geo.rotateX(Math.PI/2);const shell=new THREE.Mesh(geo,wall);shell.position.set(x,h,z);target.add(shell);const roof=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,48),trim);roof.scale.set(w*.54,.12,d*.46);roof.position.set(x,h+.04,z);target.add(roof);for(const side of [-1,1])hsph(.95,.68,.07,glass,x+side*2.55,1.95,face+front*.05);hcap(.58,1.05,mat('#294b59'),x,1.12,face+front*.1).scale.set(1,.95,.16);hcap(.13,.62,red,x+w*.31,3,face+front*.18);hcap(.13,.62,red,x+w*.31,3,face+front*.18).rotation.z=Math.PI/2;const c=document.createElement('canvas');c.width=768;c.height=150;const q=c.getContext('2d');q.fillStyle='#fff';q.fillRect(0,0,768,150);q.strokeStyle='#b52f35';q.lineWidth=10;q.strokeRect(8,8,752,134);q.fillStyle='#9f2930';q.font='bold 54px Arial';q.textAlign='center';q.textBaseline='middle';q.fillText('HOSPITAL',384,76);const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.2,.82),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sign.position.set(x,3.12,face+front*.2);target.add(sign);const path=new THREE.Mesh(new THREE.PlaneGeometry(5.8,2.4),con);path.rotation.x=-Math.PI/2;path.position.set(x,-.055,face+front*1.45);target.add(path);for(let i=-1;i<=1;i++)hchair(x+i*1.35,face+front*2.1,'#6b8794',front===1?Math.PI:0);for(const side of [-1,1]){const px=x+side*5.7,pz=face+front*1.4;hsph(.48,.15,.48,mat('#5b8a55'),px,.18,pz);for(let k=0;k<3;k++)hsph(.28,.35,.28,mat('#639d55'),px+side*(k-1)*.28,.36,pz+front*(k-1)*.22)}addCityCollision(x-w/2,z,.3,d,.12);addCityCollision(x+w/2,z,.3,d,.12);addCityCollision(x,z-d/2,w,.3,.12);addCityCollision(x-w*.34,face,w*.32,.28,.1);addCityCollision(x+w*.34,face,w*.32,.28,.1);const trigger=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.2),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,side:THREE.DoubleSide,depthWrite:false}));trigger.position.set(x,1.1,face+front*.22);trigger.userData.hospitalEntry=true;target.add(trigger);policeEntryMeshes.push(trigger)}
+function buildHospitalExterior(x,z,front,o){
+ // Hospital Municipal de Viana: edifício amplo, moderno, com dois pisos e fachada curva.
+ const w=15.5,d=9.5,h=6.35,face=z+front*(d/2+.04);
+ const wall=mat('#edf3f4',.72),white=mat('#ffffff',.48),glass=mat('#5d8290',.2),blue=mat('#1b5876',.48),red=mat('#bd343b',.48),metal=mat('#aebdc4',.38),stone=mat('#cbd3d4',.95),green=mat('#477c4e',.95);
+ const rounded=(width,depth,r)=>{
+  const sh=new THREE.Shape(),a=width/2,b=depth/2;
+  sh.moveTo(-a+r,-b);sh.lineTo(a-r,-b);sh.quadraticCurveTo(a,-b,a,-b+r);
+  sh.lineTo(a,b-r);sh.quadraticCurveTo(a,b,a-r,b);sh.lineTo(-a+r,b);
+  sh.quadraticCurveTo(-a,b,-a,b-r);sh.lineTo(-a,-b+r);sh.quadraticCurveTo(-a,-b,-a+r,-b);
+  return sh;
+ };
+ // Corpo principal com cantos arredondados e volume de dois pisos.
+ const bodyGeo=new THREE.ExtrudeGeometry(rounded(w,d,1.15),{depth:h,steps:1,bevelEnabled:true,bevelSegments:5,bevelSize:.16,bevelThickness:.16,curveSegments:16});
+ bodyGeo.rotateX(Math.PI/2);const body=new THREE.Mesh(bodyGeo,wall);body.position.set(x,h,z);body.castShadow=true;body.receiveShadow=true;target.add(body);
+ // Rodapé em pedra clara e cobertura elíptica de acabamento.
+ const plinth=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,64),stone);plinth.scale.set(w*.52,.18,d*.52);plinth.position.set(x,.02,z);target.add(plinth);
+ const roof=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,64),white);roof.scale.set(w*.535,.2,d*.535);roof.position.set(x,h+.02,z);target.add(roof);
+ const roofBand=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,64),blue);roofBand.scale.set(w*.49,.09,d*.49);roofBand.position.set(x,h-.16,z);target.add(roofBand);
+ // Janelas panorâmicas em duas linhas, com caixilharia metálica fina.
+ const windowFrame=mat('#d5e0e3',.45);
+ for(const rowY of [2.05,4.35]){
+  for(let col=-3;col<=3;col++){
+   const wx=x+col*1.92,wy=rowY+(Math.abs(col)%2)*.04;
+   const pane=new THREE.Mesh(new THREE.PlaneGeometry(1.55,1.28),glass);pane.position.set(wx,wy,face+front*.035);pane.material.side=THREE.DoubleSide;target.add(pane);
+   for(const dx of [-.81,.81]){const bar=hcyl(.035,1.38,windowFrame,wx+dx,wy,face+front*.075);bar.rotation.z=Math.PI/2}
+   for(const dy of [-.69,.69]){const bar=hcyl(.035,1.68,windowFrame,wx,wy+dy,face+front*.075);bar.rotation.z=0}
+   const mullion=hcyl(.025,1.25,metal,wx,wy,face+front*.085);mullion.rotation.z=0;
+  }
+ }
+ // Entrada principal en vidro, com duas folhas, puxadores e pórtico arredondado.
+ const entryGlass=new THREE.Mesh(new THREE.PlaneGeometry(2.85,2.55),glass);entryGlass.position.set(x,1.48,face+front*.12);entryGlass.material.side=THREE.DoubleSide;target.add(entryGlass);
+ for(const dx of [-.72,.72]){const doorLine=hcyl(.035,2.55,white,x+dx,1.48,face+front*.17);doorLine.rotation.z=0;const handle=hcyl(.025,.42,metal,x+dx*.72,1.35,face+front*.2);handle.rotation.z=0}
+ for(const dx of [-1.58,1.58])hcyl(.12,2.9,white,x+dx,1.48,face+front*.2);
+ const lintel=hcap(.22,3.25,blue,x,2.98,face+front*.3);lintel.rotation.z=Math.PI/2;lintel.scale.set(1,1,.72);
+ const canopy=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,48),white);canopy.scale.set(2.35,.16,1.15);canopy.position.set(x,3.05,face+front*.82);target.add(canopy);
+ const canopyEdge=hcap(.075,4.3,red,x,2.98,face+front*1.34);canopyEdge.rotation.z=Math.PI/2;
+ // Colunas cilíndricas sustentam a entrada, sem blocos geométricos.
+ for(const dx of [-1.95,1.95])hcyl(.105,2.95,white,x+dx,1.5,face+front*.86);
+ // Cruz médica grande e letreiro institucional iluminado.
+ const crossX=x+w*.36,crossZ=face+front*.12;
+ hcap(.16,.9,red,crossX,5.48,crossZ).rotation.z=0;
+ const crossBar=hcap(.16,.9,red,crossX,5.48,crossZ);crossBar.rotation.z=Math.PI/2;
+ const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=180;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#164d6b';ctx.fillRect(0,0,1024,180);
+ const grad=ctx.createLinearGradient(0,0,1024,180);grad.addColorStop(0,'#174d6b');grad.addColorStop(1,'#287d91');ctx.fillStyle=grad;ctx.fillRect(0,0,1024,180);
+ ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(7,7,1010,166);
+ ctx.fillStyle='#fff';ctx.font='bold 62px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('HOSPITAL MUNICIPAL DE VIANA',512,88);
+ const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.1,1.25),new THREE.MeshBasicMaterial({map:signTex,side:THREE.DoubleSide}));sign.position.set(x,5.55,face+front*.16);target.add(sign);
+ const sub=document.createElement('canvas');sub.width=512;sub.height=96;const sc=sub.getContext('2d');sc.fillStyle='#bd343b';sc.fillRect(0,0,512,96);sc.fillStyle='#fff';sc.font='bold 48px Arial';sc.textAlign='center';sc.textBaseline='middle';sc.fillText('URGÊNCIA 24 HORAS',256,49);
+ const subSign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.68),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sub),side:THREE.DoubleSide}));subSign.position.set(x,3.65,face+front*.14);target.add(subSign);
+ // Passeio frontal amplo e caminho de acesso à porta.
+ const forecourt=new THREE.Mesh(new THREE.PlaneGeometry(17,7),stone);forecourt.rotation.x=-Math.PI/2;forecourt.position.set(x,-.055,face+front*3.45);target.add(forecourt);
+ const path=new THREE.Mesh(new THREE.PlaneGeometry(4.4,4.4),mat('#e1e6e5',.95));path.rotation.x=-Math.PI/2;path.position.set(x,-.045,face+front*1.85);target.add(path);
+ // Jardins simétricos, bancos de espera e iluminação exterior.
+ for(const side of [-1,1]){
+  const gx=x+side*6.15,gz=face+front*3.05;
+  hsph(1.55,.13,.78,green,gx,.08,gz);
+  for(let k=0;k<4;k++){hsph(.42,.48,.42,mat(k%2?'#5b985d':'#6da66a',.95),gx+side*((k%2)*.5-.25),.48,gz+front*((k-1.5)*.34))}
+  hchair(gx,gz+front*.9,'#416f89',front===1?Math.PI:0);
+  const lamp=hcyl(.045,3.25,metal,gx+side*.65,1.58,face+front*4.5);
+  hsph(.2,.12,.2,mat('#f4e8b7',.35),gx+side*.65,3.25,face+front*4.5);
+ }
+ for(let i=-1;i<=1;i++)hchair(x+i*1.35,face+front*4.5,'#416f89',front===1?Math.PI:0);
+ // Área de emergência lateral com ambulância identificada.
+ const ambulance=createDetailedCar('#f3f5f4',false);ambulance.scale.setScalar(1.08);ambulance.position.set(x+8.2,0,face+front*2.15);ambulance.rotation.y=front===1?Math.PI/2:-Math.PI/2;target.add(ambulance);
+ const ambCross=new THREE.Mesh(new THREE.PlaneGeometry(.38,.38),new THREE.MeshBasicMaterial({color:'#c8323b',side:THREE.DoubleSide}));
+ ambCross.position.set(x+8.2,1.05,face+front*2.15+.72);target.add(ambCross);
+ const beacon=hsph(.28,.1,.12,red,x+8.2,1.55,face+front*2.15);
+ // Colisões nas quatro faces, deixando a entrada central livre.
+ addCityCollision(x-w/2,z,.32,d,.18);addCityCollision(x+w/2,z,.32,d,.18);addCityCollision(x,z-d/2,w,.32,.18);
+ addCityCollision(x-5.1,face,5.2,.32,.14);addCityCollision(x+5.1,face,5.2,.32,.14);
+ addCityCollision(x+8.2,face+front*2.15,2.4,4.4,.2);
+ const trigger=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,side:THREE.DoubleSide,depthWrite:false}));
+ trigger.position.set(x,1.25,face+front*.24);trigger.userData.hospitalEntry=true;target.add(trigger);policeEntryMeshes.push(trigger);
+}
 
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
@@ -625,7 +700,7 @@ function buildVianaBuilding(name,x,z,front,opts={}){
 }
 function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
- buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:9.5,d:7.8,h:3.5,wall:'#fbfbf7',trim:'#ffffff',roof:'#d9dfe2',sign:'#9d3030'});
+ buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
  buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:9.4,d:7.6,h:3.4,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
  // Mercado de bairro, com toldos modestos.
@@ -986,7 +1061,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
- if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+24.6)<2.05;const enterPrompt=$('room-enter-prompt');if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest==='esquadra'||activeRoomDoor?.dest==='hospital'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
+ if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45;const enterPrompt=$('room-enter-prompt');if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest==='esquadra'||activeRoomDoor?.dest==='hospital'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
