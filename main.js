@@ -22,8 +22,8 @@ app.innerHTML = `
   <div id="welcome" class="screen">
     <div class="welcome-content">
       <div class="logo">ANGOLA LIFE 3D</div>
-      <p>Explora o bairro Kilamba. Dez blocos residenciais com casas habitáveis.</p>
-      <button id="start-game" type="button">ENTRAR NO KILAMBA</button>
+      <p>Começa a tua vida no Kilamba. A tua casa é o primeiro lugar da tua história.</p>
+      <button id="start-game" type="button">ENTRAR NA MINHA CASA</button>
     </div>
   </div>
 
@@ -742,8 +742,16 @@ startButton.addEventListener('click', async () => {
     enterHouse(ownedHome.house, ownedHome.floor);
     districtLocation.textContent = '🏠 A TUA CASA · ' + ownedHome.house.name.toUpperCase();
   } else {
-    // Sem propriedade registada, mantém-se o ponto inicial normal da cidade.
-    player.update(0);
+    // Novo jogador começa dentro de um apartamento mobilado, em vez de surgir na rua.
+    // A entrada inicial é uma apresentação do espaço; a propriedade só é atribuída
+    // pelo sistema de compra da recepção e continua a ser validada pela conta online.
+    const starterHouse = houses[0];
+    if (starterHouse) {
+      enterHouse(starterHouse, 1);
+      districtLocation.textContent = '🏠 RESIDÊNCIA INICIAL · ' + starterHouse.name.toUpperCase();
+    } else {
+      player.update(0);
+    }
   }
   startButton.disabled = false;
   startButton.textContent = 'ENTRAR NO KILAMBA';
