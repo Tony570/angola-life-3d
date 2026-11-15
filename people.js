@@ -3,15 +3,6 @@ import { createStylizedAvatar } from './stylized-avatar.js';
 import { attachRealCar } from './vehicle-models.js';
 
 
-const URLS = {
-  male: 'https://models.codelove.in/models/male-adult-02.glb',
-  female: 'https://models.codelove.in/models/female-adult-03.glb',
-  maleIdle: 'https://models.codelove.in/animations/m_idle_neutral_01.glb',
-  femaleIdle: 'https://models.codelove.in/animations/f_idle_neutral_01.glb',
-  maleWalk: 'https://models.codelove.in/animations/m_walk_neutral_01.glb',
-  femaleWalk: 'https://models.codelove.in/animations/f_walk_neutral_01.glb'
-};
-
 let activeWorld = null;
 
 const JOBS = [
