@@ -192,7 +192,7 @@ async function getWalkClipUrl(gender){
 }
 function findGaitBones(model){
  const bones={};
- const sideOf=name=>/(left|(^|[^a-z])l([^a-z]|$)|_l_|\\.l$)/i.test(name)?'L':/(right|(^|[^a-z])r([^a-z]|$)|_r_|\\.r$)/i.test(name)?'R':null;
+ const sideOf=name=>/(left|(^|[^a-z])l([^a-z]|$)|_l_|[-.]l$)/i.test(name)?'L':/(right|(^|[^a-z])r([^a-z]|$)|_r_|[-.]r$)/i.test(name)?'R':null;
  model.traverse(o=>{
   if(!o.isBone)return;
   const n=o.name.toLowerCase(),side=sideOf(o.name);
