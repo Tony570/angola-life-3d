@@ -1,11 +1,7 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { createStylizedAvatar } from './stylized-avatar.js';
 import { attachRealCar } from './vehicle-models.js';
 
-const HUMAN_HEIGHT = 2.5;
-const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 
 const URLS = {
   male: 'https://models.codelove.in/models/male-adult-02.glb',
@@ -16,7 +12,6 @@ const URLS = {
   femaleWalk: 'https://models.codelove.in/animations/f_walk_neutral_01.glb'
 };
 
-let assetsPromise = null;
 let activeWorld = null;
 
 const JOBS = [
@@ -126,157 +121,29 @@ const JOBS = [
   }
 ];
 
-function loadAssets() {
-  if (!assetsPromise) {
-    assetsPromise = Promise.all([
-      loader.loadAsync(URLS.male),
-      loader.loadAsync(URLS.female),
-      loader.loadAsync(URLS.maleIdle),
-      loader.loadAsync(URLS.femaleIdle),
-      loader.loadAsync(URLS.maleWalk),
-      loader.loadAsync(URLS.femaleWalk)
-    ]).then(([male, female, maleIdle, femaleIdle, maleWalk, femaleWalk]) => ({
-      male: male.scene,
-      female: female.scene,
-      maleIdle: maleIdle.animations[0],
-      femaleIdle: femaleIdle.animations[0],
-      maleWalk: maleWalk.animations[0],
-      femaleWalk: femaleWalk.animations[0]
-    }));
-  }
-
-  return assetsPromise;
-}
-
-function customizeClothes(model, color) {
-  model.traverse(object => {
-    if (!object.isMesh || !object.material) return;
-
-    object.castShadow = true;
-    object.receiveShadow = true;
-
-    const materials = Array.isArray(object.material)
-      ? object.material
-      : [object.material];
-
-    const changed = materials.map(original => {
-      const material = original.clone();
-      const name = (material.name || '').toLowerCase();
-
-      const isClothing =
-        /cloth|shirt|jacket|pants|trouser|uniform|dress|coat|suit|top|skirt|blazer/.test(name);
-
-      if (isClothing && material.color) {
-        material.color.setHex(color);
-      }
-
-      return material;
-    });
-
-    object.material = Array.isArray(object.material)
-      ? changed
-      : changed[0];
-  });
-}
-
-function normalizeCharacter(model) {
-  model.updateMatrixWorld(true);
-
-  const bounds = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3();
-  bounds.getSize(size);
-
-  const originalHeight = size.y;
-
-  if (!Number.isFinite(originalHeight) || originalHeight <= 0) {
-    throw new Error('Não foi possível medir a altura do personagem.');
-  }
-
-  const normalized = new THREE.Group();
-  normalized.add(model);
-
-  const factor = HUMAN_HEIGHT / originalHeight;
-
-  normalized.scale.setScalar(factor);
-  normalized.position.y = -bounds.min.y * factor;
-
-  normalized.updateMatrixWorld(true);
-
-  return normalized;
-}
-
-function makeNPC(scene, job, assets, index) {
+function makeNPC(scene, job, index = 0) {
+  const appearance = {
+    skin: ['#8d5524','#a96b42','#6f4028','#c58a61'][index % 4],
+    hair: ['#17120f','#3b2418','#b9b9b9','#6b3f25'][index % 4],
+    hairstyle: ['curto','encaracolado','espetado','afro'][index % 4],
+    outfitColor: '#' + Number(job.outfit || 0x2877a8).toString(16).padStart(6,'0')
+  };
   const root = new THREE.Group();
-  const model = clone(assets[job.gender]);
-  const normalizedModel = normalizeCharacter(model);
-
-  customizeClothes(normalizedModel, job.outfit);
-
-  root.add(normalizedModel);
-  root.position.set(job.x, 0, job.z);
+  const model = createStylizedAvatar(appearance);
+  root.add(model);
+  root.position.set(job.x,0,job.z);
   root.rotation.y = Math.PI;
-
   root.userData.role = job.role;
   root.userData.job = job.role;
-
-  if (job.service) {
-    root.userData.service = job.service;
-    root.userData.serviceName = job.serviceName || job.role;
-    root.userData.clickableService = true;
-  }
-
+  if(job.service){root.userData.service=job.service;root.userData.serviceName=job.serviceName||job.role;root.userData.clickableService=true;}
   scene.add(root);
-
-  const mixer = new THREE.AnimationMixer(normalizedModel);
-
-  const idleClip = assets[job.gender + 'Idle'];
-  const walkClip = assets[job.gender + 'Walk'];
-
-  const idle = idleClip ? mixer.clipAction(idleClip) : null;
-  const walk = walkClip ? mixer.clipAction(walkClip) : null;
-
-  if (idle) {
-    idle.play();
-  } else if (walk) {
-    walk.play();
-    walk.paused = true;
-  }
-
-  return {
-    root,
-    model: normalizedModel,
-    mixer,
-    idle,
-    walk,
-    current: idle ? 'idle' : 'walk',
-    role: job.role,
-    service: job.service || null,
-    patrol: Boolean(job.patrol),
-    axis: job.axis || 'z',
-    originX: job.x,
-    originZ: job.z,
-    phase: index * 1.7,
-    timer: 2 + (index % 4),
-    direction: index % 2 === 0 ? 1 : -1,
-    speed: 0.65 + (index % 3) * 0.12
-  };
+  return {root,model,mixer:null,idle:null,walk:null,current:'idle',role:job.role,service:job.service||null,patrol:Boolean(job.patrol),axis:job.axis||'z',originX:job.x,originZ:job.z,phase:index*1.7,timer:2+(index%4),direction:index%2===0?1:-1,speed:.65+(index%3)*.12};
 }
 
 export async function createReceptionist(parent, job = {}, index = 0) {
-  const assets = await loadAssets();
-  const npc = makeNPC(parent, {
-    role: job.role || 'Rececionista',
-    gender: job.gender === 'female' ? 'female' : 'male',
-    x: Number(job.x) || 0,
-    z: Number(job.z) || 0,
-    patrol: false,
-    outfit: Number(job.outfit) || (index % 2 ? 0x29483e : 0x172b43)
-  }, assets, index + 100);
-
-  npc.root.position.y = Number(job.y) || 0;
-  npc.root.rotation.y = Number(job.rotationY) || 0;
-  // O interior agora usa a mesma escala real do edifício exterior.
-  // O modelo normalizado mantém os 2,5 m de altura do jogador.
+  const npc = makeNPC(parent,{role:job.role||'Rececionista',x:Number(job.x)||0,z:Number(job.z)||0,outfit:Number(job.outfit)||(index%2?0x29483e:0x172b43)},index+100);
+  npc.root.position.y=Number(job.y)||0;
+  npc.root.rotation.y=Number(job.rotationY)||0;
   return npc;
 }
 
@@ -358,25 +225,11 @@ export function createPeople(scene, world) {
     );
   }
 
-  loadAssets()
-    .then(assets => {
-      JOBS.forEach((job, index) => {
-        const npc = makeNPC(scene, job, assets, index);
-        world.npcs.push(npc);
-      });
-
-      console.log(
-        'ANGOLA LIFE 3D: funcionários e habitantes carregados:',
-        world.npcs.length
-      );
-    })
-    .catch(error => {
-      console.error('Erro ao carregar habitantes:', error);
-    });
+  JOBS.forEach((job,index)=>world.npcs.push(makeNPC(scene,job,index)));
+  console.log('ANGOLA LIFE 3D: habitantes estilizados carregados:',world.npcs.length);
 }
 
 export async function createRestaurantStaff(scene, restaurants = []) {
-  const assets = await loadAssets();
   const staff = [];
 
   restaurants.forEach((restaurant, index) => {
@@ -389,7 +242,7 @@ export async function createRestaurantStaff(scene, restaurants = []) {
       outfit: index % 2 === 0 ? 0x762d3c : 0x263b35
     };
 
-    const npc = makeNPC(scene, job, assets, index + 20);
+    const npc = makeNPC(scene, job, index + 20);
 
     npc.root.rotation.y = 0;
     npc.root.userData.restaurant = restaurant;
@@ -406,7 +259,7 @@ export async function createRestaurantStaff(scene, restaurants = []) {
   });
 
   console.log(
-    'ANGOLA LIFE 3D: garçonetes humanas carregadas:',
+    'ANGOLA LIFE 3D: funcionários estilizados carregados:',
     staff.length
   );
 
