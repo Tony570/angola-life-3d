@@ -192,13 +192,13 @@ async function getWalkClipUrl(gender){
 }
 function findGaitBones(model){
  const bones={};
- const sideOf=name=>/(left|\\bL\\b|_L_|\\.L$)/i.test(name)?'L':/(right|\\bR\\b|_R_|\\.R$)/i.test(name)?'R':null;
+ const sideOf=name=>/(left|(^|[^a-z])l([^a-z]|$)|_l_|\\.l$)/i.test(name)?'L':/(right|(^|[^a-z])r([^a-z]|$)|_r_|\\.r$)/i.test(name)?'R':null;
  model.traverse(o=>{
   if(!o.isBone)return;
   const n=o.name.toLowerCase(),side=sideOf(o.name);
   if(!side)return;
   if(/thigh|upleg|upper.?leg/.test(n))bones[side+'Thigh']=o;
-  else if(/calf|shin|lower.?leg|\\bleg\\b/.test(n))bones[side+'Calf']=o;
+  else if(/calf|shin|lower.?leg|(^|[^a-z])leg([^a-z]|$)/.test(n))bones[side+'Calf']=o;
   else if(/foot|ankle|toe/.test(n))bones[side+'Foot']=o;
   else if(/upper.?arm|arm/.test(n)&&!/forearm|lower.?arm/.test(n))bones[side+'Arm']=o;
   else if(/forearm|lower.?arm/.test(n))bones[side+'Forearm']=o;
