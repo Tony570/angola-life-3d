@@ -754,7 +754,7 @@ startButton.addEventListener('click', async () => {
     }
   }
   startButton.disabled = false;
-  startButton.textContent = 'ENTRAR NO KILAMBA';
+  startButton.textContent = 'ENTRAR NA MINHA CASA';
 });
 
 // Cada botão gere o seu próprio toque. A libertação é global para evitar
