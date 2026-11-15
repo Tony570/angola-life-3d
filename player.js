@@ -263,6 +263,13 @@ export class Player {
     pose(this.proceduralBones.rightLeg, -1.05);
     pose(this.proceduralBones.leftArm, -0.18);
     pose(this.proceduralBones.rightArm, -0.18);
+    const avatarParts = this.normalizedModel?.userData?.avatarParts;
+    if (avatarParts) {
+      avatarParts.legs[0].rotation.x = -1.05;
+      avatarParts.legs[1].rotation.x = -1.05;
+      avatarParts.arms[0].rotation.x = -0.18;
+      avatarParts.arms[1].rotation.x = -0.18;
+    }
 
     this.currentAnimation = 'sit';
     this.updateCamera();
@@ -295,6 +302,13 @@ export class Player {
     resetBones(this.proceduralBones.rightLeg);
     resetBones(this.proceduralBones.leftArm);
     resetBones(this.proceduralBones.rightArm);
+    const avatarParts = this.normalizedModel?.userData?.avatarParts;
+    if (avatarParts) {
+      [...avatarParts.legs, ...avatarParts.arms].forEach(part => {
+        part.rotation.set(0, 0, 0);
+      });
+      avatarParts.torso.rotation.set(0, 0, 0);
+    }
 
     this.currentAnimation = '';
 
