@@ -141,7 +141,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let user=null,profile=null,inventory=[],activeCategory='todos',avatar={gender:'male',skin:'#c98962',hair:'#241b18',shirt:'#3867a8',pants:'#26364b',hairStyle:'curto',eyes:'#35251f'};
 const gltfLoader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-const CHARACTER_HEIGHT=1.72; // altura humana normalizada
+const CHARACTER_HEIGHT=0.36; // altura do avatar: 36 cm
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
 function say(id,msg){$(id).textContent=msg}
@@ -254,7 +254,7 @@ function createFallbackHuman(look){
   const arm=new THREE.Group();arm.position.set(side*.19,1.28,0);figure.add(arm);rig[side<0?'leftArm':'rightArm']=arm;capsule(arm,shirt,.052,.20,[0,-.14,0]);capsule(arm,skin,.039,.16,[0,-.34,0]);sphere(arm,skin,[0,-.44,0],[.043,.05,.035]);
   const leg=new THREE.Group();leg.position.set(side*.075,.88,0);figure.add(leg);rig[side<0?'leftLeg':'rightLeg']=leg;capsule(leg,pants,.067,.25,[0,-.19,0]);capsule(leg,pants,.052,.23,[0,-.43,0]);capsule(leg,shoe,.047,.10,[0,-.59,.035]);
  }
- figure.scale.setScalar(1);figure.userData.gaitRig=rig;return figure;
+ figure.scale.setScalar(CHARACTER_HEIGHT/1.72);figure.userData.gaitRig=rig;return figure;
 }
 function applyAvatarLook(model,look){
  model.updateMatrixWorld(true);const whole=new THREE.Box3().setFromObject(model),height=Math.max(.001,whole.max.y-whole.min.y);
@@ -1052,7 +1052,7 @@ if(kind==='room'){
  }
  const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
-}else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,1.15,3.5);camera.lookAt(0,.9,0)}
+}else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.24,.78);camera.lookAt(0,.19,0)}
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
 let dragging=false,lastX=0,lastY=0,moved=false,theta=Math.PI/4,phi=.92,distance=13.5,pinchStart=0,pinchDistance=0;
 const cameraTarget=new THREE.Vector3(0,0,0);
