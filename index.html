@@ -318,7 +318,7 @@ if(kind==='room')updateOrbit();
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),.03),hit=new THREE.Vector3();
 const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-3.45,3.45),-.03,THREE.MathUtils.clamp(hit.z,-3.45,3.45))}};
 const onPointerDown=e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;};
-const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;lastX=e.clientX;lastY=e.clientY;if(kind!=='room'&&moved){target.rotation.y+=dx*.008}};
+const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;lastX=e.clientX;lastY=e.clientY;if(moved){if(kind==='room'){theta-=dx*.009;phi=THREE.MathUtils.clamp(phi+dy*.006,.62,1.12);updateOrbit()}else{target.rotation.y+=dx*.008}}};
 const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
 const touchDistance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
 const onTouchStart=e=>{if(e.touches.length===2){e.preventDefault();dragging=false;pinchStart=touchDistance(e.touches);pinchDistance=distance}};
@@ -340,8 +340,8 @@ if(kind==='room'&&houseAvatar){
  const hasInput=Math.hypot(inputX,inputZ)>.001;
  if(hasInput){const length=Math.hypot(inputX,inputZ);inputX/=length;inputZ/=length;destination=null}
  let desiredX=0,desiredZ=0;
- if(hasInput){desiredX=inputX*1.8;desiredZ=inputZ*1.8}
- else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.055){destination=null}else{desiredX=vx/dist*Math.min(1.8,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(1.8,dist/Math.max(delta,.001))}}
+ if(hasInput){desiredX=inputX*2.15;desiredZ=inputZ*2.15}
+ else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.055){destination=null}else{desiredX=vx/dist*Math.min(2.15,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(2.15,dist/Math.max(delta,.001))}}
  const response=1-Math.exp(-(hasInput?13:10)*delta);velocityX+=(desiredX-velocityX)*response;velocityZ+=(desiredZ-velocityZ)*response;
  houseAvatar.position.x=THREE.MathUtils.clamp(houseAvatar.position.x+velocityX*delta,-3.35,3.35);
  houseAvatar.position.z=THREE.MathUtils.clamp(houseAvatar.position.z+velocityZ*delta,-3.35,3.35);
@@ -350,7 +350,7 @@ if(kind==='room'&&houseAvatar){
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
- if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.35,.75,1.35))}else if(houseAvatar.userData.proceduralGait){walkPhase+=delta*(walking?7.2:0);updateProceduralGait(houseAvatar,walkPhase,walking?Math.min(1,speed/.55):0)}}
+ if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.55,.8,1.5))}walkPhase+=delta*(walking?8.5:0);if(houseAvatar.userData.proceduralGait)updateProceduralGait(houseAvatar,walkPhase,walking?Math.min(1,speed/.55):0);const bob=walking?Math.abs(Math.sin(walkPhase*2))*.018:0;model.position.y=(houseAvatar.userData.modelBaseY||0)+bob;model.rotation.z=walking?Math.sin(walkPhase)*.025:0}
  cameraTarget.set(0,0,0);
 }
 renderer.render(scene,camera)};animate();
