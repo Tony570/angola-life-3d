@@ -163,7 +163,7 @@ $('save-profile').onclick=async()=>{const username=$('profile-name').value.trim(
 function swatches(id,key){$(id).innerHTML='';palettes[key].forEach(color=>{const b=document.createElement('button');b.className='swatch'+(avatar[key]===color?' selected':'');b.style.background=color;b.title=color;b.onclick=()=>{avatar[key]=color;swatches(id,key);renderAvatar()};$(id).append(b)})}
 function renderHairChoices(){
  const labels={curto:'Curto',medio:'Médio',encaracolado:'Encaracolado',comprido:'Comprido'};
- const art={curto:'<path d="M10 25 Q12 5 24 7 Q38 6 39 25 L35 20 Q24 13 14 21Z" fill="#493024"/>',medio:'<path d="M9 26 Q9 5 24 7 Q40 6 40 26 L36 33 L34 19 Q24 12 14 20 L13 33Z" fill="#493024"/>',encaracolado:'<g fill="#493024"><circle cx="13" cy="17" r="7"/><circle cx="22" cy="11" r="7"/><circle cx="31" cy="13" r="7"/><circle cx="37" cy="21" r="7"/><circle cx="15" cy="27" r="6"/></g>',comprido:'<path d="M9 26 Q9 5 24 7 Q40 6 40 26 L39 43 L33 43 L34 19 Q24 12 14 20 L15 43 L9 43Z" fill="#493024"/>'};
+ const art={curto:'<path d="M10 25 Q12 5 24 7 Q38 6 39 25 L35 20 Q24 13 14 21Z" fill="'+avatar.hair+'"/>',medio:'<path d="M9 26 Q9 5 24 7 Q40 6 40 26 L36 33 L34 19 Q24 12 14 20 L13 33Z" fill="'+avatar.hair+'"/>',encaracolado:'<g fill="'+avatar.hair+'"><circle cx="13" cy="17" r="7"/><circle cx="22" cy="11" r="7"/><circle cx="31" cy="13" r="7"/><circle cx="37" cy="21" r="7"/><circle cx="15" cy="27" r="6"/></g>',comprido:'<path d="M9 26 Q9 5 24 7 Q40 6 40 26 L39 43 L33 43 L34 19 Q24 12 14 20 L15 43 L9 43Z" fill="'+avatar.hair+'"/>'};
  const host=$('hair-style-choices');host.innerHTML='';
  Object.keys(labels).forEach(key=>{const b=document.createElement('button');b.type='button';b.className='choice-card'+(avatar.hairStyle===key?' selected':'');b.innerHTML='<span class="choice-art"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="25" r="13" fill="#d9a783"/>'+art[key]+'</svg></span><span><b>'+labels[key]+'</b><small>Ver penteado</small></span>';b.onclick=()=>{avatar.hairStyle=key;$('hair-style').value=key;renderHairChoices();renderAvatar()};host.append(b)});
 }
@@ -368,7 +368,7 @@ function buildRoom(name){
  box(8,.18,8,mat(floorColor),0,-.12,0);
  const stoneWall=makeStoneWallMaterial();const exits=doorDefs[name]||[];
  const openings={north:null,south:null,east:null,west:null};exits.forEach(d=>openings[d.side]=d.center);
- for(const side of ['north','south','east','west']){if(side==='south')continue;/* Parede frontal aberta para manter a vista do interior; as restantes recebem revestimento de pedra. */if(openings[side]===null){if(side==='north')box(8,3.6,.18,stoneWall,0,1.65,-4);else if(side==='west')box(.18,3.6,8,stoneWall,-4,1.65,0);else box(.18,3.6,8,stoneWall,4,1.65,0)}else addWallWithOpening(side,openings[side])}
+ for(const side of ['north','south','east','west']){if(openings[side]===null){if(side==='north')box(8,3.6,.18,stoneWall,0,1.65,-4);else if(side==='south')box(8,3.6,.18,stoneWall,0,1.65,4);else if(side==='west')box(.18,3.6,8,stoneWall,-4,1.65,0);else box(.18,3.6,8,stoneWall,4,1.65,0)}else addWallWithOpening(side,openings[side])}
  /* Sem tecto: a câmara mantém sempre a vista aberta sobre o interior. */
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
