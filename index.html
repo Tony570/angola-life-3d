@@ -612,8 +612,6 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  const hasInput=Math.hypot(inputX,inputZ)>.001;
  if(hasInput){const length=Math.hypot(inputX,inputZ);inputX/=length;inputZ/=length;destination=null}
  let desiredX=0,desiredZ=0;
- if(hasInput){desiredX=inputX*2.15;desiredZ=inputZ*2.15}
- else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.055){destination=null}else{desiredX=vx/dist*Math.min(2.15,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(2.15,dist/Math.max(delta,.001))}}
  const speedLimit=kind==='city'?4.1:2.15;
  if(hasInput){desiredX=inputX*speedLimit;desiredZ=inputZ*speedLimit}
  else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.12){destination=null}else{desiredX=vx/dist*Math.min(speedLimit,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(speedLimit,dist/Math.max(delta,.001))}}
