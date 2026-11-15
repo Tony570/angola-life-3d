@@ -923,7 +923,24 @@ function buildVianaStreets(){
  buildVianaOtherBuildings();
 }
 
-if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
+if(kind==='room'){
+ // Protecção: um erro num móvel, porta ou interior especial nunca pode deixar a divisão invisível.
+ try{buildRoom(roomName)}catch(roomError){
+  console.error('Erro ao construir o interior '+roomName+'; a carregar interior de segurança:',roomError);
+  target.clear();roomDoorMeshes=[];activeRoomDoor=null;
+  const safeFloor=new THREE.Mesh(new THREE.PlaneGeometry(8,8),new THREE.MeshBasicMaterial({color:'#c5b99e',side:THREE.DoubleSide}));
+  safeFloor.rotation.x=-Math.PI/2;safeFloor.position.y=-.08;target.add(safeFloor);
+  const safeWall=new THREE.MeshBasicMaterial({color:'#d8dedf',side:THREE.DoubleSide});
+  const addSafeWall=(w,h,x,y,z,rot=0)=>{const wall=new THREE.Mesh(new THREE.PlaneGeometry(w,h),safeWall);wall.position.set(x,y,z);wall.rotation.y=rot;target.add(wall)};
+  addSafeWall(8,3.6,0,1.65,-4);addSafeWall(8,3.6,0,1.65,4);addSafeWall(8,3.6,-4,1.65,0,Math.PI/2);addSafeWall(8,3.6,4,1.65,0,Math.PI/2);
+ }
+ if(target.children.length===0){
+  const safeFloor=new THREE.Mesh(new THREE.PlaneGeometry(8,8),new THREE.MeshBasicMaterial({color:'#c5b99e',side:THREE.DoubleSide}));
+  safeFloor.rotation.x=-Math.PI/2;safeFloor.position.y=-.08;target.add(safeFloor);
+  const safeWall=new THREE.MeshBasicMaterial({color:'#d8dedf',side:THREE.DoubleSide});
+  for(const [x,y,z,rot] of [[0,1.65,-4,0],[0,1.65,4,0],[-4,1.65,0,Math.PI/2],[4,1.65,0,Math.PI/2]]){const wall=new THREE.Mesh(new THREE.PlaneGeometry(8,3.6),safeWall);wall.position.set(x,y,z);wall.rotation.y=rot;target.add(wall)}
+ }
+ const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)})}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.26,.78);camera.lookAt(0,.245,0)}
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
