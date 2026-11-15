@@ -141,7 +141,7 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
 let user=null,profile=null,inventory=[],activeCategory='todos',avatar={gender:'male',skin:'#c98962',hair:'#241b18',shirt:'#3867a8',pants:'#26364b',hairStyle:'curto',eyes:'#35251f'};
 const gltfLoader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-const characterAssets={male:{model:'https://models.codelove.in/models/business-male-01.glb',idle:'https://models.codelove.in/animations/m_idle_neutral_01.glb'},female:{model:'https://models.codelove.in/models/business-female-01.glb',idle:'https://models.codelove.in/animations/f_idle_neutral_01.glb'}};
+const characterAssets={male:{model:'https://raw.githubusercontent.com/mrdoob/three.js/r161/examples/models/gltf/Soldier.glb'},female:{model:'https://raw.githubusercontent.com/mrdoob/three.js/r161/examples/models/gltf/Soldier.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
 function say(id,msg){$(id).textContent=msg}
 function setTab(which){$('login-form').classList.toggle('hidden',which!=='login');$('signup-form').classList.toggle('hidden',which!=='signup');$('tab-login').classList.toggle('active',which==='login');$('tab-signup').classList.toggle('active',which==='signup');$('tab-login').classList.toggle('secondary',which!=='login');$('tab-signup').classList.toggle('secondary',which!=='signup');say('auth-message','')}
@@ -236,8 +236,22 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
   const scale=0.36/(size.y||1);model.scale.setScalar(scale);
   const scaledBounds=new THREE.Box3().setFromObject(model);model.position.y-=scaledBounds.min.y;
   root.userData.modelBaseY=model.position.y;root.userData.characterModel=model;root.add(model);
-  if(animateWalk)root.userData.proceduralGait=findGaitBones(model);
- },undefined,error=>{console.error('Não foi possível carregar o modelo 3D:',error);root.removeFromParent()});
+  const idleClip=gltf.animations.find(clip=>/idle/i.test(clip.name));
+  const walkClip=gltf.animations.find(clip=>/^walk$/i.test(clip.name)||/walk/i.test(clip.name));
+  if(idleClip&&walkClip){
+   const characterMixer=new THREE.AnimationMixer(model);
+   const idleAction=characterMixer.clipAction(idleClip);
+   const walkAction=characterMixer.clipAction(walkClip);
+   idleAction.setLoop(THREE.LoopRepeat,Infinity);walkAction.setLoop(THREE.LoopRepeat,Infinity);
+   idleAction.enabled=true;walkAction.enabled=true;
+   idleAction.setEffectiveWeight(1);walkAction.setEffectiveWeight(0);
+   idleAction.play();walkAction.play();
+   root.userData.animationActions={idle:idleAction,walk:walkAction};
+   onMixer(characterMixer);
+  }else{
+   console.error('O modelo humano não trouxe as animações Idle e Walk esperadas:',gltf.animations.map(c=>c.name));
+  }
+ },undefined,error=>{console.error('Não foi possível carregar o novo personagem humano:',error);root.removeFromParent()});
  return root
 }function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
 host.querySelectorAll('canvas').forEach(c=>c.remove());
@@ -340,7 +354,7 @@ if(kind==='room'&&houseAvatar){
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
- if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.25,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.55,.8,1.5))}walkPhase+=delta*(walking?(5.8+speed*2.1):0);if(houseAvatar.userData.proceduralGait)updateProceduralGait(houseAvatar,walkPhase,walking?Math.min(1,speed/.45):0);const bob=walking?Math.abs(Math.sin(walkPhase*2))*.009:0;model.position.y=(houseAvatar.userData.modelBaseY||0)+bob;model.rotation.z=walking?Math.sin(walkPhase)*.012:0;model.rotation.x=walking?Math.cos(walkPhase*2)*.008:0}
+ if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}
  cameraTarget.set(0,0,0);
 }
 renderer.render(scene,camera)};animate();
