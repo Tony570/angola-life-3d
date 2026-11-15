@@ -166,7 +166,7 @@ let animationCatalogPromise=null;
 async function getWalkClipUrl(gender){
  if(!animationCatalogPromise)animationCatalogPromise=fetch('https://models.codelove.in/catalog.json').then(r=>{if(!r.ok)throw new Error('Catálogo de animações indisponível');return r.json()});
  const catalog=await animationCatalogPromise,candidates=[];
- const genderPattern=gender==='female'?/(female|woman|f[_-])/i:/(male|man|m[_-])/i;
+ const genderPattern=gender==='female'?/(female|woman|f[_-])/i:/(^|[^a-z])(male|man|m[_-])([^a-z]|$)/i;
  const walkPattern=/(^|[^a-z])(walk|walking)([^a-z]|$)/i;
  const visit=(node,path=[])=>{
   if(typeof node==='string'){
