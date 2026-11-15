@@ -176,8 +176,8 @@ const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 const roomNames={sala:'SALA',quarto:'QUARTO',cozinha:'COZINHA',banheiro:'CASA DE BANHO',garagem:'GARAGEM'};
 const doorDefs={
- sala:[{label:'QUARTO',dest:'quarto',side:'north',center:1.25,spawn:{x:1.25,z:-2.55},face:Math.PI},{label:'COZINHA',dest:'cozinha',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
- quarto:[{label:'SALA',dest:'sala',side:'south',center:1.25,spawn:{x:1.25,z:2.55},face:0},{label:'CASA DE BANHO',dest:'banheiro',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
+ sala:[{label:'QUARTO',dest:'quarto',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2},{label:'COZINHA',dest:'cozinha',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
+ quarto:[{label:'SALA',dest:'sala',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2},{label:'CASA DE BANHO',dest:'banheiro',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  cozinha:[{label:'SALA',dest:'sala',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  banheiro:[{label:'QUARTO',dest:'quarto',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
  garagem:[]
