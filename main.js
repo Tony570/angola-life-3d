@@ -7,6 +7,7 @@ import { createKilambaDistrict } from './kilamba.js';
 import { createHouseSystem } from './kilamba-apartments.js';
 import { createReceptionist } from './people.js';
 import './style.css';
+import './inventory.js';
 
 const app = document.querySelector('#app');
 
