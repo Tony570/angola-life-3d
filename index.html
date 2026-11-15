@@ -756,8 +756,10 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   box(2.4,.95,.65,mat('#76543f',.85),x,.52,face+front*1.45);
  }
  if(opts.kind==='clothes'){
-  for(let i=-1;i<=1;i++){const sx=x+i*1.55,sz=face+front*.42;const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.55,4,8),mat(i===0?'#9c554b':'#496e83',.8));torso.position.set(sx,1.45,sz);target.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),mat('#b98768',.85));head.position.set(sx,1.88,sz);target.add(head);box(.75,.07,.07,metal,sx,2.55,sz+front*.2);for(let k=-1;k<=1;k++)box(.07,.65,.07,mat('#b48b62',.85),sx+k*.22,2.2,sz+front*.2)}
+  const looks=[{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9c554b',pants:'#30394a',hairStyle:'comprido'},{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#496e83',pants:'#26364b',hairStyle:'curto'},{gender:'female',skin:'#dca77c',hair:'#75482b',shirt:'#6f527f',pants:'#343b48',hairStyle:'medio'}];
+  looks.forEach((look,i)=>buildCharacter(target,look,{x:x+(i-1)*1.55,y:0,z:face+front*.42},()=>{},false));
   box(2.8,.12,.75,mat('#76543f',.85),x,.8,face+front*1.2);
+
  }
 }
 function buildVianaOtherBuildings(){
