@@ -304,7 +304,7 @@ if(kind==='room'){buildRoom(roomName);const initialSpawn=entrySpawn||{x:0,z:1.65
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)})}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.34,1.35);camera.lookAt(0,.10,0)}
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
-let dragging=false,lastX=0,lastY=0,moved=false,theta=0,phi=.23,distance=10.8,pinchStart=0,pinchDistance=0;
+let dragging=false,lastX=0,lastY=0,moved=false,theta=0,phi=.34,distance=10.8,pinchStart=0,pinchDistance=0;
 const cameraTarget=new THREE.Vector3(kind==='room'&&houseAvatar?houseAvatar.position.x:0,kind==='room'&&houseAvatar? .2: .12,kind==='room'&&houseAvatar?houseAvatar.position.z:0);
 function updateOrbit(){phi=THREE.MathUtils.clamp(phi,.08,.85);distance=THREE.MathUtils.clamp(distance,5,18);camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
 if(kind==='room')updateOrbit();
