@@ -168,7 +168,7 @@ async function getWalkClipUrl(gender){
  const catalog=await animationCatalogPromise,candidates=[];
  const genderPattern=gender==='female'?/(female|woman|f[_-])/i:/(^|[^a-z])(male|man)([^a-z]|$)|(^|[^a-z])m[_-]/i;
  const visit=(node,context=[])=>{
-  if(typeof node==='string'){if(/\\.glb(?:$|[?#])/i.test(node)&&context.join(' ').toLowerCase().includes('walk')&&genderPattern.test(context.join(' ')))candidates.push({url:node,score:context.length});return}
+  if(typeof node==='string'){if(/\.glb(?:$|[?#])/i.test(node)&&context.join(' ').toLowerCase().includes('walk')&&genderPattern.test(context.join(' ')))candidates.push({url:node,score:context.length});return}
   if(Array.isArray(node)){node.forEach(v=>visit(v,context));return}
   if(!node||typeof node!=='object')return;
   const labels=Object.entries(node).filter(([,v])=>typeof v==='string').map(([k,v])=>k+' '+v);
