@@ -171,28 +171,35 @@ async function getWalkClipUrl(gender){
  const visit=(node,path=[])=>{
   if(typeof node==='string'){
    const context=path.join(' ');
-   if(/\.glb(?:$|[?#])/i.test(node)&&walkPattern.test(context)&&genderPattern.test(context))candidates.push({url:node,score:(/walk/i.test(path[path.length-1]||'')?10:0)+(/female|male/i.test(context)?5:0)+path.length});
+   if(/\.glb(?:$|[?#])/i.test(node)&&walkPattern.test(context)&&genderPattern.test(context)){
+    const url=new URL(node,catalog.url||'https://models.codelove.in/').href;
+    candidates.push({url,score:(/walk/i.test(path[path.length-1]||'')?10:0)+(/female|male/i.test(context)?5:0)+path.length});
+   }
    return;
   }
   if(Array.isArray(node)){node.forEach((v,i)=>visit(v,[...path,String(i)]));return}
   if(!node||typeof node!=='object')return;
-  for(const [key,value] of Object.entries(node))visit(value,[...path,key]);
+  for(const [key,value] of Object.entries(node)){
+   const labels=[...path,key];
+   if(typeof value==='string')labels.push(value);
+   visit(value,labels);
+  }
  };
  visit(catalog);
  candidates.sort((a,b)=>b.score-a.score);
  if(!candidates.length)throw new Error('Não encontrei um clip Walk específico para '+gender);
- return new URL(candidates[0].url,catalog.url||'https://models.codelove.in/').href;
+ return candidates[0].url;
 }
 function findGaitBones(model){
  const bones={};
- const sideOf=name=>/(^|[ ._-])(left|l)([ ._-]|$)/i.test(name)?'L':/(^|[ ._-])(right|r)([ ._-]|$)/i.test(name)?'R':null;
+ const sideOf=name=>/(left|\\bL\\b|_L_|\\.L$)/i.test(name)?'L':/(right|\\bR\\b|_R_|\\.R$)/i.test(name)?'R':null;
  model.traverse(o=>{
   if(!o.isBone)return;
   const n=o.name.toLowerCase(),side=sideOf(o.name);
   if(!side)return;
   if(/thigh|upleg|upper.?leg/.test(n))bones[side+'Thigh']=o;
-  else if(/calf|shin|lower.?leg/.test(n))bones[side+'Calf']=o;
-  else if(/foot|ankle/.test(n))bones[side+'Foot']=o;
+  else if(/calf|shin|lower.?leg|\\bleg\\b/.test(n))bones[side+'Calf']=o;
+  else if(/foot|ankle|toe/.test(n))bones[side+'Foot']=o;
   else if(/upper.?arm|arm/.test(n)&&!/forearm|lower.?arm/.test(n))bones[side+'Arm']=o;
   else if(/forearm|lower.?arm/.test(n))bones[side+'Forearm']=o;
  });
@@ -205,11 +212,11 @@ function updateProceduralGait(root,phase,weight){
  const {bones,base}=gait;
  const swing=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
  const apply=(key,x,z=0)=>{const b=bones[key],r=base[key];if(b&&r){b.rotation.x=r.x+x*weight;b.rotation.z=r.z+z*weight}};
- apply('LThigh',swing*.48);apply('RThigh',opposite*.48);
- apply('LCalf',Math.max(0,-swing)*.62);apply('RCalf',Math.max(0,-opposite)*.62);
- apply('LFoot',Math.max(0,swing)*-.18);apply('RFoot',Math.max(0,opposite)*-.18);
- apply('LArm',opposite*.30);apply('RArm',swing*.30);
- apply('LForearm',.10+Math.max(0,swing)*.12);apply('RForearm',.10+Math.max(0,opposite)*.12);
+ apply('LThigh',swing*.40);apply('RThigh',opposite*.40);
+ apply('LCalf',Math.max(0,-swing)*.72);apply('RCalf',Math.max(0,-opposite)*.72);
+ apply('LFoot',Math.max(0,swing)*-.16);apply('RFoot',Math.max(0,opposite)*-.16);
+ apply('LArm',opposite*.34);apply('RArm',swing*.34);
+ apply('LForearm',.06+Math.max(0,swing)*.10);apply('RForearm',.06+Math.max(0,opposite)*.10);
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
