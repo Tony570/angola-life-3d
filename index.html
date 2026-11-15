@@ -447,11 +447,10 @@ function buildVianaBuilding(name,x,z,front,opts={}){
  }
  if(opts.kind==='party'){
   box(1.4,.5,.12,mat('#d4b66e',.7),x,2.95,face+front*.12);
+  // Palco, colunas de som e iluminação de salão comunitário.
+  box(w*.62,.28,1.35,mat('#5d4a43',.8),x,.18,z-front*(d*.25));
+  [-1,1].forEach(side=>{const sx=x+side*(w*.37),sz=face+front*.2;box(.72,1.45,.55,mat('#24272b',.65),sx,.85,sz);for(let k=0;k<3;k++){const sp=new THREE.Mesh(new THREE.CircleGeometry(.16,12),mat('#111518',.65));sp.position.set(sx,.45+k*.38,sz+front*.29);sp.rotation.y=front>0?0:Math.PI;target.add(sp)}const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(side<0?'#d34d8c':'#4d85d3',.4));lamp.position.set(sx,3.25,face+front*.3);target.add(lamp)});
  }
-}
-function buildVianaOtherBuildings(){
- // Instalações adicionais com equipamentos, mobiliário exterior e detalhes funcionais visíveis.
- 
  if(opts.kind==='hospital'){
   const red=mat('#b73535',.65),white=mat('#f2eee5',.8),cx=x+w/2-1.15,cz=face+front*.12;
   box(.28,1.05,.12,red,cx,3.05,cz);box(.95,.28,.12,red,cx,3.05,cz);
@@ -477,6 +476,8 @@ function buildVianaOtherBuildings(){
   for(let i=-1;i<=1;i++){const sx=x+i*1.55,sz=face+front*.42;const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.55,4,8),mat(i===0?'#9c554b':'#496e83',.8));torso.position.set(sx,1.45,sz);target.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),mat('#b98768',.85));head.position.set(sx,1.88,sz);target.add(head);box(.75,.07,.07,metal,sx,2.55,sz+front*.2);for(let k=-1;k<=1;k++)box(.07,.65,.07,mat('#b48b62',.85),sx+k*.22,2.2,sz+front*.2)}
   box(2.8,.12,.75,mat('#76543f',.85),x,.8,face+front*1.2);
  }
+}
+function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:9.5,d:7.8,h:3.5,wall:'#d4d0c4',sign:'#8b3935'});
  // Empresa da pedreira, com fachada industrial simples.
