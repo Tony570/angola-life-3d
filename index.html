@@ -284,9 +284,14 @@ function applyAvatarLook(model,look){
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
  root.position.set(position.x,position.y,position.z);target.add(root);
- root.userData.fallbackFigure=null;root.userData.fallbackRig=null;
+ // Mostrar imediatamente um personagem humano, sem depender do carregamento remoto do modelo 3D.
+ const immediateFallback=createFallbackHuman(look);
+ root.userData.fallbackFigure=immediateFallback;
+ root.userData.fallbackRig=immediateFallback.userData.gaitRig;
+ root.add(immediateFallback);
  gltfLoader.load(asset.model,gltf=>{
   const model=gltf.scene;
+  if(root.userData.fallbackFigure){root.remove(root.userData.fallbackFigure);root.userData.fallbackFigure=null;root.userData.fallbackRig=null;}
   model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.roughness=Math.max(.45,m.roughness??.8);m.needsUpdate=true})}}});
   const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
   const scale=0.49/(size.y||1);model.scale.setScalar(scale);
@@ -321,7 +326,7 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
   }else{
    console.error('O modelo humano não trouxe as animações Idle e Walk esperadas:',gltf.animations.map(c=>c.name));
   }
- },undefined,error=>{console.error('Não foi possível carregar o modelo humano:',error);if(!root.userData.disposed){const fallback=createFallbackHuman(look);root.userData.fallbackFigure=fallback;root.userData.fallbackRig=fallback.userData.gaitRig;root.add(fallback)}});
+ },undefined,error=>{console.error('Não foi possível carregar o modelo humano; mantém-se o personagem de segurança:',error)});
  return root
 }function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
 host.querySelectorAll('canvas').forEach(c=>c.remove());
