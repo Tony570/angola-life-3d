@@ -1135,3 +1135,7 @@ button:focus-visible {
 .decor-items,.decor-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
 .decor-actions { grid-template-columns:1fr 1fr; margin-top:7px; }
 @media(max-width:700px) { #home-tools { top:auto; right:8px; bottom:190px; width:min(220px,calc(100vw - 16px)); padding:10px; } #home-tools button { min-height:34px; padding:7px 6px; font-size:9px; } }
+.avatar-creator{display:grid;grid-template-columns:1fr;gap:9px;margin:0 auto 18px;text-align:left;max-width:330px}
+.avatar-creator label{display:grid;gap:5px;color:#f3d58e;font-size:11px;font-weight:900;letter-spacing:.5px}
+.avatar-creator select{width:100%;min-height:40px;padding:8px 11px;border:1px solid #ffffff35;border-radius:9px;background:#142a25;color:#fff;font:inherit}
+@media(min-width:520px){.avatar-creator{grid-template-columns:1fr 1fr}.avatar-creator label:last-child{grid-column:1/-1}}
