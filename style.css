@@ -1139,3 +1139,161 @@ button:focus-visible {
 .avatar-creator label{display:grid;gap:5px;color:#f3d58e;font-size:11px;font-weight:900;letter-spacing:.5px}
 .avatar-creator select{width:100%;min-height:40px;padding:8px 11px;border:1px solid #ffffff35;border-radius:9px;background:#142a25;color:#fff;font:inherit}
 @media(min-width:520px){.avatar-creator{grid-template-columns:1fr 1fr}.avatar-creator label:last-child{grid-column:1/-1}}
+
+
+/* =========================================================
+   ANGOLA LIFE 3D — NOVA EXPERIÊNCIA DE ENTRADA
+   Direção visual original inspirada em simuladores sociais 3D.
+   ========================================================= */
+#game > canvas { filter: saturate(1.12) contrast(1.03); }
+#topbar { z-index: 14; }
+#topbar .brand {
+  font-size: clamp(17px,2.2vw,25px);
+  letter-spacing: 1.8px;
+  text-shadow: 0 3px 18px #090b25;
+}
+#topbar .brand span { color:#ff8bd2; }
+#welcome.screen {
+  z-index: 30;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(16px,4vw,58px);
+  overflow-y: auto;
+  background:
+    linear-gradient(90deg,rgba(13,12,42,.92) 0%,rgba(23,17,57,.82) 43%,rgba(25,22,66,.25) 100%),
+    radial-gradient(ellipse at 75% 25%,rgba(255,91,184,.24),transparent 42%),
+    radial-gradient(ellipse at 70% 90%,rgba(56,158,255,.2),transparent 42%);
+  backdrop-filter: saturate(1.12);
+}
+#welcome.screen:before {
+  content:"ANGOLA · LUANDA · KILAMBA";
+  position:absolute;
+  top:clamp(78px,12vh,130px);
+  right:clamp(18px,5vw,72px);
+  color:#fff;
+  opacity:.72;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:4px;
+  text-shadow:0 2px 12px #08091c;
+}
+#welcome.screen:after {
+  content:"UM NOVO MUNDO. A TUA VIDA. A TUA HISTÓRIA.";
+  position:absolute;
+  right:clamp(18px,5vw,72px);
+  bottom:clamp(25px,6vh,62px);
+  color:#fff;
+  opacity:.78;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:2px;
+  text-shadow:0 2px 12px #08091c;
+}
+.welcome-content {
+  position:relative;
+  z-index:1;
+  width:min(460px,94vw);
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  margin:0;
+  padding:clamp(22px,3vw,34px);
+  text-align:left;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:25px;
+  background:linear-gradient(150deg,rgba(28,24,68,.94),rgba(13,20,48,.92));
+  box-shadow:0 26px 90px rgba(2,5,25,.58),inset 0 1px rgba(255,255,255,.12);
+  backdrop-filter:blur(18px);
+}
+.logo {
+  max-width:390px;
+  font-size:clamp(29px,6vw,46px);
+  line-height:.98;
+  letter-spacing:-1.3px;
+  color:#fff;
+  text-shadow:0 4px 22px rgba(5,5,25,.7);
+}
+.logo:after {
+  content:"";
+  display:block;
+  width:74px;
+  height:5px;
+  margin-top:13px;
+  border-radius:8px;
+  background:linear-gradient(90deg,#ff75c8,#8b83ff);
+}
+.welcome-content p {
+  max-width:360px;
+  margin:17px 0 21px;
+  color:#e8e7ff;
+  font-size:14px;
+  line-height:1.65;
+}
+.avatar-creator {
+  max-width:none;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:0 0 20px;
+}
+.avatar-creator label {
+  gap:7px;
+  color:#d9d4ff;
+  font-size:10px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.avatar-creator label:first-child { grid-column:1/-1; }
+.avatar-creator select {
+  min-height:45px;
+  border:1px solid rgba(190,177,255,.35);
+  border-radius:12px;
+  padding:10px 12px;
+  background:rgba(8,13,39,.92);
+  color:#fff;
+  font-size:13px;
+  outline:none;
+}
+.avatar-creator select:focus {
+  border-color:#ff8bd2;
+  box-shadow:0 0 0 3px rgba(255,139,210,.14);
+}
+#start-game {
+  width:100%;
+  min-height:54px;
+  padding:15px 20px;
+  border:1px solid rgba(255,255,255,.42);
+  border-radius:14px;
+  background:linear-gradient(100deg,#ff75c8,#a77aff 58%,#6b9dff);
+  color:#fff;
+  font-size:13px;
+  letter-spacing:1.1px;
+  box-shadow:0 10px 28px rgba(150,91,255,.3);
+}
+#start-game:hover { filter:brightness(1.09);box-shadow:0 12px 34px rgba(255,117,200,.28); }
+#start-game:disabled { opacity:.7;filter:saturate(.65); }
+@media(max-width:700px) {
+  #welcome.screen {
+    justify-content:center;
+    align-items:flex-end;
+    padding:12px 12px max(12px,env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(10,13,39,.12),rgba(12,13,40,.58) 34%,rgba(12,13,40,.96) 100%);
+  }
+  #welcome.screen:before { top:18px;right:16px;font-size:8px;letter-spacing:2px; }
+  #welcome.screen:after { display:none; }
+  .welcome-content {
+    width:min(520px,100%);
+    max-height:min(78vh,720px);
+    padding:20px 18px;
+    border-radius:22px;
+  }
+  .logo { font-size:clamp(28px,8vw,38px); }
+  .welcome-content p { margin:12px 0 16px;font-size:12px; }
+  .avatar-creator { grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px; }
+  .avatar-creator label:first-child { grid-column:1/-1; }
+  .avatar-creator select { min-height:42px;font-size:12px; }
+  #start-game { min-height:49px; }
+}
+@media(max-width:360px) {
+  .welcome-content { padding:17px 14px; }
+  .avatar-creator { grid-template-columns:1fr; }
+  .avatar-creator label:first-child { grid-column:auto; }
+}
