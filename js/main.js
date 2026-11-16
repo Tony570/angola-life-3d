@@ -449,9 +449,15 @@ function buildVianaCommercialInterior(name){
   // Balcão administrativo à entrada e armazém de materiais de construção.
   box(2.65,.95,.72,wood,0,.5,-2.75);box(2.75,.12,.82,white,0,1.04,-2.75);
   box(2.1,1.65,.55,mat('#a9a69c'),-2.8,.82,-2.75);box(2.1,1.65,.55,mat('#a9a69c'),2.8,.82,-2.75);
-  const stacks=[['CIMENTO','#aaa9a1'],['BLOCOS','#a88e72'],['TIJOLOS','#b76c50'],['FERRO','#606d73'],['TINTAS','#8c6ca2'],['TUBOS','#82979a']];
-  stacks.forEach(([label,color],i)=>{const x=-2.7+(i%3)*2.7,z=-.4+Math.floor(i/3)*2.55;box(1.55,.55,1.25,mat(color),x,.34,z);box(1.55,.55,1.25,mat(color),x,.9,z);box(1.7,.08,1.35,metal,x,1.22,z)});
-  for(let i=0;i<4;i++){const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,1.65,10),mat('#8e9ca0'));pipe.rotation.z=Math.PI/2;pipe.position.set(-2.6+i*.38,1.62,2.75);target.add(pipe)}
+  const stacks=[['CIMENTO','#aaa9a1'],['AREIA','#c5ad83'],['BRITA','#77756d'],['BLOCOS','#a88e72'],['TIJOLOS','#b76c50'],['FERRO','#606d73'],['CHAPAS','#829097'],['TELHAS','#9c765a'],['TUBOS','#82979a'],['TINTAS','#8c6ca2'],['MADEIRA','#9b714d'],['FERRAMENTAS','#6b7377']];
+  stacks.forEach(([label,color],i)=>{
+   const x=-3+(i%4)*2,z=-.55+Math.floor(i/4)*2.35;
+   box(1.55,.78,1.05,mat(color),x,.42,z);
+   box(1.62,.08,1.12,metal,x,.84,z);
+   const cv=document.createElement('canvas');cv.width=256;cv.height=64;const cx=cv.getContext('2d');cx.fillStyle='#26343a';cx.fillRect(0,0,256,64);cx.fillStyle='#fff';cx.font='bold 30px Arial';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(label,128,34);
+   const plaque=new THREE.Mesh(new THREE.PlaneGeometry(1.18,.28),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),side:THREE.DoubleSide}));plaque.position.set(x,.47,z+.535);target.add(plaque);
+  });
+  for(let i=0;i<4;i++){const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,1.65,10),mat('#8e9ca0'));pipe.rotation.z=Math.PI/2;pipe.position.set(-2.6+i*.38,1.62,3.35);target.add(pipe)}
   buildCharacter(target,{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#b5a15e',pants:'#35404b',hairStyle:'curto'},{x:0,y:0,z:-1.8},()=>{},false);
  }else if(isCars){
   // Exposição interior de viaturas, recepção comercial e acesso à oficina.
@@ -743,11 +749,11 @@ function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
- buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:9.4,d:7.6,h:3.4,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
- // Mercado de bairro, com toldos modestos.
- buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:9.4,d:7.6,h:3.25,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
- // Stand/loja de automóveis, com duas viaturas em exposição.
- buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:9.4,d:7.6,h:3.35,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:14.2,d:10.8,h:4.1,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
+ // Mercado de bairro amplo, com espaço de circulação e exposição exterior.
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:12,d:9.2,h:3.55,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
+ // Stand de automóveis com parque exterior e showroom interior.
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:12.2,d:9.4,h:3.7,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
