@@ -483,7 +483,7 @@ furnCounter(5.8,.95,.62,wood,white,metal,0,2.75);
   buildCharacter(target,{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9d596f',pants:'#343b48',hairStyle:'comprido'},{x:0,y:0,z:.15},()=>{},false);
  }else if(isClothes){
   // Araras de roupa, manequins e provadores separados.
-for(const x of [-2.7,0,2.7])furnClothingRack(x,-2.6,metal);/*
+for(const x of [-2.7,0,2.7])furnClothingRack(x,-2.6,metal);
   for(const x of [-2.5,0,2.5]){const mannequin=new THREE.Group();hsph(.19,.2,.18,mat('#d5b99d'),0,1.78,0,mannequin);box(.48,.82,.3,mat(['#9a554e','#54758c','#7e638f'][Math.abs(Math.round(x))%3]),0,1.18,0,mannequin);box(.28,.72,.25,mat('#343b48'),0,.42,0,mannequin);mannequin.position.set(x,0,.15);target.add(mannequin)}
 furnCounter(2.2,.9,.65,wood,white,metal,0,3.05);
   box(1.25,2.2,.12,mat('#b9a28c'),-3.15,1.1,1.05);box(1.25,2.2,.12,mat('#b9a28c'),3.15,1.1,1.05);
