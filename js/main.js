@@ -368,6 +368,26 @@ function buildPoliceStationInterior(){
  box(.72,.42,.035,mat('#c52d35',.9),-2.88,2.02,-1.25);
  box(.72,.42,.035,mat('#171717',.9),-2.88,1.6,-1.25);
  const emblem=new THREE.Mesh(new THREE.CircleGeometry(.12,12),mat('#d6b34e',.7));emblem.position.set(-2.88,1.81,-1.22);target.add(emblem);
+ // Zona administrativa reservada aos agentes, com secretária e arquivo.
+ box(2.55,.12,.82,wood,-2.55,.88,2.35);box(2.4,.08,.72,trim,-2.55,.99,2.35);
+ box(.95,1.5,.58,blue,-3.35,.78,-.2);box(.95,1.5,.58,blue,-3.35,.78,1.45);
+ hchair(-2.55,1.35,'#173f70',Math.PI);
+ // Sala de interrogatório: mesa central, duas cadeiras e iluminação própria.
+ box(2.25,.14,1.05,wood,1.85,.82,-1.95);box(2.05,.06,.92,trim,1.85,.91,-1.95);
+ hchair(1.05,-1.95,'#59636c',Math.PI/2);hchair(2.65,-1.95,'#59636c',-Math.PI/2);
+ box(.08,1.9,.08,metal,3.35,.95,-2.8);box(.08,1.9,.08,metal,3.35,.95,-1.1);
+ // Duas celas individuais no fundo direito, com grades metálicas visíveis.
+ for(let cell=0;cell<2;cell++){
+  const z=.35+cell*1.75;
+  box(1.05,.12,1.45,mat('#858c8e'),2.75,.08,z);
+  box(1.05,.12,1.45,mat('#858c8e'),2.75,.82,z);
+  for(let k=0;k<7;k++){const bar=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,1.55,8),metal);bar.position.set(2.25+k*.17,.88,z-.7);target.add(bar)}
+  box(1.1,.12,.08,metal,2.75,.08,z-.72);box(1.1,.12,.08,metal,2.75,.08,z+.72);
+  box(.42,.16,.42,mat('#a9afb0'),2.55,.28,z+.35);
+ }
+ // Placas funcionais para orientar o jogador dentro da esquadra.
+ const label=(text,x,z,color='#173f70')=>{const cv=document.createElement('canvas');cv.width=320;cv.height=72;const cx=cv.getContext('2d');cx.fillStyle=color;cx.fillRect(0,0,320,72);cx.fillStyle='#fff';cx.font='bold 30px Arial';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(text,160,38);const m=new THREE.Mesh(new THREE.PlaneGeometry(1.65,.38),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),side:THREE.DoubleSide}));m.position.set(x,2.35,z);target.add(m)};
+ label('ADMINISTRAÇÃO',-2.55,3.82);label('INTERROGATÓRIO',2.55,3.82);label('DETENÇÃO',3.5,.15);
 }
 function buildBarInterior(){
  const floor=mat('#342a28',.62),wall=mat('#382c2b',.9),wood=mat('#5c3428',.48),gold=mat('#c69b58',.42),metal=mat('#343b40',.4),glass=mat('#8db9c4',.18);
@@ -670,15 +690,15 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   [-1,1].forEach(side=>box(2.1,.16,1.15,mat(side<0?'#a34c35':'#d2b35d',.9),x+side*2.7,2.85,face+front*.55));
  }
  if(opts.kind==='cars'){
-  [-1,1].forEach(side=>{
-   const cx=x+side*2.7,cz=z+front*(d/2+1.25);
-   box(2.25,.65,1.15,mat(side<0?'#9d3930':'#b5b8ba',.7),cx,.42,cz);
-   box(1.2,.48,.92,mat('#333b40',.55),cx,.94,cz);
-   [-1,1].forEach(a=>[-1,1].forEach(b=>{
-    const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.14,12),metal);
-    wheel.rotation.z=Math.PI/2;wheel.position.set(cx+a*.72,.24,cz+b*.43);target.add(wheel);
-   }));
+  // Parque de exposição com três viaturas completas e estacionamento marcado.
+  [-1,0,1].forEach((side,i)=>{
+   const car=createDetailedCar(['#a83e36','#426d87','#d0b65b'][i],false);
+   car.scale.setScalar(.78);car.position.set(x+side*3.15,0,z+front*(d/2+1.85));car.rotation.y=front===1?0:Math.PI;target.add(car);
+   box(2.45,.025,.08,mat('#e8dfc9'),x+side*3.15,-.005,z+front*(d/2+3.15));
   });
+  // Pala moderna e fachada envidraçada do stand.
+  box(w+.5,.18,1.25,mat('#394f5b'),x,3.18,face+front*.62);
+  box(w*.72,1.85,.08,glass,x,1.45,face+front*.13);
  }
  if(opts.kind==='bar'){
   box(w*.72,.22,.7,mat('#8b5739',.9),x,1.2,face+front*.62);
