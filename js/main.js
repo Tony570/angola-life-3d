@@ -344,16 +344,10 @@ function buildPoliceStationInterior(){
  // Cadeiras para os cidadãos aguardarem atendimento.
  for(let i=0;i<3;i++){
   const x=-2.45+i*1.05;
-  box(.78,.12,.62,blue,x,.52,1.45);
-  box(.78,.72,.12,blue,x,.92,1.72);
-  box(.08,.48,.08,metal,x-.3,.25,1.22);box(.08,.48,.08,metal,x+.3,.25,1.22);
+  hchair(x,1.45,'#173f70',Math.PI);
  }
  // Duas cadeiras de trabalho, alinhadas com os computadores atrás do balcão.
- [-1.25,1.15].forEach(x=>{
-  const seat=new THREE.Mesh(new THREE.CylinderGeometry(.22,.24,.09,18),blue);seat.position.set(x,.31,-2.05);target.add(seat);
-  const back=new THREE.Mesh(new THREE.BoxGeometry(.42,.36,.09),blue);back.position.set(x,.49,-2.29);target.add(back);
-  [-.14,.14].forEach(dx=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.28,8),metal);leg.position.set(x+dx,.14,-2.05);target.add(leg)});
- });
+ [-1.25,1.15].forEach(x=>hchair(x,-2.05,'#173f70',0));
  // Os dois agentes diante dos computadores ficam sentados, com postura de atendimento.
  addPoliceOfficer(-1.25,-2.05,0,1,false,true);
  addPoliceOfficer(1.15,-2.05,0,1,false,true);
@@ -369,11 +363,11 @@ function buildPoliceStationInterior(){
  box(.72,.42,.035,mat('#171717',.9),-2.88,1.6,-1.25);
  const emblem=new THREE.Mesh(new THREE.CircleGeometry(.12,12),mat('#d6b34e',.7));emblem.position.set(-2.88,1.81,-1.22);target.add(emblem);
  // Zona administrativa reservada aos agentes, com secretária e arquivo.
- box(2.55,.12,.82,wood,-2.55,.88,2.35);box(2.4,.08,.72,trim,-2.55,.99,2.35);
+ hdesk(-2.55,2.35,2.55);
  box(.95,1.5,.58,blue,-3.35,.78,-.2);box(.95,1.5,.58,blue,-3.35,.78,1.45);
  hchair(-2.55,1.35,'#173f70',Math.PI);
  // Sala de interrogatório: mesa central, duas cadeiras e iluminação própria.
- box(2.25,.14,1.05,wood,1.85,.82,-1.95);box(2.05,.06,.92,trim,1.85,.91,-1.95);
+ furnCounter(2.25,.82,1.05,wood,trim,metal,1.85,-1.95);
  hchair(1.05,-1.95,'#59636c',Math.PI/2);hchair(2.65,-1.95,'#59636c',-Math.PI/2);
  box(.08,1.9,.08,metal,3.35,.95,-2.8);box(.08,1.9,.08,metal,3.35,.95,-1.1);
  // Duas celas individuais no fundo direito, com grades metálicas visíveis.
@@ -440,15 +434,15 @@ function buildVianaCommercialInterior(name){
  for(let i=-1;i<=1;i++){box(1.05,.045,.42,white,i*2.45,3.35,-.4);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshStandardMaterial({color:'#fff0c5',emissive:'#d9b66c',emissiveIntensity:.45}));lamp.position.set(i*2.45,3.18,-.4);target.add(lamp)}
  if(isMarket){
   // Prateleiras, balcões, caixas de fruta e produtos organizados por secção.
-  for(const side of [-1,1])for(let row=0;row<2;row++){const x=side*3.15,z=-2.35+row*2.15;box(.62,2.2,1.55,wood,x,1.08,z);for(let level=0;level<3;level++){box(.7,.08,1.62,metal,x,.48+level*.67,z);for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
+  for(const side of [-1,1])for(let row=0;row<2;row++){const x=side*3.15,z=-2.35+row*2.15;furnMarketRack(x,z,wood,metal);for(let level=0;level<3;level++){for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
   for(let i=0;i<3;i++){const x=-2.2+i*2.2;box(1.65,.85,.78,wood,x,.48,.75);for(let k=0;k<5;k++){const produce=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][i],.85));produce.position.set(x-.55+k*.27,.99,.75);target.add(produce)}}
   furnCounter(2.8,1,.68,mat('#a66d42'),white,metal,0,-3.15);
   for(let i=0;i<6;i++){const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.36,10),mat(i%2?'#4f8a73':'#c08b42'));bottle.position.set(-1.1+i*.44,1.34,-3.15);target.add(bottle)}
   buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#7d5941',pants:'#35475b',hairStyle:'medio'},{x:0,y:0,z:-2.15},()=>{},false);
  }else if(isQuarry){
   // Balcão administrativo à entrada e armazém de materiais de construção.
-  box(2.65,.95,.72,wood,0,.5,-2.75);box(2.75,.12,.82,white,0,1.04,-2.75);
-  box(2.1,1.65,.55,mat('#a9a69c'),-2.8,.82,-2.75);box(2.1,1.65,.55,mat('#a9a69c'),2.8,.82,-2.75);
+  furnCounter(2.65,.95,.72,wood,white,metal,0,-2.75);
+  for(const side of [-1,1]){const cabinet=new THREE.Group();box(.82,1.45,.55,mat('#a9a69c'),0,.75,0,cabinet);for(let level=0;level<3;level++){box(.72,.035,.035,metal,0,.38+level*.38,.29,cabinet);box(.12,.055,.04,metal,0,.38+level*.38,.32,cabinet)}cabinet.position.set(side*2.8,0,-2.75);target.add(cabinet);}
   const stacks=[['CIMENTO','#aaa9a1'],['AREIA','#c5ad83'],['BRITA','#77756d'],['BLOCOS','#a88e72'],['TIJOLOS','#b76c50'],['FERRO','#606d73'],['CHAPAS','#829097'],['TELHAS','#9c765a'],['TUBOS','#82979a'],['TINTAS','#8c6ca2'],['MADEIRA','#9b714d'],['FERRAMENTAS','#6b7377']];
   stacks.forEach(([label,color],i)=>{
    const x=-3+(i%4)*2,z=-.55+Math.floor(i/4)*2.35;
@@ -548,6 +542,22 @@ function furnPrivateBed(x,z,wood,linen,metal){
  const g=new THREE.Group();box(2.5,.38,3.1,wood,0,.32,0,g);box(2.42,.16,2.98,linen,0,.58,0,g);
  hcap(.12,1.05,mat('#f0e7dd'),0,.72,-.86,g,Math.PI/2).scale.set(1,.8,.65);hcap(.1,1.1,mat('#f0e7dd'),0,.72,.72,g,Math.PI/2).scale.set(1,.8,.65);
  box(2.58,.12,.16,wood,0,.88,-1.48,g);for(const px of [-1.12,1.12])for(const pz of [-1.35,1.35])hcyl(.045,.32,metal,px,.16,pz,g);
+ g.position.set(x,0,z);target.add(g);return g;
+}
+function furnMarketRack(x,z,wood,metal){
+ const g=new THREE.Group();
+ for(const px of [-.29,.29])for(const pz of [-.69,.69]){
+  box(.07,2.12,.07,metal,px,1.08,pz,g);
+  box(.1,.08,.1,wood,px,.08,pz,g);
+ }
+ for(let level=0;level<3;level++){
+  const y=.48+level*.67;
+  box(.72,.075,1.62,wood,0,y,0,g);
+  box(.74,.045,.055,metal,0,y+.055,.79,g);
+  box(.055,.12,1.62,metal,-.34,y+.06,0,g);
+  box(.055,.12,1.62,metal,.34,y+.06,0,g);
+ }
+ box(.64,1.95,.045,wood,0,1.08,-.72,g);
  g.position.set(x,0,z);target.add(g);return g;
 }
 
