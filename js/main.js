@@ -19,7 +19,7 @@ $('signup-method').onchange=()=>identifierMode($('signup-method').value,'signup'
 let pendingPhone=null;
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();say('auth-message','A entrar…');const method=$('login-method').value;const value=$('login-identifier').value.trim();const credentials={password:$('login-password').value};credentials[method==='phone'?'phone':'email']=value;const {error}=await sb.auth.signInWithPassword(credentials);if(error)say('auth-message',error.message);else await boot()});
 $('signup-form').addEventListener('submit',async e=>{e.preventDefault();say('auth-message','A criar a tua conta…');const method=$('signup-method').value;const value=$('signup-identifier').value.trim();const username=$('signup-name').value.trim().replace(/\s+/g,'_').toLowerCase();const options={data:{username,display_name:$('signup-name').value.trim()}};const credentials={password:$('signup-password').value,options};credentials[method==='phone'?'phone':'email']=value;if(method==='email')options.emailRedirectTo='https://tony570.github.io/angola-life-3d/';const {data,error}=await sb.auth.signUp(credentials);if(error){say('auth-message',error.message);return}if(data.session){await boot();return}if(method==='phone'){pendingPhone=value;$('login-form').classList.add('hidden');$('signup-form').classList.add('hidden');$('phone-verify').classList.remove('hidden');$('tab-login').classList.add('hidden');$('tab-signup').classList.add('hidden');say('auth-message','Aguardamos a confirmação do número.');return}say('auth-message','Conta criada. Confirma o email e depois entra no jogo. Se o código não chegar, será necessário activar o envio de email no serviço de autenticação.')});
-$('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(!pendingPhone||!/^\\d{6}$/.test(token)){say('auth-message','Introduz o código SMS de 6 dígitos.');return}say('auth-message','A confirmar número…');const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});if(error){say('auth-message',error.message);return}if(data.session)await boot()};
+$('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(!pendingPhone||!/^[0-9]{6}$/.test(token)){say('auth-message','Introduz o código SMS de 6 dígitos.');return}say('auth-message','A confirmar número…');const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});if(error){say('auth-message',error.message);return}if(data.session)await boot()};
 $('logout').onclick=async()=>{await sb.auth.signOut();user=null;$('game').classList.add('hidden');$('auth').classList.remove('hidden');$('phone-verify').classList.add('hidden');$('tab-login').classList.remove('hidden');$('tab-signup').classList.remove('hidden');setTab('login')};
 function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}renderAvatar()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
@@ -150,6 +150,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
+ root.userData.keepWorldScale=true;
  root.position.set(position.x,position.y,position.z);target.add(root);
  // Mostrar imediatamente um personagem humano, sem depender do carregamento remoto do modelo 3D.
  const immediateFallback=createFallbackHuman(look);
@@ -258,7 +259,7 @@ const doorDefs={
  cozinha:[{label:'SALA',dest:'sala',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  banheiro:[{label:'QUARTO',dest:'quarto',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
  garagem:[],
- esquadra:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:-22.6,face:Math.PI}}],
+ esquadra:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:28,z:-17.2,face:Math.PI}}],
  hospital:[{label:'SALA DE TRATAMENTO',dest:'hospital-tratamento',side:'east',center:0,spawn:{x:-2.55,z:0,face:Math.PI/2},hospitalDoor:true},{label:'CONSULTÓRIO MÉDICO',dest:'hospital-consultorio',side:'west',center:0,spawn:{x:2.55,z:0,face:-Math.PI/2},hospitalDoor:true},{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-22.65,face:Math.PI}}],
  'hospital-tratamento':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:2.55,z:0,face:Math.PI}}],
  'hospital-consultorio':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:-2.55,z:0,face:Math.PI}}],
@@ -267,14 +268,11 @@ const doorDefs={
  'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-15.4,z:0,face:Math.PI/2}}],
  'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:15.4,z:0,face:-Math.PI/2}}],
  party:[{label:'SAIR PARA VIANA',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:28,z:12.45,face:Math.PI}},{label:'SAÍDA DE EMERGÊNCIA',dest:'city',side:'south',center:0,spanX:36,spanZ:28,spawn:{x:28,z:43.55,face:0}}],
- market:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:-5.3,face:Math.PI}}],
- quarry:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:0,z:-22.7,face:Math.PI}}],
- cars:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-5.3,face:Math.PI}}],
- party:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:22.7,face:Math.PI}}],
+ market:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:-11.8,face:Math.PI}}],
+ quarry:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:0,z:-16.7,face:Math.PI}}],
+ cars:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-11.8,face:Math.PI}}],
  salon:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-3.4,z:22.7,face:Math.PI}}],
  clothes:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:3.4,z:22.7,face:Math.PI}}],
- 'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-2.5,z:1.1,face:Math.PI/2}}],
- 'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:2.5,z:1.1,face:-Math.PI/2}}],
  ...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),[{label:'VOLTAR À RECEPÇÃO',dest:'hotel',side:'south',center:0,spawn:{x:0,z:2.7,face:Math.PI}}]]))
 };
 let roomDoorMeshes=[];let policeEntryMeshes=[];
@@ -488,6 +486,16 @@ function buildVianaCommercialInterior(name){
   colors.forEach((color,i)=>{const car=createDetailedCar(color,false);car.scale.setScalar(.72);car.position.set(-2.45+i*2.45,0,.45);car.rotation.y=i===1?Math.PI:0;target.add(car)});
   box(2.6,.12,.22,metal,0,.08,2.95);box(2.6,2.2,.12,glass,0,1.2,3.82);
   for(let i=0;i<3;i++){const tyre=new THREE.Mesh(new THREE.TorusGeometry(.32,.09,8,20),mat('#25282b'));tyre.position.set(-2.5+i*2.5,.38,-2.15);target.add(tyre)}
+  // Gabinete de vendas com secretária, cadeira, computador e arquivo.
+  hdesk(3.0,2.55,Math.PI);
+  hchair(3.0,1.25,'#344c5d',Math.PI);
+  box(.72,.5,.07,glass,3.0,1.55,2.45);
+  box(.88,.06,.48,metal,3.0,1.22,2.5);
+  box(.72,1.65,.62,mat('#52636a',.86),-3.35,.83,2.55);
+  for(let level=0;level<3;level++)box(.58,.035,.04,metal,-3.35,.45+level*.42,2.88);
+  // Zona de assistência rápida: bancada e ferramentas junto à parede lateral.
+  furnCounter(1.8,.9,.55,metal,white,wood,-3.05,-.15);
+  for(let k=0;k<4;k++){const tool=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.48,8),metal);tool.position.set(-3.55+k*.34,1.25,-.12);target.add(tool)}
   buildCharacter(target,{gender:'male',skin:'#b98768',hair:'#211916',shirt:'#314d67',pants:'#252f3b',hairStyle:'curto'},{x:0,y:0,z:-2.25},()=>{},false);
  }else if(isParty){
   // Palco, pista central, mesas, cadeiras e colunas de som.
@@ -522,14 +530,47 @@ function buildBarPrivateRoom(which){
  buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#8d4053',pants:'#34313b',hairStyle:'comprido'},{x:0,y:0,z:1.15},()=>{},false);
  (doorDefs[which]||[]).forEach(addRoomDoor);
 }
+function buildExpandedInterior(builder,scale=2.3){
+ const parent=target,expanded=new THREE.Group();
+ target=expanded;
+ try{builder()}finally{target=parent}
+ // Os edifícios crescem na horizontal, mas as personagens mantêm proporções humanas.
+ expanded.traverse(object=>{if(object.userData.keepWorldScale){object.scale.x=1/scale;object.scale.z=1/scale}});
+ expanded.scale.set(scale,1,scale);
+ parent.add(expanded);
+}
+function buildPoliceSectorLayout(){
+ const wall=mat('#d7dfe5',.94),blue=mat('#173f70',.86),trim=mat('#e8edf0',.9);
+ const addDoorFrame=(x,z,rot,label)=>{
+  const g=new THREE.Group();
+  box(.12,2.35,.14,trim,-.88,1.17,0,g);box(.12,2.35,.14,trim,.88,1.17,0,g);
+  box(1.88,.13,.14,trim,0,2.35,0,g);
+  const leaf=box(.09,2.12,.08,blue,.78,1.06,.05,g);leaf.rotation.y=-.08;
+  const plaqueCanvas=document.createElement('canvas');plaqueCanvas.width=320;plaqueCanvas.height=72;
+  const ctx=plaqueCanvas.getContext('2d');ctx.fillStyle='#123d70';ctx.fillRect(0,0,320,72);
+  ctx.fillStyle='#fff';ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,160,38);
+  const plaque=new THREE.Mesh(new THREE.PlaneGeometry(1.65,.37),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(plaqueCanvas),side:THREE.DoubleSide}));
+  plaque.position.set(0,2.58,.02);g.add(plaque);g.position.set(x,0,z);g.rotation.y=rot;target.add(g);
+ };
+ // Corredor interno com três acessos independentes aos setores.
+ const wallZ=2.25,half=8.4,doorXs=[-5.5,0,5.5],gap=2.0;
+ let cursor=-half;
+ for(const x of doorXs){const end=x-gap/2;if(end>cursor)box(end-cursor,3.05,.18,wall,(cursor+end)/2,1.5,wallZ);cursor=x+gap/2}
+ if(cursor<half)box(half-cursor,3.05,.18,wall,(cursor+half)/2,1.5,wallZ);
+ addDoorFrame(-5.5,wallZ,0,'ADMINISTRAÇÃO');
+ addDoorFrame(0,wallZ,0,'INTERROGATÓRIO');
+ addDoorFrame(5.5,wallZ,0,'DETENÇÃO');
+ // Paredes laterais curtas separam os três setores sem bloquear o corredor.
+ for(const x of [-8.1,-2.9,2.9,8.1])box(.16,3.05,6.1,wall,x,1.5,-4.9);
+}
 function buildRoom(name){
  target.clear();roomDoorMeshes=[];activeRoomDoor=null;scene.background=new THREE.Color(name==='garagem'?'#aebbc7':'#c6d0d7');
  if(name==='bar'){buildBarInterior();return}
  if(name==='bar-private-1'||name==='bar-private-2'){buildBarPrivateRoom(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  if(name==='party'){buildPartyHallInterior();return}
- if(['market','quarry','cars','salon','clothes'].includes(name)){buildVianaCommercialInterior(name);return}
+ if(['market','quarry','cars','salon','clothes'].includes(name)){if(['market','quarry','cars'].includes(name))buildExpandedInterior(()=>buildVianaCommercialInterior(name),2.3);else buildVianaCommercialInterior(name);return}
  if(name==='hotel'||name.startsWith('hotel-suite-')){buildHotelInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
- if(name==='esquadra'){buildPoliceStationInterior();(doorDefs.esquadra||[]).forEach(addRoomDoor);return}
+ if(name==='esquadra'){buildExpandedInterior(()=>buildPoliceStationInterior(),2.3);buildPoliceSectorLayout();(doorDefs.esquadra||[]).forEach(addRoomDoor);return}
  if(name==='hospital'||name==='hospital-tratamento'||name==='hospital-consultorio'){buildHospitalInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  const floorColor=name==='banheiro'?'#b7c7c8':name==='cozinha'?'#c5b99e':name==='garagem'?'#858d96':'#b99570';
  box(8,.18,8,mat(floorColor),0,-.12,0);
@@ -728,6 +769,42 @@ function buildVenueYard(x,z,front,opts){
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=120;const ctx=canvas.getContext('2d');ctx.fillStyle=opts.kind==='party'?'#30263a':'#271916';ctx.fillRect(0,0,640,120);ctx.strokeStyle='#d8b36d';ctx.lineWidth=7;ctx.strokeRect(7,7,626,106);ctx.fillStyle='#fff0c9';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PARQUE PRIVATIVO',320,60);
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
+function buildCommercialYard(x,z,front,opts){
+ const half=13.5,frontZ=z+front*half,backZ=z-front*half;
+ const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
+ box(half*2,.07,half*2,ground,x,-.11,z);
+ for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
+ box(half*2,1.35,.18,fence,x,.62,backZ);addCityCollision(x,backZ,half*2,.18,.08);
+ for(const side of [-1,1]){box(2.1,1.25,.18,fence,x+side*(half-1.05),.59,frontZ);addCityCollision(x+side*(half-1.05),frontZ,2.1,.18,.08)}
+ for(const px of [-half,-2.1,2.1,half]){const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),metal);p.position.set(x+px,.76,frontZ);target.add(p)}
+ box(3.7,.08,.12,metal,x,.08,frontZ);
+ box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
+ for(const side of [-1,1]){
+  const px=x+side*10.95,pz=z+front*10.9;
+  if(opts.kind==='cars'){
+   const car=createDetailedCar(side<0?'#426d87':'#b8a13d',false);
+   car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);
+   for(const dx of [-.76,.76])box(.045,.012,4.2,paint,px+dx,-.018,pz);
+   for(const dz of [-2.1,2.1])box(1.55,.012,.045,paint,px,-.018,pz+dz);
+   addCityCollision(px,pz,2.25,1.28,.08);
+  }else if(opts.kind==='quarry'){
+   const truck=new THREE.Group(),yellow=mat('#c28a35',.78),dark=mat('#30383b',.9),glass=mat('#8aaab3',.35);
+   box(1.45,1.15,2.0,yellow,0,1.05,.35,truck);box(1.42,1.0,1.25,yellow,0,1.35,-1.25,truck);box(1.2,.62,.08,glass,0,1.55,-1.9,truck);
+   for(const wz of [-1.25,.55])for(const wx of [-.78,.78]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.36,wz);truck.add(wheel)}
+   truck.position.set(px,0,z+front*1.1);target.add(truck);addCityCollision(px,z+front*1.1,1.5,2.2,.08);
+  }else{
+   const van=createDetailedCar('#477c58',false);van.position.set(px,0,pz);van.rotation.y=Math.PI/2;target.add(van);addCityCollision(px,pz,2.25,1.28,.08);
+  }
+ }
+ if(opts.kind==='market'){
+  for(const side of [-1,1])for(let row=0;row<2;row++){
+   const sx=x+side*11.15,sz=z+(row-.5)*3.4,wood=mat('#76543b',.85),canopy=mat(side<0?'#b84e3b':'#d2b35d',.82);
+   box(.95,.12,1.35,wood,sx,.78,sz);box(1.9,.12,1.8,canopy,sx,2.15,sz);
+   for(const dx of [-.82,.82])for(const dz of [-.72,.72])box(.07,1.35,.07,metal,sx+dx,1.35,sz+dz);
+   for(let k=0;k<5;k++){const fruit=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][k%3],.85));fruit.position.set(sx-.34+(k%3)*.34,1.02,sz-.3+Math.floor(k/3)*.45);target.add(fruit)}
+  }
+ }
+}
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
@@ -829,13 +906,10 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   [-1,1].forEach(side=>{const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.13,12),metal);wheel.rotation.z=Math.PI/2;wheel.position.set(ax+side*.72,.22,az+front*.42);target.add(wheel)});
  }
  if(opts.kind==='quarry'){
-  const steel=mat('#596367',.82),belt=mat('#343b3d',.95);
-  box(w+5,.08,d+5,mat('#9b8b72',1),x,-.02,z-front*(d*.72));
-  for(let side of [-1,1]){box(.12,1.55,d+4,steel,x+side*(w*.62),.75,z-front*(d*.72));for(let k=-3;k<=3;k++)box(.08,1.35,.08,steel,x+side*(w*.62),.75,z-front*(d*.72)+k*.85)}
-  box(1.8,3.2,1.8,steel,x-w*.36,1.6,z-front*(d*.9));box(2.3,.18,2.2,mat('#777f7e',.8),x-w*.36,3.25,z-front*(d*.9));
-  const conveyor=box(4.4,.16,.8,belt,x+w*.08,1.45,z-front*(d*.9));conveyor.rotation.z=-.23;
-  for(let i=0;i<3;i++){const pile=new THREE.Mesh(new THREE.ConeGeometry(.95+i*.12,.9+i*.12,7),mat(i%2?'#817d72':'#a39a88',1));pile.position.set(x+w*.38+i*.65,.42,z-front*(d*.8)+i*.9);target.add(pile)}
-  box(2.3,.8,1.25,mat('#b5a05d',.8),x+w*.28,.48,z-front*(d*1.35));box(1.2,.55,1.15,mat('#41494c',.8),x+w*.28,1.12,z-front*(d*1.35));
+  // Materiais de amostra e zona de carga frontal dentro do recinto, sem ocupar a estrada.
+  const steel=mat('#596367',.82),sand=mat('#a99a7d',1),stone=mat('#77756d',1);
+  box(5.8,.08,1.55,steel,x,-.02,z+front*(d/2+1.15));
+  for(let i=0;i<3;i++){const pile=new THREE.Mesh(new THREE.ConeGeometry(.72,.62,7),i%2?sand:stone);pile.position.set(x-1.8+i*1.8,.35,z+front*(d/2+1.15));target.add(pile)}
  }
  if(opts.kind==='salon'){
   for(let i=-1;i<=1;i++){const sx=x+i*1.55,sz=face+front*.2;box(1.0,1.2,.1,mat('#9ab3b7',.28),sx,2.05,sz);box(1.12,.1,.14,frame,sx,2.7,sz);box(.62,.55,.62,mat('#35393d',.6),sx,.92,sz+front*.72);const seat=new THREE.Mesh(new THREE.CylinderGeometry(.28,.3,.16,12),mat('#292e32',.6));seat.position.set(sx,1.3,sz+front*.72);target.add(seat);box(.08,.55,.08,metal,sx,1.05,sz+front*.72)}
@@ -845,18 +919,18 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const looks=[{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9c554b',pants:'#30394a',hairStyle:'comprido'},{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#496e83',pants:'#26364b',hairStyle:'curto'},{gender:'female',skin:'#dca77c',hair:'#75482b',shirt:'#6f527f',pants:'#343b48',hairStyle:'medio'}];
   looks.forEach((look,i)=>buildCharacter(target,look,{x:x+(i-1)*1.55,y:0,z:face+front*.42},()=>{},false));
   box(2.8,.12,.75,mat('#76543f',.85),x,.8,face+front*1.2);
-
  }
+ if(['market','quarry','cars'].includes(opts.kind))buildCommercialYard(x,z,front,opts);
 }
 function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
- buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:14.2,d:10.8,h:4.1,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:20.5,d:20.5,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
  // Mercado de bairro amplo, com espaço de circulação e exposição exterior.
- buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:12,d:9.2,h:3.55,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:20.5,d:20.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
  // Stand de automóveis com parque exterior e showroom interior.
- buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:12.2,d:9.4,h:3.7,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:20.5,d:20.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
@@ -903,69 +977,69 @@ function buildVianaPoliceStation(){
  const wall=mat('#123f78',.96),trim=mat('#e4edf7',.9),roof=mat('#0b2d59',.95);
  const dark=mat('#19365b',.55),metal=mat('#aab8c7',.8),door=mat('#0b2d59',.8);
  const concrete=mat('#aeb7bd',1),yard=mat('#78966a',1);
- const fenceZ=-20.9,backZ=-33.7,leftX=21.5,rightX=34.5;
+ const fenceZ=-16,backZ=-40,leftX=16,rightX=40;
  // Pátio relvado e passeio de acesso.
- box(13,.08,12,yard,28,-.105,-27);
- box(9.8,.12,7.2,concrete,28,-.025,-28);
+ box(24,.08,24,yard,28,-.105,-28);
+ box(12,.12,9.5,concrete,28,-.025,-28);
  // Muro contínuo e bem visível: os segmentos têm colisão física.
  box(.28,1.35,backZ-fenceZ,concrete,leftX,.62,(backZ+fenceZ)/2);
  box(.28,1.35,backZ-fenceZ,concrete,rightX,.62,(backZ+fenceZ)/2);
  box(rightX-leftX,1.35,.28,concrete,28,.62,backZ);
- box(2.35,1.35,.28,concrete,23.95,.62,fenceZ);
- box(2.35,1.35,.28,concrete,32.05,.62,fenceZ);
+ box(5.1,1.35,.28,concrete,21.45,.62,fenceZ);
+ box(5.1,1.35,.28,concrete,34.55,.62,fenceZ);
  addCityCollision(leftX,(backZ+fenceZ)/2,.28,backZ-fenceZ,.12);
  addCityCollision(rightX,(backZ+fenceZ)/2,.28,backZ-fenceZ,.12);
  addCityCollision(28,backZ,rightX-leftX,.28,.12);
- addCityCollision(23.95,fenceZ,2.35,.28,.12);
- addCityCollision(32.05,fenceZ,2.35,.28,.12);
+ addCityCollision(21.45,fenceZ,5.1,.28,.12);
+ addCityCollision(34.55,fenceZ,5.1,.28,.12);
  // Pilares de betão e remates no topo do muro.
  [leftX,rightX].forEach(x=>[-21,-27,-33.7].forEach(z=>box(.42,1.55,.42,trim,x,.72,z)));
- [22.2,33.8].forEach(x=>box(.42,1.55,.42,trim,x,.72,fenceZ));
+ [18.9,37.1].forEach(x=>box(.42,1.55,.42,trim,x,.72,fenceZ));
  // Portão metálico de duas folhas, deixando passagem central.
  [-1,1].forEach(side=>{
-  const gx=28+side*.72;
+  const gx=28+side*1.05;
   box(.055,1.55,.08,metal,gx,.78,fenceZ);
   for(let y=0;y<8;y++)box(.035,.07,.09,metal,gx,.2+y*.19,fenceZ);
  });
  box(2.95,.08,.12,metal,28,1.57,fenceZ);
  // Edifício com paredes separadas e abertura real na entrada frontal.
- box(9.5,.12,7,concrete,28,-.035,-28);
- box(.24,3.15,6.4,wall,23.5,1.55,-28);
- box(.24,3.15,6.4,wall,32.5,1.55,-28);
- box(9,3.15,.24,wall,28,1.55,-31.2);
- box(3.75,3.15,.24,wall,25.375,1.55,-24.8);
- box(3.75,3.15,.24,wall,30.625,1.55,-24.8);
- addCityCollision(23.5,-28,.24,6.4,.16);
- addCityCollision(32.5,-28,.24,6.4,.16);
- addCityCollision(28,-31.2,9,.24,.16);
- addCityCollision(25.375,-24.8,3.75,.24,.12);
- addCityCollision(30.625,-24.8,3.75,.24,.12);
+ box(19,.12,19,concrete,28,-.035,-28);
+ box(.24,3.15,18.6,wall,18.6,1.55,-28);
+ box(.24,3.15,18.6,wall,37.4,1.55,-28);
+ box(18.6,3.15,.24,wall,28,1.55,-37.4);
+ box(8.3,3.15,.24,wall,22.85,1.55,-18.6);
+ box(8.3,3.15,.24,wall,33.15,1.55,-18.6);
+ addCityCollision(18.6,-28,.24,18.6,.16);
+ addCityCollision(37.4,-28,.24,18.6,.16);
+ addCityCollision(28,-37.4,18.6,.24,.16);
+ addCityCollision(22.85,-18.6,8.3,.24,.12);
+ addCityCollision(33.15,-18.6,8.3,.24,.12);
  // Cobertura e beirais.
- box(9.45,.2,6.85,roof,28,3.22,-28);
- box(9.15,.12,6.55,trim,28,3.08,-28);
+ box(19.2,.2,19.2,roof,28,3.22,-28);
+ box(18.8,.12,18.8,trim,28,3.08,-28);
  // Moldura e folha da porta deixada aberta para o público entrar.
- box(.14,2.35,.18,trim,27.18,1.14,-24.7);
- box(.14,2.35,.18,trim,28.82,1.14,-24.7);
- box(1.75,.14,.2,trim,28,2.3,-24.7);
- const openDoor=box(.12,2.12,1.25,door,27.92,1.08,-25.35);
+ box(.14,2.35,.18,trim,27.18,1.14,-18.5);
+ box(.14,2.35,.18,trim,28.82,1.14,-18.5);
+ box(1.75,.14,.2,trim,28,2.3,-18.5);
+ const openDoor=box(.12,2.12,1.25,door,27.92,1.08,-19.15);
  openDoor.rotation.y=.08;
  const entryTrigger=new THREE.Mesh(new THREE.BoxGeometry(1.55,2.2,.08),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,depthWrite:false,side:THREE.DoubleSide}));
- entryTrigger.position.set(28,1.1,-24.78);entryTrigger.userData.policeEntry=true;target.add(entryTrigger);policeEntryMeshes.push(entryTrigger);
+ entryTrigger.position.set(28,1.1,-18.55);entryTrigger.userData.policeEntry=true;target.add(entryTrigger);policeEntryMeshes.push(entryTrigger);
  // Janelas frontais com vidro, caixilhos e grades.
  [-1,1].forEach(side=>{
-  const x=28+side*2.65;
-  box(1.55,1.05,.13,dark,x,1.95,-24.94);
-  box(1.72,.12,.2,trim,x,2.52,-24.9);
-  box(1.72,.12,.2,trim,x,1.38,-24.9);
-  box(.12,1.18,.2,trim,x-.8,1.95,-24.9);
-  box(.12,1.18,.2,trim,x+.8,1.95,-24.9);
-  box(.07,1.02,.22,metal,x,1.95,-24.86);
-  box(1.55,.07,.22,metal,x,1.95,-24.86);
+  const x=28+side*6.2;
+  box(1.55,1.05,.13,dark,x,1.95,-18.75);
+  box(1.72,.12,.2,trim,x,2.52,-18.7);
+  box(1.72,.12,.2,trim,x,1.38,-18.7);
+  box(.12,1.18,.2,trim,x-.8,1.95,-18.7);
+  box(.12,1.18,.2,trim,x+.8,1.95,-18.7);
+  box(.07,1.02,.22,metal,x,1.95,-18.66);
+  box(1.55,.07,.22,metal,x,1.95,-18.66);
  });
  // Pala sobre a porta e pilares de apoio.
- box(2.35,.16,1.05,roof,28,2.58,-24.12);
- box(.12,.9,.12,metal,27.05,2.08,-24.35);
- box(.12,.9,.12,metal,28.95,2.08,-24.35);
+ box(2.35,.16,1.05,roof,28,2.58,-17.95);
+ box(.12,.9,.12,metal,27.05,2.08,-18.2);
+ box(.12,.9,.12,metal,28.95,2.08,-18.2);
  // Placa institucional.
  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=128;
  const ctx=canvas.getContext('2d');ctx.fillStyle='#082c5d';ctx.fillRect(0,0,768,128);
@@ -974,7 +1048,7 @@ function buildVianaPoliceStation(){
  ctx.fillText('ESQUADRA DA POLÍCIA',384,66);
  const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
  const sign=new THREE.Mesh(new THREE.BoxGeometry(5.3,.9,.13),new THREE.MeshStandardMaterial({map:signTex,roughness:.8}));
- sign.position.set(28,2.82,-24.94);target.add(sign);
+ sign.position.set(28,2.82,-18.75);target.add(sign);
  // Guardas posicionados um de cada lado do portão, à escala do avatar e armados.
  addPoliceOfficer(26.25,-21.65,0,1,true,false);
  addPoliceOfficer(29.75,-21.65,0,1,true,false);
@@ -1168,17 +1242,17 @@ if(kind==='room'){
  const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.24,.78);camera.lookAt(0,.19,0)}
-const isLargeVenue=kind==='room'&&(roomName==='bar'||roomName==='party'),roomLimit=isLargeVenue?17.15:3.35;
+const isLargeVenue=kind==='room'&&(roomName==='bar'||roomName==='party'),isExpandedInterior=kind==='room'&&['market','quarry','cars','esquadra'].includes(roomName),roomLimit=isLargeVenue?17.15:isExpandedInterior?9.15:3.35;
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
-let dragging=false,lastX=0,lastY=0,moved=false,theta=Math.PI/4,phi=.92,distance=isLargeVenue?31:13.5,pinchStart=0,pinchDistance=0;
+let dragging=false,lastX=0,lastY=0,moved=false,theta=Math.PI/4,phi=.92,distance=isLargeVenue?31:isExpandedInterior?25:13.5,pinchStart=0,pinchDistance=0;
 const cameraTarget=new THREE.Vector3(0,0,0);
-function updateOrbit(){phi=THREE.MathUtils.clamp(phi,kind==='city'?.48:.72,kind==='city'?1.05:.98);distance=THREE.MathUtils.clamp(distance,kind==='city'?9:(isLargeVenue?16:10),kind==='city'?64:(isLargeVenue?48:18));camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
+function updateOrbit(){phi=THREE.MathUtils.clamp(phi,kind==='city'?.48:.72,kind==='city'?1.05:.98);distance=THREE.MathUtils.clamp(distance,kind==='city'?9:(isLargeVenue?16:10),kind==='city'?64:((isLargeVenue||isExpandedInterior)?48:18));camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
 if(kind==='city'){theta=Math.PI/4;phi=.72;distance=19;if(houseAvatar)cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z)}if(kind==='room'||kind==='city')updateOrbit();
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),.03),hit=new THREE.Vector3();
-const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?70:(isLargeVenue?roomLimit:3.45);destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
+const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?70:roomLimit;destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
 const onPointerDown=e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;};
 const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;lastX=e.clientX;lastY=e.clientY;if(moved){if(kind==='room'||kind==='city'){theta-=dx*.009;phi=THREE.MathUtils.clamp(phi+dy*.006,kind==='city'?.42:.62,kind==='city'?1.15:1.12);updateOrbit()}else{target.rotation.y+=dx*.008}}};
-const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='city'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const entryHit=raycaster.intersectObjects(policeEntryMeshes,true)[0];if(entryHit?.object.userData.worldEntry){const entry=entryHit.object.userData.worldEntry;destination=new THREE.Vector3(entry.x,-.03,entry.z+entry.front*(entry.d/2+1.55))}else if(entryHit?.object.userData.hospitalEntry){destination=new THREE.Vector3(-28,-.03,-23.1)}else if(entryHit){destination=new THREE.Vector3(28,-.03,-23.3)}else{setDestination(e)}}else if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
+const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='city'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const entryHit=raycaster.intersectObjects(policeEntryMeshes,true)[0];if(entryHit?.object.userData.worldEntry){const entry=entryHit.object.userData.worldEntry;destination=new THREE.Vector3(entry.x,-.03,entry.z+entry.front*(entry.d/2+1.55))}else if(entryHit?.object.userData.hospitalEntry){destination=new THREE.Vector3(-28,-.03,-23.1)}else if(entryHit){destination=new THREE.Vector3(28,-.03,-17.2)}else{setDestination(e)}}else if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
 const touchDistance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
 const onTouchStart=e=>{if(e.touches.length===2){e.preventDefault();dragging=false;pinchStart=touchDistance(e.touches);pinchDistance=distance}};
 const onTouchMove=e=>{if(e.touches.length===2&&pinchStart>0){e.preventDefault();distance=THREE.MathUtils.clamp(pinchDistance*pinchStart/touchDistance(e.touches),kind==='city'?9:5,kind==='city'?64:(isLargeVenue?48:18));updateOrbit()}};
@@ -1189,7 +1263,7 @@ const onKeyDown=e=>{if((kind!=='room'&&kind!=='city')||$('page-home').classList.
 const onKeyUp=e=>{const key=e.key.toLowerCase();const map={w:'forward',arrowup:'forward',s:'backward',arrowdown:'backward',a:'left',arrowleft:'left',d:'right',arrowright:'right'};if(map[key])moveKeys[map[key]]=false};
 window.addEventListener('keydown',onKeyDown);window.addEventListener('keyup',onKeyUp);
 const moveButtons=[...host.querySelectorAll('[data-move]')];let activePadKey=null;const onPadDown=e=>{const b=e.target.closest('[data-move]');if(!b)return;e.preventDefault();activePadKey=b.dataset.move;moveKeys[activePadKey]=true};const clearPad=()=>{if(activePadKey){moveKeys[activePadKey]=false;activePadKey=null}};
-moveButtons.forEach(b=>b.addEventListener('pointerdown',onPadDown));window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('blur',()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);activePadKey=null});
+moveButtons.forEach(b=>b.addEventListener('pointerdown',onPadDown));const onWindowBlur=()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);activePadKey=null};window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('blur',onWindowBlur);
 let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);
 if((kind==='room'||kind==='city')&&houseAvatar){
  let inputX=0,inputZ=0;
@@ -1212,11 +1286,11 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
- if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
+ if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+18.55)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
-return()=>{cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));renderer.dispose();scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose()})}}
+return()=>{cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
 let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
 function renderVianaCity(spawn=null){if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='VIANA · BAIRRO';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='VIANA · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
