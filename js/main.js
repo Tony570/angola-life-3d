@@ -888,9 +888,8 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const looks=[{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9c554b',pants:'#30394a',hairStyle:'comprido'},{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#496e83',pants:'#26364b',hairStyle:'curto'},{gender:'female',skin:'#dca77c',hair:'#75482b',shirt:'#6f527f',pants:'#343b48',hairStyle:'medio'}];
   looks.forEach((look,i)=>buildCharacter(target,look,{x:x+(i-1)*1.55,y:0,z:face+front*.42},()=>{},false));
   box(2.8,.12,.75,mat('#76543f',.85),x,.8,face+front*1.2);
- if(['market','quarry','cars'].includes(opts.kind))buildCommercialYard(x,z,front,opts);
-
  }
+ if(['market','quarry','cars'].includes(opts.kind))buildCommercialYard(x,z,front,opts);
 }
 function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
