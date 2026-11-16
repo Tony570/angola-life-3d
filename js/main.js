@@ -203,7 +203,7 @@ camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,7,5);scene.add(light);
-let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z)=>cityCollisionBoxes.some(c=>x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ);
+let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function createDetailedCar(color='#a83e36',police=false){
@@ -663,48 +663,91 @@ function buildHospitalExterior(x,z,front,o){
  ambCross.position.set(x+8.2,1.05,face+front*2.15+.72);target.add(ambCross);
  const beacon=hsph(.28,.1,.12,red,x+8.2,1.55,face+front*2.15);
  // Colisões nas quatro faces, deixando a entrada central livre.
- addCityCollision(x-w/2,z,.32,d,.18);addCityCollision(x+w/2,z,.32,d,.18);addCityCollision(x,z-d/2,w,.32,.18);
- addCityCollision(x-5.1,face,5.2,.32,.14);addCityCollision(x+5.1,face,5.2,.32,.14);
+ const opening=2.2,segment=(w-opening)/2,offset=(w+opening)/4;
+ addCityCollision(x-w/2,z,.32,d,.18);addCityCollision(x+w/2,z,.32,d,.18);addCityCollision(x,z-front*d/2,w,.32,.18);
+ addCityCollision(x-offset,face,segment,.32,.14);addCityCollision(x+offset,face,segment,.32,.14);
  addCityCollision(x+8.2,face+front*2.15,2.4,4.4,.2);
  const trigger=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,side:THREE.DoubleSide,depthWrite:false}));
  trigger.position.set(x,1.25,face+front*.24);trigger.userData.hospitalEntry=true;target.add(trigger);policeEntryMeshes.push(trigger);
 }
 
 function buildPremiumVenueExterior(name,x,z,front,opts){
- const w=opts.w||10,d=opts.d||8,h=opts.h||4,face=z+front*(d/2+.08),hotel=opts.kind==='hotel',wall=mat(hotel?'#d8c8ad':'#8b5b43',.82),trim=mat(hotel?'#f1e6d2':'#d7b38a',.58),glass=new THREE.MeshPhysicalMaterial({color:'#9eb9c0',roughness:.18,metalness:.18,transparent:true,opacity:.82,side:THREE.DoubleSide}),gold=mat('#d2ad68',.35);
+ const w=opts.w||10,d=opts.d||8,h=opts.h||4,face=z+front*(d/2+.08),hotel=opts.kind==='hotel',party=opts.kind==='party',wall=mat(hotel?'#d8c8ad':party?'#4d405e':'#8b5b43',.82),trim=mat(hotel?'#f1e6d2':party?'#d7c6eb':'#d7b38a',.58),glass=new THREE.MeshPhysicalMaterial({color:'#9eb9c0',roughness:.18,metalness:.18,transparent:true,opacity:.82,side:THREE.DoubleSide}),gold=mat('#d2ad68',.35);
  const apron=new THREE.Mesh(new THREE.PlaneGeometry(w+4,d+4),mat('#9c9789',.96));apron.rotation.x=-Math.PI/2;apron.position.set(x,-.06,z);target.add(apron);
  const s=new THREE.Shape(),r=.42,L=-w/2,R=w/2,B=-d/2,F=d/2;s.moveTo(L+r,B);s.lineTo(R-r,B);s.quadraticCurveTo(R,B,R,B+r);s.lineTo(R,F-r);s.quadraticCurveTo(R,F,R-r,F);s.lineTo(L+r,F);s.quadraticCurveTo(L,F,L,F-r);s.lineTo(L,B+r);s.quadraticCurveTo(L,B,L+r,B);
  const geo=new THREE.ExtrudeGeometry(s,{depth:h,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:.08,bevelThickness:.06,curveSegments:10});geo.rotateX(-Math.PI/2);const shell=new THREE.Mesh(geo,wall);shell.position.set(x,0,z);shell.castShadow=true;target.add(shell);
- const roof=new THREE.Mesh(new THREE.CylinderGeometry(w*.52,w*.52,.18,48),mat('#655849',.72));roof.scale.z=d/w;roof.position.set(x,h+.08,z);target.add(roof);
+ const roof=new THREE.Mesh(new THREE.CylinderGeometry(w*.52,w*.52,.18,48),mat(party?'#453653':'#655849',.72));roof.scale.z=d/w;roof.position.set(x,h+.08,z);target.add(roof);
  for(const side of [-1,1]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,h-.45,20),trim);p.position.set(x+side*w*.39,h/2-.1,face+front*.12);target.add(p)}
  const door=new THREE.Mesh(new THREE.PlaneGeometry(1.55,2.35),glass);door.position.set(x,1.18,face+front*.035);door.rotation.y=front===1?0:Math.PI;target.add(door);
  for(const dx of [-.82,.82]){const frame=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,2.45,10),gold);frame.position.set(x+dx,1.2,face+front*.08);target.add(frame)}
  const xs=hotel?[-3.9,-1.95,1.95,3.9]:[-w*.34,w*.34];for(const dx of xs)for(const yy of (hotel?[2.25,3.55]:[1.75])){const win=new THREE.Mesh(new THREE.PlaneGeometry(hotel?1.45:1.75,hotel?1.05:1.45),glass);win.position.set(x+dx,yy,face+front*.04);win.rotation.y=front===1?0:Math.PI;target.add(win)}
  const canopy=new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,.16,36,1,false,Math.PI,Math.PI),hotel?gold:mat('#59372c',.65));canopy.scale.z=.62;canopy.position.set(x,2.72,face+front*.62);target.add(canopy);
  for(let i=0;i<3;i++){const step=new THREE.Mesh(new THREE.BoxGeometry(2.5,.12,.34),mat('#c6b9a4',.95));step.position.set(x,-.02+i*.02,face+front*(.48+i*.29));target.add(step)}
- const canvas=document.createElement('canvas');canvas.width=900;canvas.height=180;const ctx=canvas.getContext('2d');ctx.fillStyle=hotel?'#183b4a':'#271916';ctx.fillRect(0,0,900,180);ctx.strokeStyle='#d8b36d';ctx.lineWidth=9;ctx.strokeRect(8,8,884,164);ctx.fillStyle='#fff0c9';ctx.font='bold 64px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,450,90);const plaque=new THREE.Mesh(new THREE.PlaneGeometry(hotel?7.2:Math.min(13,w*.48),1.24),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));plaque.position.set(x,h-.72,face+front*.16);plaque.rotation.y=front===1?0:Math.PI;target.add(plaque);
+ const canvas=document.createElement('canvas');canvas.width=900;canvas.height=180;const ctx=canvas.getContext('2d');ctx.fillStyle=hotel?'#183b4a':party?'#30263a':'#271916';ctx.fillRect(0,0,900,180);ctx.strokeStyle='#d8b36d';ctx.lineWidth=9;ctx.strokeRect(8,8,884,164);ctx.fillStyle='#fff0c9';ctx.font='bold 64px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,450,90);const plaque=new THREE.Mesh(new THREE.PlaneGeometry(hotel?7.2:Math.min(13,w*.48),1.24),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));plaque.position.set(x,h-.72,face+front*.16);plaque.rotation.y=front===1?0:Math.PI;target.add(plaque);
  for(const side of [-1,1]){const lx=x+side*w*.34,lz=face+front*.95,pole=new THREE.Mesh(new THREE.CylinderGeometry(.045,.065,2.25,12),mat('#26343a',.42));pole.position.set(lx,1.08,lz);target.add(pole);const bulb=new THREE.Mesh(new THREE.SphereGeometry(.16,16,12),new THREE.MeshStandardMaterial({color:'#ffe7b2',emissive:'#ffbd62',emissiveIntensity:1.1}));bulb.position.set(lx,2.28,lz);target.add(bulb);const pot=new THREE.Mesh(new THREE.CylinderGeometry(.42,.35,.42,20),mat('#76513c',.86));pot.position.set(lx,.16,face+front*1.85);target.add(pot);for(let k=0;k<5;k++){const leaf=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),mat(k%2?'#4f7a4c':'#668d57',.95));leaf.scale.set(.65,1.6,.65);leaf.position.set(lx+Math.cos(k*1.25)*.24,.55,face+front*1.85+Math.sin(k*1.25)*.24);target.add(leaf)}}
  if(hotel){const balcony=new THREE.Mesh(new THREE.BoxGeometry(w*.82,.12,.72),trim);balcony.position.set(x,2.92,face+front*.38);target.add(balcony);for(let i=0;i<13;i++){const rail=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.62,8),gold);rail.position.set(x-w*.39+i*(w*.78/12),3.25,face+front*.67);target.add(rail)}}
- else{for(const side of [-1,1]){const awning=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,.12,28,1,false,Math.PI,Math.PI),mat(side<0?'#8e3335':'#d7b66e',.72));awning.scale.set(1.25,.8,.55);awning.position.set(x+side*2.35,2.55,face+front*.42);target.add(awning)}}
+ else{for(const side of [-1,1]){const awning=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,.12,28,1,false,Math.PI,Math.PI),mat(party?(side<0?'#79529a':'#d7b66e'):(side<0?'#8e3335':'#d7b66e'),.72));awning.scale.set(1.25,.8,.55);awning.position.set(x+side*2.35,2.55,face+front*.42);target.add(awning)}}
+}
+function buildVenueYard(x,z,front,opts){
+ const lotHalfW=11.7,frontZ=19.95,backZ=36.95,lotDepth=backZ-frontZ,midZ=(frontZ+backZ)/2,gateCarW=3.05,pedW=2.2;
+ const concrete=mat('#858783',.98),edge=mat('#c9c5b8',.95),fence=mat('#a7a89f',.96),metal=mat('#343b40',.55),paint=mat('#eee8d4',.8),grass=mat('#58824d',.98),wood=mat('#76513c',.85);
+ box(lotHalfW*2,.07,lotDepth,concrete,x,-.105,midZ);
+ for(const side of [-1,1]){
+  box(.18,1.25,lotDepth,fence,x+side*lotHalfW,.59,midZ);
+  addCityCollision(x+side*lotHalfW,midZ,.18,lotDepth,.08);
+ }
+ box(lotHalfW*2,1.25,.18,fence,x,.59,backZ);
+ addCityCollision(x,backZ,lotHalfW*2,.18,.08);
+ const carGateCenter=lotHalfW-gateCarW/2,centralHalf=pedW/2,carInner=carGateCenter-gateCarW/2,segmentW=carInner-centralHalf;
+ for(const side of [-1,1]){
+  box(segmentW,1.15,.18,fence,x+side*(centralHalf+segmentW/2),.55,frontZ);
+  addCityCollision(x+side*(centralHalf+segmentW/2),frontZ,segmentW,.18,.08);
+ }
+ const postXs=[-lotHalfW,-carInner,-centralHalf,centralHalf,carInner,lotHalfW];
+ postXs.forEach(px=>{const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),edge);p.position.set(x+px,.76,frontZ);target.add(p)});
+ const buildingFront=z+front*opts.d/2;
+ box(2.25,.045,Math.abs(buildingFront-frontZ),edge,x,-.025,(buildingFront+frontZ)/2);
+ for(const side of [-1,1]){
+  const px=x+side*6.9,pz=frontZ+1.15;
+  box(1.35,.28,.9,wood,px,.12,pz);
+  const bush=new THREE.Mesh(new THREE.SphereGeometry(.42,8,7),grass);bush.scale.set(1.35,.72,.85);bush.position.set(px,.55,pz);target.add(bush);
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(.045,.065,1.8,8),metal);lamp.position.set(x+side*4.2,.9,frontZ+1.05);target.add(lamp);
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),new THREE.MeshStandardMaterial({color:'#ffe7b2',emissive:'#ffbd62',emissiveIntensity:.8}));bulb.position.set(x+side*4.2,1.85,frontZ+1.05);target.add(bulb);
+ }
+ const colors=['#a83e36','#d0c8b6','#426b86','#b8a13d'];let carIndex=0;
+ for(const side of [-1,1]){
+  const carX=x+side*(opts.w/2+1.45);
+  for(const carZ of [25.15,30.85]){
+   const left=carX-1.38,right=carX+1.38,near=carZ-2.12,far=carZ+2.12;
+   for(const px of [left,right])box(.045,.012,4.24,paint,px,-.018,carZ);
+   for(const pz of [near,far])box(2.76,.012,.045,paint,carX,-.018,pz);
+   const car=createDetailedCar(colors[carIndex++],false);car.position.set(carX,0,carZ);car.rotation.y=Math.PI/2;target.add(car);
+   addCityCollision(carX,carZ,1.62,3.9,.12);
+  }
+ }
+ const canvas=document.createElement('canvas');canvas.width=640;canvas.height=120;const ctx=canvas.getContext('2d');ctx.fillStyle=opts.kind==='party'?'#30263a':'#271916';ctx.fillRect(0,0,640,120);ctx.strokeStyle='#d8b36d';ctx.lineWidth=7;ctx.strokeRect(7,7,626,106);ctx.fillStyle='#fff0c9';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PARQUE PRIVATIVO',320,60);
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
- if(opts.kind==='hotel'||opts.kind==='bar'){
-  addCityCollision(x-w/2,z,.35,d,.22);addCityCollision(x+w/2,z,.35,d,.22);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-w*.32,z+front*d/2,w*.36,.35,.22);addCityCollision(x+w*.32,z+front*d/2,w*.36,.35,.22);
+ if(opts.kind==='hotel'||opts.kind==='bar'||opts.kind==='party'){
+  const opening=1.9,segment=(w-opening)/2,offset=(w+opening)/4,frontWallZ=z+front*d/2;
+  addCityCollision(x-w/2,z,.35,d,.22);addCityCollision(x+w/2,z,.35,d,.22);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-offset,frontWallZ,segment,.35,.18);addCityCollision(x+offset,frontWallZ,segment,.35,.18);
   const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,frontFace+front*.28);entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
  }else{
   // Colisão apenas nas paredes: a abertura frontal permanece livre para entrar.
+  const opening=1.9,segment=(w-opening)/2,offset=(w+opening)/4,frontWallZ=z+front*d/2;
   addCityCollision(x-w/2,z,.3,d,.18);addCityCollision(x+w/2,z,.3,d,.18);
   addCityCollision(x,z-front*d/2,w,.3,.18);
-  addCityCollision(x-w*.32,z+front*d/2,w*.36,.3,.18);
-  addCityCollision(x+w*.32,z+front*d/2,w*.36,.3,.18);
+  addCityCollision(x-offset,frontWallZ,segment,.3,.18);
+  addCityCollision(x+offset,frontWallZ,segment,.3,.18);
   const entry=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
   entry.position.set(x,1.2,frontFace+front*.28);
   entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};
   target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
  }
- if(opts.kind==='hotel'||opts.kind==='bar'){buildPremiumVenueExterior(name,x,z,front,opts);return}
+ if(opts.kind==='hotel'||opts.kind==='bar'||opts.kind==='party'){buildPremiumVenueExterior(name,x,z,front,opts);if(opts.kind==='bar'||opts.kind==='party')buildVenueYard(x,z,front,opts);return}
  const wall=mat(opts.wall||'#c9c0ad',.96),trim=mat(opts.trim||'#e4ddce',.9),roof=mat(opts.roof||'#77736b',.96);
  const glass=mat('#263b43',.48),door=mat('#39464a',.82),frame=mat('#e8dfcd',.9),ground=mat('#a18b70',1),metal=mat('#505657',.82);
  const face=z+front*(d/2+.075);
@@ -817,9 +860,9 @@ function buildVianaOtherBuildings(){
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
- buildVianaBuilding('BAR DAS PUTAS',-28,28,-1,{kind:'bar',w:36,d:28,h:5.2,wall:'#c58b62',trim:'#ead0ad',roof:'#75452f',sign:'#693b2b'});
+ buildVianaBuilding('BAR DAS PUTAS',-28,28,-1,{kind:'bar',w:17.5,d:12.5,h:5.2,wall:'#c58b62',trim:'#ead0ad',roof:'#75452f',sign:'#693b2b'});
  // Salão de festas.
- buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:36,d:28,h:5.6,wall:'#c5b5ce',trim:'#eee4f0',roof:'#66556e',sign:'#55405e'});
+ buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:17.5,d:12.5,h:5.6,wall:'#c5b5ce',trim:'#eee4f0',roof:'#66556e',sign:'#55405e'});
  // Dois pequenos estabelecimentos no mesmo quarteirão comercial.
  buildVianaBuilding('SALÃO DE BELEZA',-3.4,28,-1,{kind:'salon',w:5.7,d:6.8,h:3.2,wall:'#d9aebd',trim:'#f4dce4',roof:'#80566b',sign:'#864e68'});
  buildVianaBuilding('LOJA DE ROUPAS',3.4,28,-1,{kind:'clothes',w:5.7,d:6.8,h:3.2,wall:'#9bbfc0',trim:'#e0eeee',roof:'#486c70',sign:'#365960'});
@@ -1162,7 +1205,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  const response=1-Math.exp(-(hasInput?13:10)*delta);velocityX+=(desiredX-velocityX)*response;velocityZ+=(desiredZ-velocityZ)*response;
  const limit=kind==='city'?70:roomLimit;
  const oldX=houseAvatar.position.x,oldZ=houseAvatar.position.z,nextX=THREE.MathUtils.clamp(oldX+velocityX*delta,-limit,limit),nextZ=THREE.MathUtils.clamp(oldZ+velocityZ*delta,-limit,limit);
- if(kind==='city'){const radius=.38;if(!cityBlocked(nextX+Math.sign(velocityX)*radius,oldZ)){houseAvatar.position.x=nextX}else velocityX=0;if(!cityBlocked(houseAvatar.position.x,nextZ+Math.sign(velocityZ)*radius)){houseAvatar.position.z=nextZ}else velocityZ=0}else{houseAvatar.position.x=nextX;houseAvatar.position.z=nextZ}
+ if(kind==='city'){const radius=.38;if(!cityBlocked(nextX,oldZ,radius)){houseAvatar.position.x=nextX}else velocityX=0;if(!cityBlocked(houseAvatar.position.x,nextZ,radius)){houseAvatar.position.z=nextZ}else velocityZ=0}else{houseAvatar.position.x=nextX;houseAvatar.position.z=nextZ}
  if(Math.abs(houseAvatar.position.x)>=limit-.01)velocityX=0;if(Math.abs(houseAvatar.position.z)>=limit-.01)velocityZ=0;
  const speed=Math.hypot(velocityX,velocityZ),walking=speed>.035;
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
