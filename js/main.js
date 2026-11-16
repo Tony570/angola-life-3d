@@ -19,7 +19,7 @@ $('signup-method').onchange=()=>identifierMode($('signup-method').value,'signup'
 let pendingPhone=null;
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();say('auth-message','A entrar…');const method=$('login-method').value;const value=$('login-identifier').value.trim();const credentials={password:$('login-password').value};credentials[method==='phone'?'phone':'email']=value;const {error}=await sb.auth.signInWithPassword(credentials);if(error)say('auth-message',error.message);else await boot()});
 $('signup-form').addEventListener('submit',async e=>{e.preventDefault();say('auth-message','A criar a tua conta…');const method=$('signup-method').value;const value=$('signup-identifier').value.trim();const username=$('signup-name').value.trim().replace(/\s+/g,'_').toLowerCase();const options={data:{username,display_name:$('signup-name').value.trim()}};const credentials={password:$('signup-password').value,options};credentials[method==='phone'?'phone':'email']=value;if(method==='email')options.emailRedirectTo='https://tony570.github.io/angola-life-3d/';const {data,error}=await sb.auth.signUp(credentials);if(error){say('auth-message',error.message);return}if(data.session){await boot();return}if(method==='phone'){pendingPhone=value;$('login-form').classList.add('hidden');$('signup-form').classList.add('hidden');$('phone-verify').classList.remove('hidden');$('tab-login').classList.add('hidden');$('tab-signup').classList.add('hidden');say('auth-message','Aguardamos a confirmação do número.');return}say('auth-message','Conta criada. Confirma o email e depois entra no jogo. Se o código não chegar, será necessário activar o envio de email no serviço de autenticação.')});
-$('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(!pendingPhone||!/^\\d{6}$/.test(token)){say('auth-message','Introduz o código SMS de 6 dígitos.');return}say('auth-message','A confirmar número…');const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});if(error){say('auth-message',error.message);return}if(data.session)await boot()};
+$('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(!pendingPhone||!/^[0-9]{6}$/.test(token)){say('auth-message','Introduz o código SMS de 6 dígitos.');return}say('auth-message','A confirmar número…');const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});if(error){say('auth-message',error.message);return}if(data.session)await boot()};
 $('logout').onclick=async()=>{await sb.auth.signOut();user=null;$('game').classList.add('hidden');$('auth').classList.remove('hidden');$('phone-verify').classList.add('hidden');$('tab-login').classList.remove('hidden');$('tab-signup').classList.remove('hidden');setTab('login')};
 function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}renderAvatar()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
@@ -150,6 +150,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
+ root.userData.keepWorldScale=true;
  root.position.set(position.x,position.y,position.z);target.add(root);
  // Mostrar imediatamente um personagem humano, sem depender do carregamento remoto do modelo 3D.
  const immediateFallback=createFallbackHuman(look);
@@ -267,14 +268,11 @@ const doorDefs={
  'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-15.4,z:0,face:Math.PI/2}}],
  'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:15.4,z:0,face:-Math.PI/2}}],
  party:[{label:'SAIR PARA VIANA',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:28,z:12.45,face:Math.PI}},{label:'SAÍDA DE EMERGÊNCIA',dest:'city',side:'south',center:0,spanX:36,spanZ:28,spawn:{x:28,z:43.55,face:0}}],
- market:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:28,z:-5.3,face:Math.PI}}],
- quarry:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:0,z:-22.7,face:Math.PI}}],
- cars:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:-28,z:-5.3,face:Math.PI}}],
- party:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:22.7,face:Math.PI}}],
+ market:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:-5.3,face:Math.PI}}],
+ quarry:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:0,z:-22.7,face:Math.PI}}],
+ cars:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-5.3,face:Math.PI}}],
  salon:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-3.4,z:22.7,face:Math.PI}}],
  clothes:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:3.4,z:22.7,face:Math.PI}}],
- 'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-2.5,z:1.1,face:Math.PI/2}}],
- 'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:2.5,z:1.1,face:-Math.PI/2}}],
  ...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),[{label:'VOLTAR À RECEPÇÃO',dest:'hotel',side:'south',center:0,spawn:{x:0,z:2.7,face:Math.PI}}]]))
 };
 let roomDoorMeshes=[];let policeEntryMeshes=[];
@@ -536,6 +534,8 @@ function buildExpandedInterior(builder,scale=2.3){
  const parent=target,expanded=new THREE.Group();
  target=expanded;
  try{builder()}finally{target=parent}
+ // Os edifícios crescem na horizontal, mas as personagens mantêm proporções humanas.
+ expanded.traverse(object=>{if(object.userData.keepWorldScale){object.scale.x=1/scale;object.scale.z=1/scale}});
  expanded.scale.set(scale,1,scale);
  parent.add(expanded);
 }
@@ -770,7 +770,7 @@ function buildVenueYard(x,z,front,opts){
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
 function buildCommercialYard(x,z,front,opts){
- const half=12.2,frontZ=z+front*half,backZ=z-front*half;
+ const half=13.5,frontZ=z+front*half,backZ=z-front*half;
  const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
  box(half*2,.07,half*2,ground,x,-.11,z);
  for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
@@ -779,17 +779,21 @@ function buildCommercialYard(x,z,front,opts){
  for(const px of [-half,-2.1,2.1,half]){const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),metal);p.position.set(x+px,.76,frontZ);target.add(p)}
  box(3.7,.08,.12,metal,x,.08,frontZ);
  box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
- if(opts.kind!=='cars'){
-  for(const side of [-1,1]){
-   const px=x+side*10.95,pz=z+front*1.1;
-   if(opts.kind==='quarry'){
-    const truck=new THREE.Group(),yellow=mat('#c28a35',.78),dark=mat('#30383b',.9),glass=mat('#8aaab3',.35);
-    box(1.45,1.15,2.0,yellow,0,1.05,.35,truck);box(1.42,1.0,1.25,yellow,0,1.35,-1.25,truck);box(1.2,.62,.08,glass,0,1.55,-1.9,truck);
-    for(const wz of [-1.25,.55])for(const wx of [-.78,.78]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.36,wz);truck.add(wheel)}
-    truck.position.set(px,0,pz);target.add(truck);addCityCollision(px,pz,1.5,2.2,.08);
-   }else{
-    const van=createDetailedCar('#477c58',false);van.position.set(px,0,z+front*10.9);van.rotation.y=Math.PI/2;target.add(van);addCityCollision(px,z+front*10.9,2.2,1.25,.08);
-   }
+ for(const side of [-1,1]){
+  const px=x+side*10.95,pz=z+front*10.9;
+  if(opts.kind==='cars'){
+   const car=createDetailedCar(side<0?'#426d87':'#b8a13d',false);
+   car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);
+   for(const dx of [-.76,.76])box(.045,.012,4.2,paint,px+dx,-.018,pz);
+   for(const dz of [-2.1,2.1])box(1.55,.012,.045,paint,px,-.018,pz+dz);
+   addCityCollision(px,pz,2.25,1.28,.08);
+  }else if(opts.kind==='quarry'){
+   const truck=new THREE.Group(),yellow=mat('#c28a35',.78),dark=mat('#30383b',.9),glass=mat('#8aaab3',.35);
+   box(1.45,1.15,2.0,yellow,0,1.05,.35,truck);box(1.42,1.0,1.25,yellow,0,1.35,-1.25,truck);box(1.2,.62,.08,glass,0,1.55,-1.9,truck);
+   for(const wz of [-1.25,.55])for(const wx of [-.78,.78]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.36,wz);truck.add(wheel)}
+   truck.position.set(px,0,z+front*1.1);target.add(truck);addCityCollision(px,z+front*1.1,1.5,2.2,.08);
+  }else{
+   const van=createDetailedCar('#477c58',false);van.position.set(px,0,pz);van.rotation.y=Math.PI/2;target.add(van);addCityCollision(px,pz,2.25,1.28,.08);
   }
  }
  if(opts.kind==='market'){
