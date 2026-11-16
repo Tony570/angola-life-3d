@@ -45,4 +45,13 @@
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
 </script>
 <script type="module" src="js/main.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+      .then(registration => registration.update())
+      .catch(error => console.warn('Não foi possível activar o modo offline:', error));
+  });
+}
+</script>
 </body></html>
