@@ -493,8 +493,8 @@ function buildBarPrivateRoom(which){
  const wall=mat('#493536',.9),floor=mat('#4b3738',.85),wood=mat('#80513f',.78),gold=mat('#c69a5b',.55);
  box(8,.18,8,floor,0,-.12,0);
  for(const [x,z,r] of [[0,-4,0],[0,4,0],[-4,0,Math.PI/2],[4,0,Math.PI/2]]){const p=new THREE.Mesh(new THREE.PlaneGeometry(8,3.5),wall);p.position.set(x,1.7,z);p.rotation.y=r;p.material.side=THREE.DoubleSide;target.add(p)}
- const bed=new THREE.Mesh(new THREE.BoxGeometry(2.5,.42,3.1),wood);bed.position.set(0,.32,-.55);target.add(bed);
- box(2.35,.14,2.95,mat('#d7c7b8'),0,.58,-.55);
+ // Cama estofada com colchão, almofadas e estrutura completa.
+ furnPrivateBed(0,-.55,wood,mat('#d7c7b8'),gold);
  for(const x of [-1.25,1.25]){box(.12,.7,.12,gold,x,.55,-2.05);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),new THREE.MeshStandardMaterial({color:'#ffdca3',emissive:'#d89b57',emissiveIntensity:.8}));lamp.position.set(x,1.1,-2.05);target.add(lamp)}
  furnCounter(2.2,.82,.55,wood,gold,wood,0,2.55);
  buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#8d4053',pants:'#34313b',hairStyle:'comprido'},{x:0,y:0,z:1.15},()=>{},false);
