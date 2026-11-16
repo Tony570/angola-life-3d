@@ -765,11 +765,11 @@ function buildCommercialYard(x,z,front,opts){
  box(half*2,.07,half*2,ground,x,-.11,z);
  for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
  box(half*2,1.35,.18,fence,x,.62,backZ);addCityCollision(x,backZ,half*2,.18,.08);
- for(const side of [-1,1]){box(half-2.1,1.25,.18,fence,x+side*(2.1+(half-2.1)/2),.59,frontZ);addCityCollision(x+side*(2.1+(half-2.1)/2),frontZ,half-2.1,.18,.08)}
+ for(const side of [-1,1]){box(2.1,1.25,.18,fence,x+side*(half-1.05),.59,frontZ);addCityCollision(x+side*(half-1.05),frontZ,2.1,.18,.08)}
  for(const px of [-half,-2.1,2.1,half]){const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),metal);p.position.set(x+px,.76,frontZ);target.add(p)}
  box(3.7,.08,.12,metal,x,.08,frontZ);
  box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
- for(const side of [-1,1]){const px=x+side*7.4,pz=z+front*11.15;for(const dx of [-1.15,1.15])box(.045,.012,4.2,paint,px+dx,-.018,pz);for(const dz of [-2.1,2.1])box(2.3,.012,.045,paint,px,-.018,pz+dz);const car=createDetailedCar(opts.kind==='quarry'?'#c28a35':opts.kind==='market'?'#477c58':'#a83e36',false);car.position.set(px,0,pz);car.rotation.y=front===1?Math.PI:0;target.add(car);addCityCollision(px,pz,1.28,2.25,.08)}
+ for(const side of [-1,1]){const px=x+side*6.5,pz=z+front*11.25;for(const dx of [-1.15,1.15])box(.045,.012,4.2,paint,px+dx,-.018,pz);for(const dz of [-.82,.82])box(2.3,.012,.045,paint,px,-.018,pz+dz);const car=createDetailedCar(opts.kind==='quarry'?'#c28a35':opts.kind==='market'?'#477c58':'#a83e36',false);car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);addCityCollision(px,pz,2.25,1.28,.08)}
 }
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
