@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v1';
+const CACHE_NAME = 'angola-life-3d-v2';
 const APP_SHELL = [
   './',
   './index.html',
