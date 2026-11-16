@@ -251,7 +251,7 @@ function createDetailedCar(color='#a83e36',police=false){
  }
  return g;
 }
-const roomNames={sala:'SALA',quarto:'QUARTO',cozinha:'COZINHA',banheiro:'CASA DE BANHO',garagem:'GARAGEM',esquadra:'ESQUADRA DA POLÍCIA',hospital:'HOSPITAL · RECEPÇÃO','hospital-tratamento':'SALA DE TRATAMENTO','hospital-consultorio':'CONSULTÓRIO MÉDICO',bar:'BAR DAS PUTAS',hotel:'HOTEL · RECEPÇÃO',...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),'HOTEL · SUÍTE '+String(i+1).padStart(2,'0')]))};
+const roomNames={sala:'SALA',quarto:'QUARTO',cozinha:'COZINHA',banheiro:'CASA DE BANHO',garagem:'GARAGEM',esquadra:'ESQUADRA DA POLÍCIA',hospital:'HOSPITAL · RECEPÇÃO','hospital-tratamento':'SALA DE TRATAMENTO','hospital-consultorio':'CONSULTÓRIO MÉDICO',bar:'BAR DAS PUTAS',hotel:'HOTEL · RECEPÇÃO',market:'MERCADO',quarry:'EMPRESA DA PEDREIRA',cars:'LOJA DE CARROS',party:'SALÃO DE FESTAS',salon:'SALÃO DE BELEZA',clothes:'LOJA DE ROUPAS','bar-private-1':'SALA PRIVADA 1','bar-private-2':'SALA PRIVADA 2',...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),'HOTEL · SUÍTE '+String(i+1).padStart(2,'0')]))};
 const doorDefs={
  sala:[{label:'QUARTO',dest:'quarto',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2},{label:'COZINHA',dest:'cozinha',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
  quarto:[{label:'SALA',dest:'sala',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2},{label:'CASA DE BANHO',dest:'banheiro',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
@@ -263,7 +263,15 @@ const doorDefs={
  'hospital-tratamento':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:2.55,z:0,face:Math.PI}}],
  'hospital-consultorio':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:-2.55,z:0,face:Math.PI}}],
  hotel:[{label:'SAIR PARA VIANA',dest:'city',side:'north',center:0,spawn:{x:0,z:-5.45,face:Math.PI}}],
- bar:[{label:'SAIR PARA VIANA',dest:'city',side:'north',center:0,spawn:{x:-28,z:22.7,face:Math.PI}}],
+ bar:[{label:'SAIR PARA VIANA',dest:'city',side:'north',center:0,spawn:{x:-28,z:22.7,face:Math.PI}},{label:'SALA PRIVADA 1',dest:'bar-private-1',side:'west',center:0,spawn:{x:0,z:2.7,face:-Math.PI/2}},{label:'SALA PRIVADA 2',dest:'bar-private-2',side:'east',center:0,spawn:{x:0,z:2.7,face:Math.PI/2}}],
+ market:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:-5.3,face:Math.PI}}],
+ quarry:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:0,z:-22.7,face:Math.PI}}],
+ cars:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-5.3,face:Math.PI}}],
+ party:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:28,z:22.7,face:Math.PI}}],
+ salon:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:-3.4,z:22.7,face:Math.PI}}],
+ clothes:[{label:'SAIR PARA VIANA',dest:'city',side:'south',center:0,spawn:{x:3.4,z:22.7,face:Math.PI}}],
+ 'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-2.5,z:1.1,face:Math.PI/2}}],
+ 'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:2.5,z:1.1,face:-Math.PI/2}}],
  ...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),[{label:'VOLTAR À RECEPÇÃO',dest:'hotel',side:'south',center:0,spawn:{x:0,z:2.7,face:Math.PI}}]]))
 };
 let roomDoorMeshes=[];let policeEntryMeshes=[];
@@ -395,9 +403,82 @@ function buildHotelInterior(name){
   const n=Number(name.split('-').pop())||1,c=document.createElement('canvas');c.width=256;c.height=90;const q=c.getContext('2d');q.fillStyle='#24465b';q.fillRect(0,0,256,90);q.fillStyle='#f5d88f';q.font='bold 48px Arial';q.textAlign='center';q.textBaseline='middle';q.fillText('SUÍTE '+String(n).padStart(2,'0'),128,47);const sign=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.55),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sign.position.set(0,2.55,-3.86);target.add(sign);
  }
 }
+function buildVianaCommercialInterior(name){
+ const isMarket=name==='market',isQuarry=name==='quarry',isCars=name==='cars',isParty=name==='party',isSalon=name==='salon',isClothes=name==='clothes';
+ const floorColor=isMarket?'#c9b98e':isQuarry?'#92999a':isCars?'#aeb8bd':isParty?'#5d4d62':isSalon?'#ead6dc':'#c8d8d5';
+ const wallColor=isMarket?'#ead9b9':isQuarry?'#c7c4b8':isCars?'#e7ecee':isParty?'#342b3c':isSalon?'#f5e7eb':'#e8f0ef';
+ const floor=mat(floorColor,.94),wall=mat(wallColor,.92),wood=mat('#76543b',.84),metal=mat('#59666b',.72),glass=mat('#83aab4',.3),white=mat('#f4f1e9',.88);
+ box(8,.18,8,floor,0,-.12,0);
+ const exits=doorDefs[name]||[],openings={north:null,south:null,east:null,west:null};exits.forEach(d=>openings[d.side]=d.center);
+ for(const side of ['north','south','east','west']){
+  const center=openings[side];
+  if(center===null){if(side==='north')box(8,3.6,.18,wall,0,1.65,-4);else if(side==='south')box(8,3.6,.18,wall,0,1.65,4);else if(side==='west')box(.18,3.6,8,wall,-4,1.65,0);else box(.18,3.6,8,wall,4,1.65,0)}
+  else addWallWithOpening(side,center);
+ }
+ exits.forEach(addRoomDoor);
+ // Iluminação de teto e rodapé contínuo dão leitura de espaço sem aumentar a carga.
+ for(let i=-1;i<=1;i++){box(1.05,.045,.42,white,i*2.45,3.35,-.4);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshStandardMaterial({color:'#fff0c5',emissive:'#d9b66c',emissiveIntensity:.45}));lamp.position.set(i*2.45,3.18,-.4);target.add(lamp)}
+ if(isMarket){
+  // Prateleiras, balcões, caixas de fruta e produtos organizados por secção.
+  for(const side of [-1,1])for(let row=0;row<2;row++){const x=side*3.15,z=-2.35+row*2.15;box(.62,2.2,1.55,wood,x,1.08,z);for(let level=0;level<3;level++){box(.7,.08,1.62,metal,x,.48+level*.67,z);for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
+  for(let i=0;i<3;i++){const x=-2.2+i*2.2;box(1.65,.85,.78,wood,x,.48,.75);for(let k=0;k<5;k++){const produce=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][i],.85));produce.position.set(x-.55+k*.27,.99,.75);target.add(produce)}}
+  box(2.8,1.05,.62,mat('#a66d42'),0,.52,-3.15);box(2.9,.1,.7,white,0,1.1,-3.15);
+  for(let i=0;i<6;i++){const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.36,10),mat(i%2?'#4f8a73':'#c08b42'));bottle.position.set(-1.1+i*.44,1.34,-3.15);target.add(bottle)}
+  buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#7d5941',pants:'#35475b',hairStyle:'medio'},{x:0,y:0,z:-2.15},()=>{},false);
+ }else if(isQuarry){
+  // Balcão administrativo à entrada e armazém de materiais de construção.
+  box(2.65,.95,.72,wood,0,.5,-2.75);box(2.75,.12,.82,white,0,1.04,-2.75);
+  box(2.1,1.65,.55,mat('#a9a69c'),-2.8,.82,-2.75);box(2.1,1.65,.55,mat('#a9a69c'),2.8,.82,-2.75);
+  const stacks=[['CIMENTO','#aaa9a1'],['BLOCOS','#a88e72'],['TIJOLOS','#b76c50'],['FERRO','#606d73'],['TINTAS','#8c6ca2'],['TUBOS','#82979a']];
+  stacks.forEach(([label,color],i)=>{const x=-2.7+(i%3)*2.7,z=-.4+Math.floor(i/3)*2.55;box(1.55,.55,1.25,mat(color),x,.34,z);box(1.55,.55,1.25,mat(color),x,.9,z);box(1.7,.08,1.35,metal,x,1.22,z)});
+  for(let i=0;i<4;i++){const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,1.65,10),mat('#8e9ca0'));pipe.rotation.z=Math.PI/2;pipe.position.set(-2.6+i*.38,1.62,2.75);target.add(pipe)}
+  buildCharacter(target,{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#b5a15e',pants:'#35404b',hairStyle:'curto'},{x:0,y:0,z:-1.8},()=>{},false);
+ }else if(isCars){
+  // Exposição interior de viaturas, recepção comercial e acesso à oficina.
+  box(2.6,.92,.72,wood,0,.48,-3.05);box(2.75,.12,.82,white,0,1,-3.05);
+  const colors=['#a83e36','#426d87','#d0b65b'];
+  colors.forEach((color,i)=>{const car=createDetailedCar(color,false);car.scale.setScalar(.72);car.position.set(-2.45+i*2.45,0,.45);car.rotation.y=i===1?Math.PI:0;target.add(car)});
+  box(2.6,.12,.22,metal,0,.08,2.95);box(2.6,2.2,.12,glass,0,1.2,3.82);
+  for(let i=0;i<3;i++){const tyre=new THREE.Mesh(new THREE.TorusGeometry(.32,.09,8,20),mat('#25282b'));tyre.position.set(-2.5+i*2.5,.38,-2.15);target.add(tyre)}
+  buildCharacter(target,{gender:'male',skin:'#b98768',hair:'#211916',shirt:'#314d67',pants:'#252f3b',hairStyle:'curto'},{x:0,y:0,z:-2.25},()=>{},false);
+ }else if(isParty){
+  // Palco, pista central, mesas, cadeiras e colunas de som.
+  box(4.4,.32,1.35,wood,0,.18,-3.1);box(3.8,.08,.08,mat('#d8b65d'),0,.39,-3.1);
+  box(4.5,.035,3.1,mat('#9b6d91',.45),0,.015,.25);
+  for(const x of [-3.25,3.25]){box(.72,1.55,.55,mat('#24272b'),x,.82,-2.9);for(let k=0;k<3;k++){const ring=new THREE.Mesh(new THREE.TorusGeometry(.16,.035,6,14),mat('#bd8cb8'));ring.position.set(x,.42+k*.4,-2.58);target.add(ring)}}
+  for(const x of [-2.55,2.55])for(const z of [.7,2.65]){const t=new THREE.Mesh(new THREE.CylinderGeometry(.65,.68,.12,24),wood);t.position.set(x,.83,z);target.add(t);for(let k=0;k<3;k++)hchair(x+Math.cos(k*2.1)*.85,z+Math.sin(k*2.1)*.85,'#705b75',k*2.1)}
+  for(const x of [-1.2,0,1.2]){const bulb=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),new THREE.MeshStandardMaterial({color:'#f3d6a0',emissive:'#d98eac',emissiveIntensity:.7}));bulb.position.set(x,3.05,-.8);target.add(bulb)}
+ }else if(isSalon){
+  // Espelhos altos, cadeiras profissionais, lavatórios e bancada de produtos.
+  for(const x of [-2.55,0,2.55]){box(1.18,1.75,.09,glass,x,2.05,-3.75);box(1.28,.09,.12,metal,x,2.96,-3.72);box(.62,.62,.62,mat('#373d42'),x,.9,-2.45);const seat=new THREE.Mesh(new THREE.CylinderGeometry(.3,.34,.14,18),mat('#292e32'));seat.position.set(x,1.28,-2.45);target.add(seat);box(.08,.55,.08,metal,x,1.02,-2.45)}
+  box(5.8,.95,.62,wood,0,.48,2.75);box(5.9,.12,.72,white,0,1,2.75);
+  for(let i=0;i<3;i++){const basin=new THREE.Mesh(new THREE.SphereGeometry(.36,16,12),mat('#f3f5f3'));basin.scale.set(1,.35,.8);basin.position.set(-2+i*2,.98,2.6);target.add(basin);hcyl(.035,.42,metal,-2+i*2,.73,2.6)}
+  for(let i=0;i<8;i++){const jar=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.3,10),mat(['#c27c9c','#d5b85d','#7d9caa'][i%3]));jar.position.set(-2.5+(i%4)*1.65,1.25,2.72+Math.floor(i/4)*.18);target.add(jar)}
+  buildCharacter(target,{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9d596f',pants:'#343b48',hairStyle:'comprido'},{x:0,y:0,z:.15},()=>{},false);
+ }else if(isClothes){
+  // Araras de roupa, manequins e provadores separados.
+  for(const x of [-2.7,0,2.7]){box(.12,1.95,.12,metal,x,1.02,-2.6);box(1.95,.08,.12,metal,x,2.05,-2.6);for(let k=0;k<4;k++){const hanger=new THREE.Mesh(new THREE.ConeGeometry(.12,.25,3),mat(['#a84f4c','#466e83','#7b6a9a','#c29a4d'][k]));hanger.position.set(x-.65+k*.43,1.75,-2.6);target.add(hanger)}}
+  for(const x of [-2.5,0,2.5]){const mannequin=new THREE.Group();hsph(.19,.2,.18,mat('#d5b99d'),0,1.78,0,mannequin);box(.48,.82,.3,mat(['#9a554e','#54758c','#7e638f'][Math.abs(Math.round(x))%3]),0,1.18,0,mannequin);box(.28,.72,.25,mat('#343b48'),0,.42,0,mannequin);mannequin.position.set(x,0,.15);target.add(mannequin)}
+  box(2.2,.9,.65,wood,0,.48,3.05);box(2.3,.12,.72,white,0,1,3.05);
+  box(1.25,2.2,.12,mat('#b9a28c'),-3.15,1.1,1.05);box(1.25,2.2,.12,mat('#b9a28c'),3.15,1.1,1.05);
+ }
+}
+function buildBarPrivateRoom(which){
+ const wall=mat('#493536',.9),floor=mat('#4b3738',.85),wood=mat('#80513f',.78),gold=mat('#c69a5b',.55);
+ box(8,.18,8,floor,0,-.12,0);
+ for(const [x,z,r] of [[0,-4,0],[0,4,0],[-4,0,Math.PI/2],[4,0,Math.PI/2]]){const p=new THREE.Mesh(new THREE.PlaneGeometry(8,3.5),wall);p.position.set(x,1.7,z);p.rotation.y=r;p.material.side=THREE.DoubleSide;target.add(p)}
+ const bed=new THREE.Mesh(new THREE.BoxGeometry(2.5,.42,3.1),wood);bed.position.set(0,.32,-.55);target.add(bed);
+ box(2.35,.14,2.95,mat('#d7c7b8'),0,.58,-.55);
+ for(const x of [-1.25,1.25]){box(.12,.7,.12,gold,x,.55,-2.05);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),new THREE.MeshStandardMaterial({color:'#ffdca3',emissive:'#d89b57',emissiveIntensity:.8}));lamp.position.set(x,1.1,-2.05);target.add(lamp)}
+ box(2.2,.82,.55,wood,0,.42,2.55);box(2.3,.1,.62,gold,0,.9,2.55);
+ buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#8d4053',pants:'#34313b',hairStyle:'comprido'},{x:0,y:0,z:1.15},()=>{},false);
+ (doorDefs[which]||[]).forEach(addRoomDoor);
+}
 function buildRoom(name){
  target.clear();roomDoorMeshes=[];activeRoomDoor=null;scene.background=new THREE.Color(name==='garagem'?'#aebbc7':'#c6d0d7');
  if(name==='bar'){buildBarInterior();(doorDefs.bar||[]).forEach(addRoomDoor);return}
+ if(name==='bar-private-1'||name==='bar-private-2'){buildBarPrivateRoom(name);return}
+ if(['market','quarry','cars','party','salon','clothes'].includes(name)){buildVianaCommercialInterior(name);return}
  if(name==='hotel'||name.startsWith('hotel-suite-')){buildHotelInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  if(name==='esquadra'){buildPoliceStationInterior();(doorDefs.esquadra||[]).forEach(addRoomDoor);return}
  if(name==='hospital'||name==='hospital-tratamento'||name==='hospital-consultorio'){buildHospitalInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
@@ -525,8 +606,18 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
  if(opts.kind==='hotel'||opts.kind==='bar'){
   addCityCollision(x-w/2,z,.35,d,.22);addCityCollision(x+w/2,z,.35,d,.22);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-w*.32,z+front*d/2,w*.36,.35,.22);addCityCollision(x+w*.32,z+front*d/2,w*.36,.35,.22);
-  const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,frontFace+front*.28);entry.userData.worldEntry={dest:opts.kind==='hotel'?'hotel':'bar',label:opts.kind==='hotel'?'HOTEL':'BAR DAS PUTAS',x,z,front,d};target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
- }else addCityCollision(x,z,w,d,.48);
+  const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,frontFace+front*.28);entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
+ }else{
+  // Colisão apenas nas paredes: a abertura frontal permanece livre para entrar.
+  addCityCollision(x-w/2,z,.3,d,.18);addCityCollision(x+w/2,z,.3,d,.18);
+  addCityCollision(x,z-front*d/2,w,.3,.18);
+  addCityCollision(x-w*.32,z+front*d/2,w*.36,.3,.18);
+  addCityCollision(x+w*.32,z+front*d/2,w*.36,.3,.18);
+  const entry=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
+  entry.position.set(x,1.2,frontFace+front*.28);
+  entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};
+  target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
+ }
  if(opts.kind==='hotel'||opts.kind==='bar'){buildPremiumVenueExterior(name,x,z,front,opts);return}
  const wall=mat(opts.wall||'#c9c0ad',.96),trim=mat(opts.trim||'#e4ddce',.9),roof=mat(opts.roof||'#77736b',.96);
  const glass=mat('#263b43',.48),door=mat('#39464a',.82),frame=mat('#e8dfcd',.9),ground=mat('#a18b70',1),metal=mat('#505657',.82);
@@ -991,7 +1082,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
- if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:nearVenue.dest==='bar'?-1.35:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest==='esquadra'||activeRoomDoor?.dest==='hospital'||activeRoomDoor?.dest==='hotel'||activeRoomDoor?.dest==='bar'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
+ if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:nearVenue.dest==='bar'?-1.35:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
