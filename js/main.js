@@ -1068,11 +1068,11 @@ function buildVianaPoliceStation(){
 
 function buildVianaStreets(){
  target.clear();roomDoorMeshes=[];policeEntryMeshes=[];cityWorldEntrances=[];activeRoomDoor=null;cityCollisionBoxes=[];scene.background=new THREE.Color('#58a9ed');
- // Bairro humilde de Viana: nesta fase só existem ruas, passeios, lancis e drenagem.
+ // Viana ampliada: malha viária em grelha, novos quarteirões residenciais e avenidas de ligação.
  const groundMat=mat('#b69a75',1),roadMat=mat('#3c4143',.99),patchMat=mat('#565653',1),sideMat=mat('#c5c0b5',.98),slabMat=mat('#d0cabe',1),curbMat=mat('#817c72',.98),drainMat=mat('#55534e',1),lineMat=mat('#d8c99b',.95);
- box(144,.18,144,groundMat,0,-.22,0);
- const streets=[-42,-14,14,42],mainRoad=14,sideWidth=6.4,mainWidth=8.2,walkWidth=1.65,curbWidth=.2;
- const roadWidth=c=>c===mainRoad?mainWidth:sideWidth;
+ box(200,.18,200,groundMat,0,-.22,0);
+ const streets=[-70,-42,-14,14,42,70],mainRoad=14,sideWidth=6.4,mainWidth=8.2,walkWidth=1.65,curbWidth=.2;
+ const roadWidth=c=>Math.abs(c)===70||c===mainRoad?mainWidth:sideWidth;
  // Uma avenida principal e ruas locais em grelha, sem edifícios ou casas.
  streets.forEach(x=>box(roadWidth(x),.12,144,roadMat,x,-.105,0));
  streets.forEach(z=>box(144,.12,roadWidth(z),roadMat,0,-.105,z));
@@ -1080,33 +1080,39 @@ function buildVianaStreets(){
  [-31,-2,27].forEach(z=>box(2.8,.012,.72,patchMat,mainRoad+.9,-.039,z));
  [-34,5,34].forEach(x=>box(.72,.012,2.4,patchMat,x,-.039,-14.8));
  const makeSideRuns=(axis,fixed,list)=>{
-  let cursor=-72;
+  let cursor=-100;
   list.forEach(c=>{
    const gap=roadWidth(c)/2+curbWidth+walkWidth,finish=c-gap;
    if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
    cursor=c+gap;
   });
-  if(cursor<72){const len=72-cursor,mid=(72+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
+  if(cursor<100){const len=100-cursor,mid=(72+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
  };
  streets.forEach(x=>[-1,1].forEach(side=>makeSideRuns('z',x+side*(roadWidth(x)/2+curbWidth+walkWidth/2),streets)));
  streets.forEach(z=>[-1,1].forEach(side=>makeSideRuns('x',z+side*(roadWidth(z)/2+curbWidth+walkWidth/2),streets)));
  // Lancis e valetas estreitas ao longo dos passeios.
  const makeEdges=(axis,fixed,list)=>{
-  let cursor=-72;
+  let cursor=-100;
   list.forEach(c=>{
    const gap=roadWidth(c)/2+curbWidth+walkWidth,finish=c-gap;
    if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
    cursor=c+gap;
   });
-  if(cursor<72){const len=72-cursor,mid=(72+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
+  if(cursor<100){const len=100-cursor,mid=(72+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
  };
  streets.forEach(x=>[-1,1].forEach(side=>makeEdges('z',x+side*(roadWidth(x)/2+curbWidth/2),streets)));
  streets.forEach(z=>[-1,1].forEach(side=>makeEdges('x',z+side*(roadWidth(z)/2+curbWidth/2),streets)));
  // Juntas nas placas de cimento, interrompidas nos cruzamentos.
- streets.forEach(x=>[-1,1].forEach(side=>{const fixed=x+side*(roadWidth(x)/2+curbWidth+walkWidth/2);for(let z=-68;z<72;z+=4.5)if(!streets.some(c=>Math.abs(z-c)<roadWidth(c)/2+walkWidth+curbWidth))box(walkWidth,.008,.035,slabMat,fixed,.101,z)}));
- streets.forEach(z=>[-1,1].forEach(side=>{const fixed=z+side*(roadWidth(z)/2+curbWidth+walkWidth/2);for(let x=-68;x<72;x+=4.5)if(!streets.some(c=>Math.abs(x-c)<roadWidth(c)/2+walkWidth+curbWidth))box(.035,.008,walkWidth,slabMat,x,.101,fixed)}));
- // Passadeiras simples e já gastas nos cruzamentos.
- [-42,-14,14,42].forEach(z=>{for(let k=-3;k<=3;k++){box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z-(mainWidth/2+1.2));box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z+(mainWidth/2+1.2))}});
+ streets.forEach(x=>[-1,1].forEach(side=>{const fixed=x+side*(roadWidth(x)/2+curbWidth+walkWidth/2);for(let z=-96;z<100;z+=4.5)if(!streets.some(c=>Math.abs(z-c)<roadWidth(c)/2+walkWidth+curbWidth))box(walkWidth,.008,.035,slabMat,fixed,.101,z)}));
+ streets.forEach(z=>[-1,1].forEach(side=>{const fixed=z+side*(roadWidth(z)/2+curbWidth+walkWidth/2);for(let x=-96;x<100;x+=4.5)if(!streets.some(c=>Math.abs(x-c)<roadWidth(c)/2+walkWidth+curbWidth))box(.035,.008,walkWidth,slabMat,x,.101,fixed)}));
+ // Marcas centrais descontínuas em instâncias, para manter o mapa leve.
+ const dashGeometry=new THREE.BoxGeometry(.12,.014,2.25),dashCount=streets.length*40*2;
+ const roadDashes=new THREE.InstancedMesh(dashGeometry,lineMat,dashCount);const dashDummy=new THREE.Object3D();let dashIndex=0;
+ streets.forEach(x=>{for(let z=-97;z<=97;z+=6){if(streets.some(c=>Math.abs(z-c)<roadWidth(c)/2+2.2))continue;dashDummy.position.set(x,-.025,z);dashDummy.rotation.set(0,0,0);dashDummy.scale.set(1,1,1);dashDummy.updateMatrix();roadDashes.setMatrixAt(dashIndex++,dashDummy.matrix)}});
+ streets.forEach(z=>{for(let x=-97;x<=97;x+=6){if(streets.some(c=>Math.abs(x-c)<roadWidth(c)/2+2.2))continue;dashDummy.position.set(x,-.025,z);dashDummy.rotation.set(0,Math.PI/2,0);dashDummy.updateMatrix();roadDashes.setMatrixAt(dashIndex++,dashDummy.matrix)}});
+ roadDashes.count=dashIndex;roadDashes.instanceMatrix.needsUpdate=true;target.add(roadDashes);
+ // Passadeiras na avenida principal em todos os cruzamentos.
+ streets.forEach(z=>{for(let k=-3;k<=3;k++){box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z-(roadWidth(z)/2+1.2));box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z+(roadWidth(z)/2+1.2))}});
  // Tampas de saneamento na estrada.
  [-35,0,35].forEach(z=>{const cover=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.025,16),mat('#686762',1));cover.position.set(mainRoad+2.2,-.035,z);target.add(cover);const rim=new THREE.Mesh(new THREE.TorusGeometry(.38,.025,5,16),mat('#858078',1));rim.rotation.x=Math.PI/2;rim.position.set(mainRoad+2.2,-.018,z);target.add(rim)});
 
@@ -1209,6 +1215,12 @@ function buildVianaStreets(){
   [-56,56,-1,'#d0bd9b','#77736a'],[0,56,-1,'#c7b5a0','#81796c'],[56,56,-1,'#d3c69f','#77736a'],
   [-56,-28,1,'#c5b7a0','#77736a'],[56,0,-1,'#d0b99f','#81796c'],[-56,28,1,'#c6c6a9','#77736a']
  ].forEach(([x,z,front,c,r])=>addHouse(x,z,front,c,r));
+ // Novo anel residencial periférico, afastado das infraestruturas principais.
+ [
+  [-84,-84,1,'#d7c19b','#77736a'],[0,-84,1,'#c9d0b2','#82796b'],[84,-84,1,'#d5b5a0','#77736a'],
+  [-84,0,1,'#c5b7a0','#77736a'],[84,0,-1,'#d0b99f','#81796c'],
+  [-84,84,-1,'#d0bd9b','#77736a'],[0,84,-1,'#c7b5a0','#81796c'],[84,84,-1,'#d3c69f','#77736a']
+ ].forEach(([x,z,front,c,r])=>addHouse(x,z,front,c,r));
  [-56,-28,0,56].forEach(x=>[-34,-6,22,50].forEach(z=>addTree(x+(x<0?-1.8:1.8),z,.78)));
  [-56,-28,0,56].forEach(x=>[-34,-6,22,50].forEach(z=>addStreetLamp(x+(x<0?2.8:-2.8),z+2)));
  const binMat=mat('#3e6655',.9),binLid=mat('#263e35',.9);
@@ -1246,16 +1258,16 @@ const isLargeVenue=kind==='room'&&(roomName==='bar'||roomName==='party'),isExpan
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
 let dragging=false,lastX=0,lastY=0,moved=false,theta=Math.PI/4,phi=.92,distance=isLargeVenue?31:isExpandedInterior?25:13.5,pinchStart=0,pinchDistance=0;
 const cameraTarget=new THREE.Vector3(0,0,0);
-function updateOrbit(){phi=THREE.MathUtils.clamp(phi,kind==='city'?.48:.72,kind==='city'?1.05:.98);distance=THREE.MathUtils.clamp(distance,kind==='city'?9:(isLargeVenue?16:10),kind==='city'?64:((isLargeVenue||isExpandedInterior)?48:18));camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
-if(kind==='city'){theta=Math.PI/4;phi=.72;distance=19;if(houseAvatar)cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z)}if(kind==='room'||kind==='city')updateOrbit();
+function updateOrbit(){phi=THREE.MathUtils.clamp(phi,kind==='city'?.48:.72,kind==='city'?1.05:.98);distance=THREE.MathUtils.clamp(distance,kind==='city'?9:(isLargeVenue?16:10),kind==='city'?95:((isLargeVenue||isExpandedInterior)?48:18));camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
+if(kind==='city'){theta=Math.PI/4;phi=.72;distance=26;if(houseAvatar)cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z)}if(kind==='room'||kind==='city')updateOrbit();
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),.03),hit=new THREE.Vector3();
-const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?70:roomLimit;destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
+const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?98:roomLimit;destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
 const onPointerDown=e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;};
 const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;lastX=e.clientX;lastY=e.clientY;if(moved){if(kind==='room'||kind==='city'){theta-=dx*.009;phi=THREE.MathUtils.clamp(phi+dy*.006,kind==='city'?.42:.62,kind==='city'?1.15:1.12);updateOrbit()}else{target.rotation.y+=dx*.008}}};
 const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='city'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const entryHit=raycaster.intersectObjects(policeEntryMeshes,true)[0];if(entryHit?.object.userData.worldEntry){const entry=entryHit.object.userData.worldEntry;destination=new THREE.Vector3(entry.x,-.03,entry.z+entry.front*(entry.d/2+1.55))}else if(entryHit?.object.userData.hospitalEntry){destination=new THREE.Vector3(-28,-.03,-23.1)}else if(entryHit){destination=new THREE.Vector3(28,-.03,-17.2)}else{setDestination(e)}}else if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
 const touchDistance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
 const onTouchStart=e=>{if(e.touches.length===2){e.preventDefault();dragging=false;pinchStart=touchDistance(e.touches);pinchDistance=distance}};
-const onTouchMove=e=>{if(e.touches.length===2&&pinchStart>0){e.preventDefault();distance=THREE.MathUtils.clamp(pinchDistance*pinchStart/touchDistance(e.touches),kind==='city'?9:5,kind==='city'?64:(isLargeVenue?48:18));updateOrbit()}};
+const onTouchMove=e=>{if(e.touches.length===2&&pinchStart>0){e.preventDefault();distance=THREE.MathUtils.clamp(pinchDistance*pinchStart/touchDistance(e.touches),kind==='city'?9:5,kind==='city'?95:(isLargeVenue?48:18));updateOrbit()}};
 const onTouchEnd=e=>{if(e.touches.length<2)pinchStart=0};
 renderer.domElement.addEventListener('touchstart',onTouchStart,{passive:false});renderer.domElement.addEventListener('touchmove',onTouchMove,{passive:false});renderer.domElement.addEventListener('touchend',onTouchEnd);renderer.domElement.addEventListener('touchcancel',onTouchEnd);
 renderer.domElement.addEventListener('pointerdown',onPointerDown);window.addEventListener('pointermove',onPointerMove);window.addEventListener('pointerup',onPointerUp);
@@ -1277,7 +1289,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  if(hasInput){desiredX=inputX*speedLimit;desiredZ=inputZ*speedLimit}
  else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.12){destination=null}else{desiredX=vx/dist*Math.min(speedLimit,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(speedLimit,dist/Math.max(delta,.001))}}
  const response=1-Math.exp(-(hasInput?13:10)*delta);velocityX+=(desiredX-velocityX)*response;velocityZ+=(desiredZ-velocityZ)*response;
- const limit=kind==='city'?70:roomLimit;
+ const limit=kind==='city'?98:roomLimit;
  const oldX=houseAvatar.position.x,oldZ=houseAvatar.position.z,nextX=THREE.MathUtils.clamp(oldX+velocityX*delta,-limit,limit),nextZ=THREE.MathUtils.clamp(oldZ+velocityZ*delta,-limit,limit);
  if(kind==='city'){const radius=.38;if(!cityBlocked(nextX,oldZ,radius)){houseAvatar.position.x=nextX}else velocityX=0;if(!cityBlocked(houseAvatar.position.x,nextZ,radius)){houseAvatar.position.z=nextZ}else velocityZ=0}else{houseAvatar.position.x=nextX;houseAvatar.position.z=nextZ}
  if(Math.abs(houseAvatar.position.x)>=limit-.01)velocityX=0;if(Math.abs(houseAvatar.position.z)>=limit-.01)velocityZ=0;
