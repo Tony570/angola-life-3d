@@ -488,6 +488,16 @@ function buildVianaCommercialInterior(name){
   colors.forEach((color,i)=>{const car=createDetailedCar(color,false);car.scale.setScalar(.72);car.position.set(-2.45+i*2.45,0,.45);car.rotation.y=i===1?Math.PI:0;target.add(car)});
   box(2.6,.12,.22,metal,0,.08,2.95);box(2.6,2.2,.12,glass,0,1.2,3.82);
   for(let i=0;i<3;i++){const tyre=new THREE.Mesh(new THREE.TorusGeometry(.32,.09,8,20),mat('#25282b'));tyre.position.set(-2.5+i*2.5,.38,-2.15);target.add(tyre)}
+  // Gabinete de vendas com secretária, cadeira, computador e arquivo.
+  hdesk(3.0,2.55,Math.PI);
+  hchair(3.0,1.25,'#344c5d',Math.PI);
+  box(.72,.5,.07,glass,3.0,1.55,2.45);
+  box(.88,.06,.48,metal,3.0,1.22,2.5);
+  box(.72,1.65,.62,mat('#52636a',.86),-3.35,.83,2.55);
+  for(let level=0;level<3;level++)box(.58,.035,.04,metal,-3.35,.45+level*.42,2.88);
+  // Zona de assistência rápida: bancada e ferramentas junto à parede lateral.
+  furnCounter(1.8,.9,.55,metal,white,wood,-3.05,-.15);
+  for(let k=0;k<4;k++){const tool=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.48,8),metal);tool.position.set(-3.55+k*.34,1.25,-.12);target.add(tool)}
   buildCharacter(target,{gender:'male',skin:'#b98768',hair:'#211916',shirt:'#314d67',pants:'#252f3b',hairStyle:'curto'},{x:0,y:0,z:-2.25},()=>{},false);
  }else if(isParty){
   // Palco, pista central, mesas, cadeiras e colunas de som.
