@@ -716,13 +716,13 @@ function buildVenueYard(x,z,front,opts){
  }
  const colors=['#a83e36','#d0c8b6','#426b86','#b8a13d'];let carIndex=0;
  for(const side of [-1,1]){
-  const carX=x+side*(opts.w/2+1.2);
+  const carX=x+side*(opts.w/2+1.75);
   for(const carZ of [25.15,30.85]){
    const left=carX-1.15,right=carX+1.15,near=carZ-2.12,far=carZ+2.12;
    for(const px of [left,right])box(.045,.012,4.24,paint,px,-.018,carZ);
    for(const pz of [near,far])box(2.3,.012,.045,paint,carX,-.018,pz);
    const car=createDetailedCar(colors[carIndex++],false);car.position.set(carX,0,carZ);car.rotation.y=Math.PI/2;target.add(car);
-   addCityCollision(carX,carZ,1.62,3.9,.12);
+   addCityCollision(carX,carZ,1.34,3.56,.02);
   }
  }
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=120;const ctx=canvas.getContext('2d');ctx.fillStyle=opts.kind==='party'?'#30263a':'#271916';ctx.fillRect(0,0,640,120);ctx.strokeStyle='#d8b36d';ctx.lineWidth=7;ctx.strokeRect(7,7,626,106);ctx.fillStyle='#fff0c9';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PARQUE PRIVATIVO',320,60);
@@ -733,7 +733,7 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
  if(opts.kind==='hotel'||opts.kind==='bar'||opts.kind==='party'){
   const opening=1.9,segment=(w-opening)/2,offset=(w+opening)/4,frontWallZ=z+front*d/2;
-  addCityCollision(x-w/2,z,.35,d,.22);addCityCollision(x+w/2,z,.35,d,.22);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-offset,frontWallZ,segment,.35,.18);addCityCollision(x+offset,frontWallZ,segment,.35,.18);
+  addCityCollision(x-w/2,z,.35,d,.08);addCityCollision(x+w/2,z,.35,d,.08);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-offset,frontWallZ,segment,.35,.18);addCityCollision(x+offset,frontWallZ,segment,.35,.18);
   const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,frontFace+front*.28);entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
  }else{
   // Colisão apenas nas paredes: a abertura frontal permanece livre para entrar.
@@ -860,9 +860,9 @@ function buildVianaOtherBuildings(){
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
- buildVianaBuilding('BAR DAS PUTAS',-28,28,-1,{kind:'bar',w:13,d:12.5,h:5.2,wall:'#c58b62',trim:'#ead0ad',roof:'#75452f',sign:'#693b2b'});
+ buildVianaBuilding('BAR DAS PUTAS',-28,28,-1,{kind:'bar',w:11,d:12.5,h:5.2,wall:'#c58b62',trim:'#ead0ad',roof:'#75452f',sign:'#693b2b'});
  // Salão de festas.
- buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:13,d:12.5,h:5.6,wall:'#c5b5ce',trim:'#eee4f0',roof:'#66556e',sign:'#55405e'});
+ buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:11,d:12.5,h:5.6,wall:'#c5b5ce',trim:'#eee4f0',roof:'#66556e',sign:'#55405e'});
  // Dois pequenos estabelecimentos no mesmo quarteirão comercial.
  buildVianaBuilding('SALÃO DE BELEZA',-3.4,28,-1,{kind:'salon',w:5.7,d:6.8,h:3.2,wall:'#d9aebd',trim:'#f4dce4',roof:'#80566b',sign:'#864e68'});
  buildVianaBuilding('LOJA DE ROUPAS',3.4,28,-1,{kind:'clothes',w:5.7,d:6.8,h:3.2,wall:'#9bbfc0',trim:'#e0eeee',roof:'#486c70',sign:'#365960'});
