@@ -322,7 +322,7 @@ function buildPoliceStationInterior(){
  box(.08,.24,7.8,blue,-3.86,.16,0);
  box(.08,.24,7.8,blue,3.86,.16,0);
  // Balcão de recepção com frente azul, tampo e equipamento.
- box(4.7,1.02,.78,blue,0,.57,-.95);
+ furnCounter(4.7,.95,.82,blue,trim,wood,0,-.95);
  box(4.85,.12,.9,trim,0,1.13,-.95);
  box(4.55,.12,.68,wood,0,.12,-.95);
  box(.85,.62,.08,glass,-1.2,1.52,-1.2);
@@ -442,7 +442,7 @@ function buildVianaCommercialInterior(name){
   // Prateleiras, balcões, caixas de fruta e produtos organizados por secção.
   for(const side of [-1,1])for(let row=0;row<2;row++){const x=side*3.15,z=-2.35+row*2.15;box(.62,2.2,1.55,wood,x,1.08,z);for(let level=0;level<3;level++){box(.7,.08,1.62,metal,x,.48+level*.67,z);for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
   for(let i=0;i<3;i++){const x=-2.2+i*2.2;box(1.65,.85,.78,wood,x,.48,.75);for(let k=0;k<5;k++){const produce=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][i],.85));produce.position.set(x-.55+k*.27,.99,.75);target.add(produce)}}
-  box(2.8,1.05,.62,mat('#a66d42'),0,.52,-3.15);box(2.9,.1,.7,white,0,1.1,-3.15);
+  furnCounter(2.8,1,.68,mat('#a66d42'),white,metal,0,-3.15);
   for(let i=0;i<6;i++){const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.36,10),mat(i%2?'#4f8a73':'#c08b42'));bottle.position.set(-1.1+i*.44,1.34,-3.15);target.add(bottle)}
   buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#7d5941',pants:'#35475b',hairStyle:'medio'},{x:0,y:0,z:-2.15},()=>{},false);
  }else if(isQuarry){
@@ -461,7 +461,7 @@ function buildVianaCommercialInterior(name){
   buildCharacter(target,{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#b5a15e',pants:'#35404b',hairStyle:'curto'},{x:0,y:0,z:-1.8},()=>{},false);
  }else if(isCars){
   // Exposição interior de viaturas, recepção comercial e acesso à oficina.
-  box(2.6,.92,.72,wood,0,.48,-3.05);box(2.75,.12,.82,white,0,1,-3.05);
+  furnCounter(2.6,.92,.72,wood,white,metal,0,-3.05);
   const colors=['#a83e36','#426d87','#d0b65b'];
   colors.forEach((color,i)=>{const car=createDetailedCar(color,false);car.scale.setScalar(.72);car.position.set(-2.45+i*2.45,0,.45);car.rotation.y=i===1?Math.PI:0;target.add(car)});
   box(2.6,.12,.22,metal,0,.08,2.95);box(2.6,2.2,.12,glass,0,1.2,3.82);
@@ -476,8 +476,8 @@ function buildVianaCommercialInterior(name){
   for(const x of [-1.2,0,1.2]){const bulb=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),new THREE.MeshStandardMaterial({color:'#f3d6a0',emissive:'#d98eac',emissiveIntensity:.7}));bulb.position.set(x,3.05,-.8);target.add(bulb)}
  }else if(isSalon){
   // Espelhos altos, cadeiras profissionais, lavatórios e bancada de produtos.
-  for(const x of [-2.55,0,2.55]){box(1.18,1.75,.09,glass,x,2.05,-3.75);box(1.28,.09,.12,metal,x,2.96,-3.72);box(.62,.62,.62,mat('#373d42'),x,.9,-2.45);const seat=new THREE.Mesh(new THREE.CylinderGeometry(.3,.34,.14,18),mat('#292e32'));seat.position.set(x,1.28,-2.45);target.add(seat);box(.08,.55,.08,metal,x,1.02,-2.45)}
-  box(5.8,.95,.62,wood,0,.48,2.75);box(5.9,.12,.72,white,0,1,2.75);
+  for(const x of [-2.55,0,2.55]){box(1.18,1.75,.09,glass,x,2.05,-3.75);box(1.28,.09,.12,metal,x,2.96,-3.72);furnSalonChair(x,-2.45,mat('#292e32'),metal)}
+  furnCounter(5.8,.95,.62,wood,white,metal,0,2.75);
   for(let i=0;i<3;i++){const basin=new THREE.Mesh(new THREE.SphereGeometry(.36,16,12),mat('#f3f5f3'));basin.scale.set(1,.35,.8);basin.position.set(-2+i*2,.98,2.6);target.add(basin);hcyl(.035,.42,metal,-2+i*2,.73,2.6)}
   for(let i=0;i<8;i++){const jar=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.3,10),mat(['#c27c9c','#d5b85d','#7d9caa'][i%3]));jar.position.set(-2.5+(i%4)*1.65,1.25,2.72+Math.floor(i/4)*.18);target.add(jar)}
   buildCharacter(target,{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9d596f',pants:'#343b48',hairStyle:'comprido'},{x:0,y:0,z:.15},()=>{},false);
@@ -485,7 +485,7 @@ function buildVianaCommercialInterior(name){
   // Araras de roupa, manequins e provadores separados.
   for(const x of [-2.7,0,2.7]){box(.12,1.95,.12,metal,x,1.02,-2.6);box(1.95,.08,.12,metal,x,2.05,-2.6);for(let k=0;k<4;k++){const hanger=new THREE.Mesh(new THREE.ConeGeometry(.12,.25,3),mat(['#a84f4c','#466e83','#7b6a9a','#c29a4d'][k]));hanger.position.set(x-.65+k*.43,1.75,-2.6);target.add(hanger)}}
   for(const x of [-2.5,0,2.5]){const mannequin=new THREE.Group();hsph(.19,.2,.18,mat('#d5b99d'),0,1.78,0,mannequin);box(.48,.82,.3,mat(['#9a554e','#54758c','#7e638f'][Math.abs(Math.round(x))%3]),0,1.18,0,mannequin);box(.28,.72,.25,mat('#343b48'),0,.42,0,mannequin);mannequin.position.set(x,0,.15);target.add(mannequin)}
-  box(2.2,.9,.65,wood,0,.48,3.05);box(2.3,.12,.72,white,0,1,3.05);
+  furnCounter(2.2,.9,.65,wood,white,metal,0,3.05);
   box(1.25,2.2,.12,mat('#b9a28c'),-3.15,1.1,1.05);box(1.25,2.2,.12,mat('#b9a28c'),3.15,1.1,1.05);
  }
 }
@@ -493,10 +493,10 @@ function buildBarPrivateRoom(which){
  const wall=mat('#493536',.9),floor=mat('#4b3738',.85),wood=mat('#80513f',.78),gold=mat('#c69a5b',.55);
  box(8,.18,8,floor,0,-.12,0);
  for(const [x,z,r] of [[0,-4,0],[0,4,0],[-4,0,Math.PI/2],[4,0,Math.PI/2]]){const p=new THREE.Mesh(new THREE.PlaneGeometry(8,3.5),wall);p.position.set(x,1.7,z);p.rotation.y=r;p.material.side=THREE.DoubleSide;target.add(p)}
- const bed=new THREE.Mesh(new THREE.BoxGeometry(2.5,.42,3.1),wood);bed.position.set(0,.32,-.55);target.add(bed);
- box(2.35,.14,2.95,mat('#d7c7b8'),0,.58,-.55);
+ // Cama estofada com colchão, almofadas e estrutura completa.
+ furnPrivateBed(0,-.55,wood,mat('#d7c7b8'),gold);
  for(const x of [-1.25,1.25]){box(.12,.7,.12,gold,x,.55,-2.05);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),new THREE.MeshStandardMaterial({color:'#ffdca3',emissive:'#d89b57',emissiveIntensity:.8}));lamp.position.set(x,1.1,-2.05);target.add(lamp)}
- box(2.2,.82,.55,wood,0,.42,2.55);box(2.3,.1,.62,gold,0,.9,2.55);
+ furnCounter(2.2,.82,.55,wood,gold,wood,0,2.55);
  buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#8d4053',pants:'#34313b',hairStyle:'comprido'},{x:0,y:0,z:1.15},()=>{},false);
  (doorDefs[which]||[]).forEach(addRoomDoor);
 }
@@ -530,6 +530,27 @@ function hospitalShell(n){const f=new THREE.Mesh(new THREE.PlaneGeometry(8,8),ma
 function hchair(x,z,color='#4b86a8',rot=0){const g=new THREE.Group(),f=mat(color),m=mat('#aeb9bf');hcap(.32,.12,f,0,.55,0,g,Math.PI/2).scale.set(1,.82,.72);hcap(.31,.42,f,0,.91,-.23,g).scale.set(.9,1,.5);hcyl(.045,.43,m,0,.25,0,g);for(let i=0;i<4;i++){const a=i*Math.PI/2,l=hcyl(.03,.38,m,Math.cos(a)*.2,.18,Math.sin(a)*.2,g);l.rotation.z=Math.cos(a)*-.32;l.rotation.x=Math.sin(a)*.32}g.position.set(x,0,z);g.rotation.y=rot;target.add(g)}
 function hbed(x,z,rot=0){const g=new THREE.Group(),w=mat('#f5f7f7'),b=mat('#8fb5c9'),m=mat('#9aa8b0'),rub=mat('#333b40');hcap(.34,1.25,w,0,.78,0,g,Math.PI/2).scale.set(1,.62,.78);hcap(.29,1.2,b,0,1,0,g,Math.PI/2).scale.set(1,.58,.76);hcap(.3,.16,w,-.82,1.02,0,g,Math.PI/2);for(const side of [-1,1]){const rail=hcyl(.035,1.55,m,0,1.23,side*.34,g);rail.rotation.z=Math.PI/2;for(const e of [-.66,.66])hcyl(.025,.42,m,e,.94,side*.34,g)}for(const px of [-.7,.7])for(const pz of [-.25,.25]){hcyl(.035,.62,m,px,.4,pz,g);hsph(.095,.07,.095,rub,px,.13,pz,g)}g.position.set(x,0,z);g.rotation.y=rot;target.add(g)}
 function hdesk(x,z,w=2.4){const g=new THREE.Group(),wood=mat('#d9c8ad'),white=mat('#f6f7f5'),m=mat('#aab5bc');hcap(.34,w,wood,0,1.02,0,g,Math.PI/2).scale.set(1,.62,.72);hcap(.24,w*.92,white,0,1.24,0,g,Math.PI/2).scale.set(1,.28,.75);for(const px of [-w*.34,w*.34])hcyl(.05,.86,m,px,.52,0,g);hsph(.46,.29,.075,mat('#263b48'),0,1.65,-.12,g);const sc=new THREE.Mesh(new THREE.PlaneGeometry(.72,.4),mat('#79b8cf'));sc.position.set(0,1.66,-.047);g.add(sc);hcyl(.045,.2,m,0,1.43,-.12,g);hcap(.11,.48,m,0,1.29,.28,g,Math.PI/2);g.position.set(x,0,z);target.add(g)}
+
+function furnCounter(w,h,d,body,top,metal,x,z){
+ const g=new THREE.Group();box(w,h,d,body,0,h/2,0,g);box(w+.12,.11,d+.12,top,0,h+.045,0,g);
+ box(w*.88,.045,.035,metal,0,h*.68,d/2+.018,g);
+ for(const px of [-w*.38,w*.38]){hcyl(.045,.13,metal,px,.07,0,g);box(.035,h*.55,.035,metal,px,h*.34,d/2+.025,g)}
+ g.position.set(x,0,z);target.add(g);return g;
+}
+function furnSalonChair(x,z,seatMat,metal){
+ const g=new THREE.Group();hcyl(.045,.62,metal,0,.36,0,g);hcyl(.29,.09,metal,0,.08,0,g);
+ for(let i=0;i<5;i++){const a=i*Math.PI*2/5;const leg=hcyl(.025,.44,metal,Math.cos(a)*.2,.06,Math.sin(a)*.2,g);leg.rotation.z=Math.cos(a)*-.55;leg.rotation.x=Math.sin(a)*.55}
+ hcap(.27,.1,seatMat,0,.75,0,g,Math.PI/2).scale.set(1,.8,.8);hcap(.19,.26,seatMat,0,1.03,-.18,g);
+ for(const px of [-.3,.3])hcyl(.025,.42,metal,px,.78,-.05,g);
+ g.position.set(x,0,z);target.add(g);return g;
+}
+function furnPrivateBed(x,z,wood,linen,metal){
+ const g=new THREE.Group();box(2.5,.38,3.1,wood,0,.32,0,g);box(2.42,.16,2.98,linen,0,.58,0,g);
+ hcap(.12,1.05,mat('#f0e7dd'),0,.72,-.86,g,Math.PI/2).scale.set(1,.8,.65);hcap(.1,1.1,mat('#f0e7dd'),0,.72,.72,g,Math.PI/2).scale.set(1,.8,.65);
+ box(2.58,.12,.16,wood,0,.88,-1.48,g);for(const px of [-1.12,1.12])for(const pz of [-1.35,1.35])hcyl(.045,.32,metal,px,.16,pz,g);
+ g.position.set(x,0,z);target.add(g);return g;
+}
+
 function buildHospitalInterior(n){hospitalShell(n);const blue=mat('#3f7896'),steel=mat('#aab6bc'),pale=mat('#dce8ed');if(n==='hospital'){hdesk(0,-1.1,2.55);hchair(-.75,-2,'#537f98');hchair(.75,-2,'#537f98');hchair(-2.45,1.55);hchair(-1.25,1.55);hchair(0,1.55);hsph(1.05,.32,.07,blue,0,2.72,-3.82);const c=document.createElement('canvas');c.width=512;c.height=128;const q=c.getContext('2d');q.fillStyle='#285c78';q.fillRect(0,0,512,128);q.fillStyle='#fff';q.font='bold 48px Arial';q.textAlign='center';q.textBaseline='middle';q.fillText('RECEPÇÃO',256,66);const sign=new THREE.Mesh(new THREE.PlaneGeometry(2.7,.66),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sign.position.set(0,2.72,-3.76);target.add(sign);const look={gender:'female',skin:'#a86f55',hair:'#241b18',eyes:'#33231f',shirt:'#e8f0f1',pants:'#38566a',hairStyle:'curto'};const p=buildCharacter(target,look,{x:0,y:0,z:-1.65},()=>{},false);p.scale.setScalar(.9);p.rotation.y=Math.PI}
 if(n==='hospital-tratamento'){hbed(-1.9,-1.55);hbed(1.65,-1.55);hbed(-1.9,1.35);hcap(.25,.62,mat('#f7f8f6'),0,.82,2.65);for(const x of [-.18,.18])hcyl(.025,1.5,steel,x,1.55,2.65);hcyl(.04,.5,steel,0,2.3,2.65);hcap(.08,.5,mat('#6d9a76'),2.85,.55,1.65);hcyl(.025,2,steel,2.85,1.35,1.65);const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(-.2,2.5,-.2),new THREE.Vector3(.7,2.5,-.2),new THREE.Vector3(1.6,2.5,-.2),new THREE.Vector3(2.2,2.5,.1)]);target.add(new THREE.Mesh(new THREE.TubeGeometry(curve,24,.035,8,false),steel));for(let i=0;i<5;i++)hsph(.22,.9,.025,pale,.15+i*.38,1.5,-.2)}
 if(n==='hospital-consultorio'){hdesk(0,-1.6,2.2);hchair(-.1,-.55,'#426f88',Math.PI);hchair(1.55,.05);hchair(-1.55,.05);hbed(0,2,Math.PI/2);hsph(.62,.42,.08,blue,0,2.65,-3.82);const board=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.72),mat('#d8e9e9'));board.position.set(0,2.65,-3.74);target.add(board);const look={gender:'male',skin:'#8d604b',hair:'#25201d',eyes:'#34241f',shirt:'#f1f3f0',pants:'#39576a',hairStyle:'curto'};const p=buildCharacter(target,look,{x:0,y:0,z:-2.15},()=>{},false);p.scale.setScalar(.92);p.rotation.y=Math.PI}}
