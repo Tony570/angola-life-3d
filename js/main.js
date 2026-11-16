@@ -769,7 +769,27 @@ function buildCommercialYard(x,z,front,opts){
  for(const px of [-half,-2.1,2.1,half]){const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),metal);p.position.set(x+px,.76,frontZ);target.add(p)}
  box(3.7,.08,.12,metal,x,.08,frontZ);
  box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
- for(const side of [-1,1]){const px=x+side*6.5,pz=z+front*11.25;for(const dx of [-1.15,1.15])box(.045,.012,4.2,paint,px+dx,-.018,pz);for(const dz of [-.82,.82])box(2.3,.012,.045,paint,px,-.018,pz+dz);const car=createDetailedCar(opts.kind==='quarry'?'#c28a35':opts.kind==='market'?'#477c58':'#a83e36',false);car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);addCityCollision(px,pz,2.25,1.28,.08)}
+ if(opts.kind!=='cars'){
+  for(const side of [-1,1]){
+   const px=x+side*10.95,pz=z+front*1.1;
+   if(opts.kind==='quarry'){
+    const truck=new THREE.Group(),yellow=mat('#c28a35',.78),dark=mat('#30383b',.9),glass=mat('#8aaab3',.35);
+    box(1.45,1.15,2.0,yellow,0,1.05,.35,truck);box(1.42,1.0,1.25,yellow,0,1.35,-1.25,truck);box(1.2,.62,.08,glass,0,1.55,-1.9,truck);
+    for(const wz of [-1.25,.55])for(const wx of [-.78,.78]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.36,wz);truck.add(wheel)}
+    truck.position.set(px,0,pz);target.add(truck);addCityCollision(px,pz,1.5,2.2,.08);
+   }else{
+    const van=createDetailedCar('#477c58',false);van.position.set(px,0,z+front*10.9);van.rotation.y=Math.PI/2;target.add(van);addCityCollision(px,z+front*10.9,2.2,1.25,.08);
+   }
+  }
+ }
+ if(opts.kind==='market'){
+  for(const side of [-1,1])for(let row=0;row<2;row++){
+   const sx=x+side*11.15,sz=z+(row-.5)*3.4,wood=mat('#76543b',.85),canopy=mat(side<0?'#b84e3b':'#d2b35d',.82);
+   box(.95,.12,1.35,wood,sx,.78,sz);box(1.9,.12,1.8,canopy,sx,2.15,sz);
+   for(const dx of [-.82,.82])for(const dz of [-.72,.72])box(.07,1.35,.07,metal,sx+dx,1.35,sz+dz);
+   for(let k=0;k<5;k++){const fruit=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][k%3],.85));fruit.position.set(sx-.34+(k%3)*.34,1.02,sz-.3+Math.floor(k/3)*.45);target.add(fruit)}
+  }
+ }
 }
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
@@ -872,13 +892,10 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   [-1,1].forEach(side=>{const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.19,.19,.13,12),metal);wheel.rotation.z=Math.PI/2;wheel.position.set(ax+side*.72,.22,az+front*.42);target.add(wheel)});
  }
  if(opts.kind==='quarry'){
-  const steel=mat('#596367',.82),belt=mat('#343b3d',.95);
-  box(w+5,.08,d+5,mat('#9b8b72',1),x,-.02,z-front*(d*.72));
-  for(let side of [-1,1]){box(.12,1.55,d+4,steel,x+side*(w*.62),.75,z-front*(d*.72));for(let k=-3;k<=3;k++)box(.08,1.35,.08,steel,x+side*(w*.62),.75,z-front*(d*.72)+k*.85)}
-  box(1.8,3.2,1.8,steel,x-w*.36,1.6,z-front*(d*.9));box(2.3,.18,2.2,mat('#777f7e',.8),x-w*.36,3.25,z-front*(d*.9));
-  const conveyor=box(4.4,.16,.8,belt,x+w*.08,1.45,z-front*(d*.9));conveyor.rotation.z=-.23;
-  for(let i=0;i<3;i++){const pile=new THREE.Mesh(new THREE.ConeGeometry(.95+i*.12,.9+i*.12,7),mat(i%2?'#817d72':'#a39a88',1));pile.position.set(x+w*.38+i*.65,.42,z-front*(d*.8)+i*.9);target.add(pile)}
-  box(2.3,.8,1.25,mat('#b5a05d',.8),x+w*.28,.48,z-front*(d*1.35));box(1.2,.55,1.15,mat('#41494c',.8),x+w*.28,1.12,z-front*(d*1.35));
+  // Materiais de amostra e zona de carga frontal dentro do recinto, sem ocupar a estrada.
+  const steel=mat('#596367',.82),sand=mat('#a99a7d',1),stone=mat('#77756d',1);
+  box(5.8,.08,1.55,steel,x,-.02,z+front*(d/2+1.15));
+  for(let i=0;i<3;i++){const pile=new THREE.Mesh(new THREE.ConeGeometry(.72,.62,7),i%2?sand:stone);pile.position.set(x-1.8+i*1.8,.35,z+front*(d/2+1.15));target.add(pile)}
  }
  if(opts.kind==='salon'){
   for(let i=-1;i<=1;i++){const sx=x+i*1.55,sz=face+front*.2;box(1.0,1.2,.1,mat('#9ab3b7',.28),sx,2.05,sz);box(1.12,.1,.14,frame,sx,2.7,sz);box(.62,.55,.62,mat('#35393d',.6),sx,.92,sz+front*.72);const seat=new THREE.Mesh(new THREE.CylinderGeometry(.28,.3,.16,12),mat('#292e32',.6));seat.position.set(sx,1.3,sz+front*.72);target.add(seat);box(.08,.55,.08,metal,sx,1.05,sz+front*.72)}
