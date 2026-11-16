@@ -759,6 +759,18 @@ function buildVenueYard(x,z,front,opts){
  const canvas=document.createElement('canvas');canvas.width=640;canvas.height=120;const ctx=canvas.getContext('2d');ctx.fillStyle=opts.kind==='party'?'#30263a':'#271916';ctx.fillRect(0,0,640,120);ctx.strokeStyle='#d8b36d';ctx.lineWidth=7;ctx.strokeRect(7,7,626,106);ctx.fillStyle='#fff0c9';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('PARQUE PRIVATIVO',320,60);
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
+function buildCommercialYard(x,z,front,opts){
+ const half=12.2,frontZ=z+front*half,backZ=z-front*half;
+ const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
+ box(half*2,.07,half*2,ground,x,-.11,z);
+ for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
+ box(half*2,1.35,.18,fence,x,.62,backZ);addCityCollision(x,backZ,half*2,.18,.08);
+ for(const side of [-1,1]){box(half-2.1,1.25,.18,fence,x+side*(2.1+(half-2.1)/2),.59,frontZ);addCityCollision(x+side*(2.1+(half-2.1)/2),frontZ,half-2.1,.18,.08)}
+ for(const px of [-half,-2.1,2.1,half]){const p=new THREE.Mesh(new THREE.BoxGeometry(.28,1.55,.28),metal);p.position.set(x+px,.76,frontZ);target.add(p)}
+ box(3.7,.08,.12,metal,x,.08,frontZ);
+ box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
+ for(const side of [-1,1]){const px=x+side*7.4,pz=z+front*11.15;for(const dx of [-1.15,1.15])box(.045,.012,4.2,paint,px+dx,-.018,pz);for(const dz of [-2.1,2.1])box(2.3,.012,.045,paint,px,-.018,pz+dz);const car=createDetailedCar(opts.kind==='quarry'?'#c28a35':opts.kind==='market'?'#477c58':'#a83e36',false);car.position.set(px,0,pz);car.rotation.y=front===1?Math.PI:0;target.add(car);addCityCollision(px,pz,1.28,2.25,.08)}
+}
 function buildVianaBuilding(name,x,z,front,opts={}){
  if(opts.kind==='hospital'){buildHospitalExterior(x,z,front,opts);return}
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
@@ -876,6 +888,7 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const looks=[{gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#9c554b',pants:'#30394a',hairStyle:'comprido'},{gender:'male',skin:'#985b42',hair:'#171412',shirt:'#496e83',pants:'#26364b',hairStyle:'curto'},{gender:'female',skin:'#dca77c',hair:'#75482b',shirt:'#6f527f',pants:'#343b48',hairStyle:'medio'}];
   looks.forEach((look,i)=>buildCharacter(target,look,{x:x+(i-1)*1.55,y:0,z:face+front*.42},()=>{},false));
   box(2.8,.12,.75,mat('#76543f',.85),x,.8,face+front*1.2);
+ if(['market','quarry','cars'].includes(opts.kind))buildCommercialYard(x,z,front,opts);
 
  }
 }
@@ -883,11 +896,11 @@ function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
- buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:17,d:13,h:4.4,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:20.5,d:20.5,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
  // Mercado de bairro amplo, com espaço de circulação e exposição exterior.
- buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:15.5,d:12.5,h:4.0,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:20.5,d:20.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
  // Stand de automóveis com parque exterior e showroom interior.
- buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:15.5,d:12.5,h:4.3,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:20.5,d:20.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
@@ -934,69 +947,69 @@ function buildVianaPoliceStation(){
  const wall=mat('#123f78',.96),trim=mat('#e4edf7',.9),roof=mat('#0b2d59',.95);
  const dark=mat('#19365b',.55),metal=mat('#aab8c7',.8),door=mat('#0b2d59',.8);
  const concrete=mat('#aeb7bd',1),yard=mat('#78966a',1);
- const fenceZ=-18.6,backZ=-37.4,leftX=19.2,rightX=36.8;
+ const fenceZ=-16,backZ=-40,leftX=16,rightX=40;
  // Pátio relvado e passeio de acesso.
- box(17.6,.08,18.8,yard,28,-.105,-28);
- box(11.2,.12,8.6,concrete,28,-.025,-28);
+ box(24,.08,24,yard,28,-.105,-28);
+ box(12,.12,9.5,concrete,28,-.025,-28);
  // Muro contínuo e bem visível: os segmentos têm colisão física.
  box(.28,1.35,backZ-fenceZ,concrete,leftX,.62,(backZ+fenceZ)/2);
  box(.28,1.35,backZ-fenceZ,concrete,rightX,.62,(backZ+fenceZ)/2);
  box(rightX-leftX,1.35,.28,concrete,28,.62,backZ);
- box(2.35,1.35,.28,concrete,23.95,.62,fenceZ);
- box(2.35,1.35,.28,concrete,32.05,.62,fenceZ);
+ box(5.1,1.35,.28,concrete,21.45,.62,fenceZ);
+ box(5.1,1.35,.28,concrete,34.55,.62,fenceZ);
  addCityCollision(leftX,(backZ+fenceZ)/2,.28,backZ-fenceZ,.12);
  addCityCollision(rightX,(backZ+fenceZ)/2,.28,backZ-fenceZ,.12);
  addCityCollision(28,backZ,rightX-leftX,.28,.12);
- addCityCollision(23.95,fenceZ,2.35,.28,.12);
- addCityCollision(32.05,fenceZ,2.35,.28,.12);
+ addCityCollision(21.45,fenceZ,5.1,.28,.12);
+ addCityCollision(34.55,fenceZ,5.1,.28,.12);
  // Pilares de betão e remates no topo do muro.
  [leftX,rightX].forEach(x=>[-21,-27,-33.7].forEach(z=>box(.42,1.55,.42,trim,x,.72,z)));
- [22.2,33.8].forEach(x=>box(.42,1.55,.42,trim,x,.72,fenceZ));
+ [18.9,37.1].forEach(x=>box(.42,1.55,.42,trim,x,.72,fenceZ));
  // Portão metálico de duas folhas, deixando passagem central.
  [-1,1].forEach(side=>{
-  const gx=28+side*.72;
+  const gx=28+side*1.05;
   box(.055,1.55,.08,metal,gx,.78,fenceZ);
   for(let y=0;y<8;y++)box(.035,.07,.09,metal,gx,.2+y*.19,fenceZ);
  });
  box(2.95,.08,.12,metal,28,1.57,fenceZ);
  // Edifício com paredes separadas e abertura real na entrada frontal.
- box(9.5,.12,7,concrete,28,-.035,-28);
- box(.24,3.15,6.4,wall,23.5,1.55,-28);
- box(.24,3.15,6.4,wall,32.5,1.55,-28);
- box(9,3.15,.24,wall,28,1.55,-31.2);
- box(3.75,3.15,.24,wall,25.375,1.55,-24.8);
- box(3.75,3.15,.24,wall,30.625,1.55,-24.8);
- addCityCollision(23.5,-28,.24,6.4,.16);
- addCityCollision(32.5,-28,.24,6.4,.16);
- addCityCollision(28,-31.2,9,.24,.16);
- addCityCollision(25.375,-24.8,3.75,.24,.12);
- addCityCollision(30.625,-24.8,3.75,.24,.12);
+ box(19,.12,19,concrete,28,-.035,-28);
+ box(.24,3.15,18.6,wall,18.6,1.55,-28);
+ box(.24,3.15,18.6,wall,37.4,1.55,-28);
+ box(18.6,3.15,.24,wall,28,1.55,-37.4);
+ box(8.3,3.15,.24,wall,22.85,1.55,-18.6);
+ box(8.3,3.15,.24,wall,33.15,1.55,-18.6);
+ addCityCollision(18.6,-28,.24,18.6,.16);
+ addCityCollision(37.4,-28,.24,18.6,.16);
+ addCityCollision(28,-37.4,18.6,.24,.16);
+ addCityCollision(22.85,-18.6,8.3,.24,.12);
+ addCityCollision(33.15,-18.6,8.3,.24,.12);
  // Cobertura e beirais.
- box(9.45,.2,6.85,roof,28,3.22,-28);
- box(9.15,.12,6.55,trim,28,3.08,-28);
+ box(19.2,.2,19.2,roof,28,3.22,-28);
+ box(18.8,.12,18.8,trim,28,3.08,-28);
  // Moldura e folha da porta deixada aberta para o público entrar.
- box(.14,2.35,.18,trim,27.18,1.14,-24.7);
- box(.14,2.35,.18,trim,28.82,1.14,-24.7);
- box(1.75,.14,.2,trim,28,2.3,-24.7);
- const openDoor=box(.12,2.12,1.25,door,27.92,1.08,-25.35);
+ box(.14,2.35,.18,trim,27.18,1.14,-18.5);
+ box(.14,2.35,.18,trim,28.82,1.14,-18.5);
+ box(1.75,.14,.2,trim,28,2.3,-18.5);
+ const openDoor=box(.12,2.12,1.25,door,27.92,1.08,-19.15);
  openDoor.rotation.y=.08;
  const entryTrigger=new THREE.Mesh(new THREE.BoxGeometry(1.55,2.2,.08),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,depthWrite:false,side:THREE.DoubleSide}));
- entryTrigger.position.set(28,1.1,-24.78);entryTrigger.userData.policeEntry=true;target.add(entryTrigger);policeEntryMeshes.push(entryTrigger);
+ entryTrigger.position.set(28,1.1,-18.55);entryTrigger.userData.policeEntry=true;target.add(entryTrigger);policeEntryMeshes.push(entryTrigger);
  // Janelas frontais com vidro, caixilhos e grades.
  [-1,1].forEach(side=>{
-  const x=28+side*2.65;
-  box(1.55,1.05,.13,dark,x,1.95,-24.94);
-  box(1.72,.12,.2,trim,x,2.52,-24.9);
-  box(1.72,.12,.2,trim,x,1.38,-24.9);
-  box(.12,1.18,.2,trim,x-.8,1.95,-24.9);
-  box(.12,1.18,.2,trim,x+.8,1.95,-24.9);
-  box(.07,1.02,.22,metal,x,1.95,-24.86);
-  box(1.55,.07,.22,metal,x,1.95,-24.86);
+  const x=28+side*6.2;
+  box(1.55,1.05,.13,dark,x,1.95,-18.75);
+  box(1.72,.12,.2,trim,x,2.52,-18.7);
+  box(1.72,.12,.2,trim,x,1.38,-18.7);
+  box(.12,1.18,.2,trim,x-.8,1.95,-18.7);
+  box(.12,1.18,.2,trim,x+.8,1.95,-18.7);
+  box(.07,1.02,.22,metal,x,1.95,-18.66);
+  box(1.55,.07,.22,metal,x,1.95,-18.66);
  });
  // Pala sobre a porta e pilares de apoio.
- box(2.35,.16,1.05,roof,28,2.58,-24.12);
- box(.12,.9,.12,metal,27.05,2.08,-24.35);
- box(.12,.9,.12,metal,28.95,2.08,-24.35);
+ box(2.35,.16,1.05,roof,28,2.58,-17.95);
+ box(.12,.9,.12,metal,27.05,2.08,-18.2);
+ box(.12,.9,.12,metal,28.95,2.08,-18.2);
  // Placa institucional.
  const canvas=document.createElement('canvas');canvas.width=768;canvas.height=128;
  const ctx=canvas.getContext('2d');ctx.fillStyle='#082c5d';ctx.fillRect(0,0,768,128);
@@ -1005,7 +1018,7 @@ function buildVianaPoliceStation(){
  ctx.fillText('ESQUADRA DA POLÍCIA',384,66);
  const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
  const sign=new THREE.Mesh(new THREE.BoxGeometry(5.3,.9,.13),new THREE.MeshStandardMaterial({map:signTex,roughness:.8}));
- sign.position.set(28,2.82,-24.94);target.add(sign);
+ sign.position.set(28,2.82,-18.75);target.add(sign);
  // Guardas posicionados um de cada lado do portão, à escala do avatar e armados.
  addPoliceOfficer(26.25,-21.65,0,1,true,false);
  addPoliceOfficer(29.75,-21.65,0,1,true,false);
@@ -1243,7 +1256,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
- if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+24.8)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
+ if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+18.55)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
