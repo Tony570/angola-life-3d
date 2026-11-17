@@ -204,7 +204,7 @@ camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,7,5);scene.add(light);
-let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
+let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[],cityPoliceVehicles=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function createDetailedCar(color='#a83e36',police=false){
@@ -1237,6 +1237,20 @@ function buildVianaStreets(){
   {group:patrolOne,route:[{x:18.5,z:-10.5},{x:25,z:-9.2},{x:32,z:-9.2},{x:37.5,z:-10.5},{x:32,z:-11.2},{x:25,z:-11.2}],waypoint:1,mode:'patrol',phase:0},
   {group:patrolTwo,route:[{x:37.5,z:-10.5},{x:32,z:-11.2},{x:25,z:-11.2},{x:18.5,z:-10.5},{x:25,z:-9.2},{x:32,z:-9.2}],waypoint:1,mode:'patrol',phase:Math.PI}
  );
+ // Viatura com agente ao volante: circuito contínuo pelas avenidas e ruas periféricas.
+ const patrolCar=createDetailedCar('#e8ecee',true);
+ patrolCar.position.set(42,0,-14);patrolCar.rotation.y=0;target.add(patrolCar);
+ const driver=addPoliceOfficer(0,0,Math.PI/2,1,true,true);
+ target.remove(driver);patrolCar.add(driver);driver.position.set(-.48,.48,0);driver.scale.setScalar(.78);
+ const vehicleRoute=[
+  {x:42,z:-14},{x:42,z:-42},{x:14,z:-42},{x:-14,z:-42},{x:-42,z:-42},{x:-70,z:-42},
+  {x:-70,z:-14},{x:-70,z:14},{x:-42,z:14},{x:-14,z:14},{x:14,z:14},{x:42,z:14},{x:70,z:14},
+  {x:70,z:42},{x:42,z:42},{x:14,z:42},{x:-14,z:42},{x:-42,z:42},{x:-70,z:42},
+  {x:-70,z:70},{x:-42,z:70},{x:-14,z:70},{x:14,z:70},{x:42,z:70},{x:70,z:70},
+  {x:70,z:42},{x:70,z:14},{x:70,z:-14},{x:70,z:-42},{x:70,z:-70},{x:42,z:-70},
+  {x:14,z:-70},{x:-14,z:-70},{x:-42,z:-70},{x:-70,z:-70},{x:-70,z:-42}
+ ];
+ cityPoliceVehicles.push({group:patrolCar,route:vehicleRoute,waypoint:1,speed:5.8});
  buildVianaOtherBuildings();
 }
 
@@ -1282,7 +1296,7 @@ const onKeyUp=e=>{const key=e.key.toLowerCase();const map={w:'forward',arrowup:'
 window.addEventListener('keydown',onKeyDown);window.addEventListener('keyup',onKeyUp);
 const moveButtons=[...host.querySelectorAll('[data-move]')];let activePadKey=null;const onPadDown=e=>{const b=e.target.closest('[data-move]');if(!b)return;e.preventDefault();activePadKey=b.dataset.move;moveKeys[activePadKey]=true};const clearPad=()=>{if(activePadKey){moveKeys[activePadKey]=false;activePadKey=null}};
 moveButtons.forEach(b=>b.addEventListener('pointerdown',onPadDown));const onWindowBlur=()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);activePadKey=null};window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('blur',onWindowBlur);
-let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);
+let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0,receptionShown=false;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);
 if(kind==='city'&&cityPoliceAgents.length){
  for(const agent of cityPoliceAgents){
   const officer=agent.group,player=houseAvatar;if(!officer)continue;
@@ -1299,6 +1313,28 @@ if(kind==='city'&&cityPoliceAgents.length){
   const actions=officer.userData.animationActions;
   if(actions){actions.walk.setEffectiveWeight(walking?1:0);actions.idle.setEffectiveWeight(walking?0:1);actions.walk.setEffectiveTimeScale(.9);}
   else if(officer.userData.fallbackRig){const rig=officer.userData.fallbackRig;agent.phase+=delta*(walking?7:1.5);const swing=walking?Math.sin(agent.phase)*.42:0;rig.leftLeg.rotation.x=swing;rig.rightLeg.rotation.x=-swing;rig.leftArm.rotation.x=-swing*.65;rig.rightArm.rotation.x=swing*.65;}
+ }
+}
+if(kind==='room'&&roomName==='esquadra'&&houseAvatar&&!receptionShown){
+ const receptionDistance=Math.hypot(houseAvatar.position.x,houseAvatar.position.z+0.15);
+ if(receptionDistance<2.15){
+  receptionShown=true;
+  openLifePanel('Recepção da Esquadra','<p class="life-muted">Bom dia. Seja bem-vindo à esquadra. Em que podemos ajudar?</p><div class="life-list"><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button></div>');
+  const bindReception=(id,title,body)=>{const b=$('life-panel').querySelector('#'+id);if(b)b.onclick=()=>openLifePanel(title,'<p class="life-muted">'+body+'</p><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');};
+  bindReception('police-reception-complaint','Registo de queixa','O recepcionista vai recolher o tipo de ocorrência, o local e a descrição. Este registo é uma simulação do jogo.');
+  bindReception('police-reception-info','Informações da Polícia','O recepcionista pode orientar o cidadão sobre os serviços e procedimentos da esquadra.');
+  bindReception('police-reception-security','Pedido de segurança residencial','O recepcionista regista a morada e o motivo do pedido para encaminhar uma patrulha. Esta função está em fase inicial.');
+  bindReception('police-reception-emergency','Comunicação de emergência','Indica a ocorrência e o local. A esquadra recebe a comunicação dentro da simulação.');
+  const panel=$('life-panel');panel.addEventListener('click',e=>{if(e.target?.id==='police-reception-back'){openLifePanel('Recepção da Esquadra','<p class="life-muted">Em que podemos ajudar?</p><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button>')}},{once:false});
+ }
+}
+if(kind==='city'&&cityPoliceVehicles.length){
+ for(const patrol of cityPoliceVehicles){
+  const car=patrol.group,point=patrol.route[patrol.waypoint];if(!car||!point)continue;
+  const dx=point.x-car.position.x,dz=point.z-car.position.z,dist=Math.hypot(dx,dz);
+  if(dist<.65){patrol.waypoint=(patrol.waypoint+1)%patrol.route.length;continue}
+  const step=Math.min(dist,patrol.speed*delta);car.position.x+=dx/dist*step;car.position.z+=dz/dist*step;
+  car.rotation.y=Math.atan2(-dz,dx);
  }
 }
 if((kind==='room'||kind==='city')&&houseAvatar){
@@ -1326,7 +1362,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
-return()=>{cityPoliceAgents.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
+return()=>{cityPoliceAgents.length=0;cityPoliceVehicles.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
 let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
 function renderVianaCity(spawn=null){if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='POVO GRANDE';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='POVO GRANDE · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
