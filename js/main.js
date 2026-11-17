@@ -3,7 +3,7 @@ const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let user=null,profile=null,inventory=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#eef2f5',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',beardStyle:'goatee',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:3};
+let user=null,profile=null,inventory=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#eef2f5',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:4};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
@@ -20,7 +20,7 @@ $('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(
 $('logout').onclick=async()=>{await sb.auth.signOut();user=null;$('game').classList.add('hidden');$('auth').classList.remove('hidden');$('phone-verify').classList.add('hidden');$('tab-login').classList.remove('hidden');$('tab-signup').classList.remove('hidden');setTab('login')};
 function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderAvatar()}if(page==='inventory'){if(disposeHome){disposeHome();disposeHome=null}if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderInventoryPage()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
-async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};if((savedAvatar.modelVersion||0)<3){if(!savedAvatar.hair||['#241b18','#171412'].includes(savedAvatar.hair))avatar.hair=avatar.gender==='male'?'#eef2f5':'#38251d';if(!savedAvatar.shirt||savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';if(!savedAvatar.pants||savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';avatar.beardStyle=avatar.gender==='male'?'goatee':'none';avatar.modelVersion=3;}$('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
+async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};if((savedAvatar.modelVersion||0)<4){if(!savedAvatar.hair||['#241b18','#171412'].includes(savedAvatar.hair))avatar.hair=avatar.gender==='male'?'#eef2f5':'#38251d';if(!savedAvatar.shirt||savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';if(!savedAvatar.pants||savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';avatar.beardStyle=avatar.gender==='male'?'goatee':'none';avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=4;}$('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
 async function loadInventory(){const {data,error}=await sb.from('inventory_items').select('*').eq('user_id',user.id).order('category');if(error){console.error(error);inventory=[]}else inventory=data||[];renderInventory()}
 function fillProfile(){$('profile-display').textContent=profile.display_name;$('profile-handle').textContent='@'+profile.username;$('profile-name').value=profile.username;$('profile-display-input').value=profile.display_name;$('profile-bio').value=profile.bio||''}
 $('save-profile').onclick=async()=>{const username=$('profile-name').value.trim().toLowerCase().replace(/\s+/g,'_');const display_name=$('profile-display-input').value.trim();if(!username||!display_name){say('profile-message','Preenche os dois nomes.');return}const {data,error}=await sb.from('profiles').update({username,display_name,bio:$('profile-bio').value.trim(),updated_at:new Date().toISOString()}).eq('id',user.id).select().single();if(error){say('profile-message',error.message);return}profile=data;fillProfile();$('side-name').textContent=profile.display_name;say('profile-message','Perfil guardado com sucesso.')};
@@ -137,8 +137,12 @@ function createFallbackHuman(look){
  const shirt=new THREE.MeshStandardMaterial({color:look.shirt||'#f2f2ee',roughness:.82});
  const pants=new THREE.MeshStandardMaterial({color:look.pants||'#e6e8ee',roughness:.88});
  const hair=new THREE.MeshStandardMaterial({color:look.hair||'#eef2f5',roughness:.9});
- const beard=new THREE.MeshStandardMaterial({color:look.beardColor||look.hair||'#283039',roughness:.9});
- const dark=new THREE.MeshStandardMaterial({color:'#202329',roughness:.75});
+ const beard=new THREE.MeshStandardMaterial({color:look.beardColor||'#332a27',roughness:.92});
+ const brow=new THREE.MeshStandardMaterial({color:look.browColor||'#332a27',roughness:.88});
+ const dark=new THREE.MeshStandardMaterial({color:'#292321',roughness:.8});
+ const skinShade=new THREE.MeshStandardMaterial({color:'#80584b',roughness:.95});
+ const blush=new THREE.MeshStandardMaterial({color:'#b96e68',roughness:1,transparent:true,opacity:.16,depthWrite:false});
+ const lip=new THREE.MeshStandardMaterial({color:look.gender==='female'?'#a85e65':'#925d55',roughness:.8});
  const iris=new THREE.MeshStandardMaterial({color:look.eyes||'#35251f',roughness:.42});
  const white=new THREE.MeshStandardMaterial({color:'#f7f3ed',roughness:.55});
  const gold=new THREE.MeshStandardMaterial({color:look.accessory||'#c69b45',metalness:.62,roughness:.34});
@@ -146,6 +150,7 @@ function createFallbackHuman(look){
  const shoe=new THREE.MeshStandardMaterial({color:look.shoe||'#e9eef2',roughness:.62});
  const sole=new THREE.MeshStandardMaterial({color:'#34383d',roughness:.9});
  const sphere=(parent,material,pos,scale,segments=20)=>{const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,segments,16),material);mesh.position.set(...pos);mesh.scale.set(...scale);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
+ const curveTube=(parent,material,points,radius,segments=18)=>{const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,segments,radius,6,false),material);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
  const capsule=(parent,material,radius,length,pos)=>{const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,14),material);mesh.position.set(...pos);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
  const box=(parent,material,size,pos,rot=0)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),material);mesh.position.set(...pos);mesh.rotation.z=rot;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh};
  const female=look.gender==='female',hairStyle=look.hairStyle||(female?'comprido':'curto');
@@ -162,48 +167,57 @@ function createFallbackHuman(look){
  const chain=new THREE.Mesh(new THREE.TorusGeometry(.126,.012,8,32,Math.PI*2),gold);chain.rotation.x=Math.PI/2;chain.position.set(0,1.365,0);figure.add(chain);
  box(figure,gold,[.105,.105,.025],[0,1.245,.124]);
  box(figure,gold,[.065,.025,.012],[0,1.31,.132]);
- // Cabeça independente para acompanhar o movimento e a expressão.
+ // Cabeça com proporções suaves, maxilar definido e expressão amigável.
  const head=new THREE.Group();head.position.set(0,1.505,0);figure.add(head);rig.head=head;
- sphere(head,skin,[0,0,0],[.139,.17,.126],24);
- sphere(head,skin,[0,-.082,.025],[.108,.088,.112],20);
- sphere(head,skin,[-.143,-.005,0],[.027,.047,.026]);sphere(head,skin,[.143,-.005,0],[.027,.047,.026]);
- sphere(head,skin,[0,-.012,.132],[.025,.038,.03]);
+ sphere(head,skin,[0,.004,0],[.139,.174,.124],32);
+ sphere(head,skin,[0,-.071,.018],[.105,.094,.103],28);
+ sphere(head,skin,[0,-.125,.043],[.061,.043,.071],24);
  for(const side of [-1,1]){
-  sphere(head,white,[side*.052,.027,.112],[.031,.021,.014]);
-  sphere(head,iris,[side*.052,.026,.124],[.014,.016,.009]);
-  sphere(head,dark,[side*.052,.026,.132],[.006,.009,.005]);
-  sphere(head,white,[side*.047,.033,.138],[.004,.004,.003]);
-  box(head,beard,[.076,.021,.025],[side*.052,.073,.105],side*-.17);
+  sphere(head,skin,[side*.137,-.006,.002],[.026,.043,.025],18);
+  sphere(head,skinShade,[side*.148,-.006,.019],[.009,.024,.008],14);
+  sphere(head,blush,[side*.083,-.043,.091],[.038,.022,.008],16);
  }
- // Nariz, boca, bigode e barba curta; a versão feminina mantém o rosto sem barba.
- sphere(head,skin,[0,-.018,.151],[.023,.036,.026]);
- box(head,dark,[.046,.008,.012],[0,-.092,.122]);
- if(!female){
-  if((look.beardStyle||'goatee')!=='none'){
-   sphere(head,beard,[-.027,-.105,.112],[.041,.018,.018]);
-   sphere(head,beard,[.027,-.105,.112],[.041,.018,.018]);
-  }
+ for(const side of [-1,1]){
+  sphere(head,skinShade,[side*.052,.027,.105],[.034,.023,.009],20);
+  sphere(head,white,[side*.052,.027,.113],[.029,.0165,.011],24);
+  sphere(head,iris,[side*.052,.026,.124],[.0125,.0135,.008],20);
+  sphere(head,dark,[side*.052,.026,.131],[.006,.008,.004],16);
+  sphere(head,white,[side*.048,.032,.135],[.0035,.0035,.0025],12);
+  curveTube(head,skin,[[side*.082,.027,.112],[side*.053,.045,.125],[side*.022,.027,.117]],.0032,16);
+  curveTube(head,skinShade,[[side*.079,.014,.111],[side*.052,.006,.119],[side*.025,.014,.116]],.0018,14);
+  curveTube(head,brow,[[side*.088,.071,.099],[side*.058,.086,.122],[side*.024,.076,.127]],female?.0045:.0065,18);
+ }
+ sphere(head,skin,[0,-.004,.111],[.014,.041,.018],20);
+ sphere(head,skin,[0,-.038,.132],[.021,.015,.016],20);
+ for(const side of [-1,1])sphere(head,skinShade,[side*.012,-.046,.137],[.004,.0028,.0028],12);
+ curveTube(head,skinShade,[[-.027,-.078,.113],[0,-.083,.123],[.027,-.078,.113]],.0022,16);
+ curveTube(head,lip,[[-.026,-.079,.115],[0,-.087,.124],[.026,-.079,.115]],.0032,16);
+ curveTube(head,lip,[[-.022,-.083,.116],[0,-.091,.122],[.022,-.083,.116]],.0025,14);
+ if(!female&&(look.beardStyle||'goatee')!=='none'){
+  curveTube(head,beard,[[-.042,-.064,.111],[-.023,-.059,.122],[-.006,-.064,.125]],.0055,12);
+  curveTube(head,beard,[[.006,-.064,.125],[.023,-.059,.122],[.042,-.064,.111]],.0055,12);
   if((look.beardStyle||'goatee')==='goatee'||look.beardStyle==='full'){
-   sphere(head,beard,[0,-.145,.087],[.055,.052,.043]);
-   if(look.beardStyle==='full'){sphere(head,beard,[-.087,-.09,.035],[.035,.07,.045]);sphere(head,beard,[.087,-.09,.035],[.035,.07,.045])}
+   sphere(head,beard,[0,-.125,.092],[.031,.036,.025],20);
+   sphere(head,beard,[0,-.151,.078],[.019,.018,.018],16);
+   if(look.beardStyle==='full'){sphere(head,beard,[-.092,-.076,.025],[.025,.061,.035],16);sphere(head,beard,[.092,-.076,.025],[.025,.061,.035],16)}
   }
  }
- // Cabelo volumoso com madeixas modeladas, em vez de uma peça lisa.
- sphere(head,hair,[0,.128,-.005],[.143,.075,.132],24);
+ sphere(head,hair,[0,.126,-.006],[.143,.078,.13],28);
  if(hairStyle==='comprido'){
-  sphere(head,hair,[0,.015,-.092],[.12,.16,.065]);
-  capsule(head,hair,.043,.20,[-.115,-.08,-.015]);capsule(head,hair,.043,.20,[.115,-.08,-.015]);
-  for(let i=0;i<5;i++)sphere(head,hair,[-.09+i*.045,.18+Math.sin(i*1.1)*.018,.045],[.04,.045,.055]);
+  sphere(head,hair,[0,.005,-.09],[.112,.15,.064],20);
+  capsule(head,hair,.036,.19,[-.119,-.078,-.012]);capsule(head,hair,.036,.19,[.119,-.078,-.012]);
+  for(let i=0;i<5;i++)sphere(head,hair,[-.084+i*.042,.178+Math.sin(i*1.1)*.012,.042],[.035,.035,.048],16);
  }else if(hairStyle==='medio'){
-  sphere(head,hair,[0,.17,.015],[.13,.07,.115]);
-  sphere(head,hair,[-.12,.045,-.005],[.04,.09,.055]);sphere(head,hair,[.12,.045,-.005],[.04,.09,.055]);
+  sphere(head,hair,[0,.166,.012],[.128,.063,.105],24);
+  sphere(head,hair,[-.119,.035,-.002],[.034,.082,.047],16);sphere(head,hair,[.119,.035,-.002],[.034,.082,.047],16);
+  sphere(head,hair,[-.025,.19,.055],[.065,.035,.058],18);
  }else if(hairStyle==='encaracolado'){
-  for(let i=0;i<13;i++){const a=i*Math.PI*2/13;sphere(head,hair,[Math.cos(a)*.105,.15+Math.sin(i*1.7)*.018,Math.sin(a)*.09],[.047,.047,.047],14)}
-  for(let i=0;i<4;i++)sphere(head,hair,[-.075+i*.05,.205,.025],[.04,.045,.04],14);
+  for(let i=0;i<15;i++){const a=i*Math.PI*2/15;sphere(head,hair,[Math.cos(a)*.105,.15+Math.sin(i*1.7)*.012,Math.sin(a)*.082],[.039,.042,.041],14)}
+  for(let i=0;i<5;i++)sphere(head,hair,[-.08+i*.04,.19,.018],[.035,.04,.038],14);
  }else{
-  sphere(head,hair,[0,.17,.07],[.105,.055,.08]);
-  sphere(head,hair,[-.07,.14,.075],[.055,.05,.06]);sphere(head,hair,[.065,.145,.075],[.055,.05,.06]);
-  sphere(head,hair,[.025,.205,-.015],[.045,.05,.045]);
+  sphere(head,hair,[0,.17,.055],[.085,.043,.066],20);
+  sphere(head,hair,[-.064,.145,.064],[.046,.038,.05],18);sphere(head,hair,[.055,.15,.066],[.045,.036,.05],18);
+  curveTube(head,hair,[[-.105,.151,.042],[-.052,.199,.047],[.018,.205,.036],[.079,.17,.038]],.009,18);
  }
  // Mangas compridas, braços articulados, mãos e punhos.
  for(const side of [-1,1]){
@@ -230,7 +244,7 @@ function createFallbackHuman(look){
  // Ombros e gola reforçam o aspecto de personagem de jogo.
  const collar=new THREE.Mesh(new THREE.TorusGeometry(.074,.012,8,24),white);collar.rotation.x=Math.PI/2;collar.position.set(0,1.36,.01);figure.add(collar);
  if(female){for(const side of [-1,1])sphere(head,gold,[side*.145,-.015,.01],[.014,.014,.014],12)}
- figure.scale.setScalar(CHARACTER_HEIGHT/1.72);figure.userData.gaitRig=rig;figure.userData.styleVersion=3;return figure;
+ figure.scale.setScalar(CHARACTER_HEIGHT/1.72);figure.userData.gaitRig=rig;figure.userData.styleVersion=4;return figure;
 }
 function applyAvatarLook(model,look){
  model.updateMatrixWorld(true);const whole=new THREE.Box3().setFromObject(model),height=Math.max(.001,whole.max.y-whole.min.y);
@@ -260,7 +274,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',styledLook={...look,gender,beardStyle:look.beardStyle||(gender==='male'?'goatee':'none')},root=new THREE.Group();
- root.userData.keepWorldScale=true;root.userData.styleVersion=3;root.userData.actionState={type:'idle',time:0};
+ root.userData.keepWorldScale=true;root.userData.styleVersion=4;root.userData.actionState={type:'idle',time:0};
  if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  const figure=createFallbackHuman(styledLook);
@@ -272,9 +286,10 @@ host.querySelectorAll('canvas').forEach(c=>c.remove());
 const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':kind==='avatar'?'#211b29':'#58a9ed');
 const camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.1,100);
 camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5.4);
-const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,7,5);scene.add(light);
+const renderer=new THREE.WebGLRenderer({antialias:kind==='avatar',powerPreference:'low-power'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,kind==='avatar'?1.5:1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,kind==='avatar'?2.35:2));const light=new THREE.DirectionalLight(0xfff1df,kind==='avatar'?2.45:2.2);light.position.set(-3,7,5);scene.add(light);
+if(kind==='avatar'){const fill=new THREE.DirectionalLight(0xd9e8ff,1.05);fill.position.set(3,3,4);scene.add(fill);const rim=new THREE.DirectionalLight(0xffdca0,1.15);rim.position.set(0,4,-3);scene.add(rim)}
 let target=new THREE.Group();target.userData.characters=[];scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[],cityPoliceVehicles=[],cityDrivableCars=[],sceneSeatAnchors=[];let nearbySeat=null;const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
@@ -1474,7 +1489,7 @@ function renderWardrobe(){const host=$('wardrobe-items');if(!host)return;host.in
 function renderInventoryPage(){updateWardrobeGender();renderWardrobe();if(disposeInventory)disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}
 document.querySelectorAll('[data-gender-choice]').forEach(button=>button.onclick=()=>{avatar.gender=button.dataset.genderChoice;updateWardrobeGender();renderWardrobe();if(disposeInventory){disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}});
 document.querySelectorAll('[data-wardrobe]').forEach(button=>button.onclick=()=>{activeWardrobe=button.dataset.wardrobe;document.querySelectorAll('[data-wardrobe]').forEach(b=>b.classList.toggle('active',b===button));renderWardrobe()});
-$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:3};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
+$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:4};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
 const icons={cabelo:'💇',roupa:'👕',calçado:'👟',acessório:'⌚'};
 function renderInventory(){const filtered=inventory.filter(x=>activeCategory==='todos'||x.category===activeCategory);$('inventory-count').textContent=inventory.length+' OBJECTOS';$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;$('inventory-grid').innerHTML='';if(!filtered.length){$('inventory-grid').innerHTML='<p class="muted">Ainda não tens objectos nesta categoria.</p>';return}filtered.forEach(item=>{const el=document.createElement('div');el.className='item';el.innerHTML='<div class="item-icon">'+(icons[item.category]||'📦')+'</div><strong></strong><div class="muted small"></div><button class="secondary"></button>';el.querySelector('strong').textContent=item.label;el.querySelector('.muted').textContent=item.category;const b=el.querySelector('button');b.textContent=item.equipped?'Equipado':'Equipar';b.disabled=item.equipped;b.onclick=()=>equip(item);$('inventory-grid').append(el)})}
 async function equip(item){const clear=await sb.from('inventory_items').update({equipped:false}).eq('user_id',user.id).eq('category',item.category);if(clear.error){alert(clear.error.message);return}const chosen=await sb.from('inventory_items').update({equipped:true}).eq('id',item.id).eq('user_id',user.id);if(chosen.error){alert(chosen.error.message);return}inventory=inventory.map(x=>({...x,equipped:x.id===item.id?true:(x.category===item.category?false:x.equipped)}));renderInventory()}
