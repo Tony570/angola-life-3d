@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Obter código
         uses: actions/checkout@v4
+      - name: Validar sintaxe do JavaScript
+        run: node --input-type=module --check < js/main.js
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
       - name: Preparar ficheiros do jogo
