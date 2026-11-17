@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vida-em-cabinda-3d-v16-avatar-acoes-colisoes-20261117';
+const CACHE_NAME = 'vida-em-cabinda-3d-v17-avatar-estilizado-20261117';
 const APP_SHELL = [
   './',
   './index.html',
