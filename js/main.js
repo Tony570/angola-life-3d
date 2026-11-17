@@ -61,9 +61,13 @@ async function openMarketPanel(){
   if(!Number.isInteger(qty)||qty<1||qty>99){$('market-message').textContent='Escolhe uma quantidade entre 1 e 99.';return}
   button.disabled=true;button.textContent='A comprar…';
   const {data,error}=await sb.rpc('market_buy_food',{p_item:key,p_quantity:qty});
-  if(error){$('market-message').textContent=error.message;button.disabled=false;button.textContent='Comprar';return}
-  await refreshPlayerWallet();await openMarketPanel();
-  const msg=$('market-message');if(msg)msg.textContent='Compra concluída: '+data.quantity+' × '+data.item+'. Total: '+new Intl.NumberFormat('pt-PT').format(data.total)+' Kz.';
+  if(error){const msg=$('life-panel').querySelector('#market-message');if(msg)msg.textContent=error.message;if(button.isConnected){button.disabled=false;button.textContent='Comprar'}return}
+  await refreshPlayerWallet();
+  const panel=$('life-panel');
+  if(activeRoomName==='market'&&!panel.classList.contains('hidden')&&panel.querySelector('#market-message')){
+   await openMarketPanel();
+   const msg=panel.querySelector('#market-message');if(msg)msg.textContent='Compra concluída: '+data.quantity+' × '+data.item+'. Total: '+new Intl.NumberFormat('pt-PT').format(data.total)+' Kz.';
+  }
  });
 }
 async function openKitchenPanel(){
@@ -78,14 +82,21 @@ async function openKitchenPanel(){
  $('life-panel').querySelectorAll('[data-cook-recipe]').forEach(button=>button.onclick=async()=>{
   button.disabled=true;button.textContent='A preparar…';
   const {data,error}=await sb.rpc('cook_player_recipe',{p_recipe:button.dataset.cookRecipe});
-  if(error){$('kitchen-message').textContent=error.message;button.disabled=false;button.textContent='Preparar';return}
-  await openKitchenPanel();const msg=$('kitchen-message');if(msg)msg.textContent='Prato preparado e guardado: '+data.label+'.';
+  if(error){const msg=$('life-panel').querySelector('#kitchen-message');if(msg)msg.textContent=error.message;if(button.isConnected){button.disabled=false;button.textContent='Preparar'}return}
+  const panel=$('life-panel');
+  if(activeRoomName==='cozinha'&&!panel.classList.contains('hidden')&&panel.querySelector('#kitchen-message')){
+   await openKitchenPanel();const msg=panel.querySelector('#kitchen-message');if(msg)msg.textContent='Prato preparado e guardado: '+data.label+'.';
+  }
  });
  $('life-panel').querySelectorAll('[data-eat-meal]').forEach(button=>button.onclick=async()=>{
   button.disabled=true;button.textContent='A comer…';
   const {data,error}=await sb.rpc('eat_player_meal',{p_item:button.dataset.eatMeal});
-  if(error){$('kitchen-message').textContent=error.message;button.disabled=false;button.textContent='Comer';return}
-  await Promise.all([refreshPlayerNeeds(),openKitchenPanel()]);const msg=$('kitchen-message');if(msg)msg.textContent='Comeste '+data.item+'. Energia e saciedade recuperadas.';
+  if(error){const msg=$('life-panel').querySelector('#kitchen-message');if(msg)msg.textContent=error.message;if(button.isConnected){button.disabled=false;button.textContent='Comer'}return}
+  await refreshPlayerNeeds();
+  const panel=$('life-panel');
+  if(activeRoomName==='cozinha'&&!panel.classList.contains('hidden')&&panel.querySelector('#kitchen-message')){
+   await openKitchenPanel();const msg=panel.querySelector('#kitchen-message');if(msg)msg.textContent='Comeste '+data.item+'. Energia e saciedade recuperadas.';
+  }
  });
 }
 
