@@ -580,9 +580,12 @@ function buildBarInterior(){
  waitressLooks.forEach((look,i)=>{
   const group=buildCharacter(target,look,{x:routes[i][0].x,y:0,z:routes[i][0].z},()=>{},false);
   group.rotation.y=Math.PI;group.userData.barRole='waitress';
+  // Bandeja e copo para tornar o serviço visível durante a circulação.
+  box(.58,.045,.36,mat('#b8bec4',.42),0,1.08,.13,group);
+  const cup=new THREE.Mesh(new THREE.CylinderGeometry(.075,.065,.2,12),mat('#d8e7ed',.2));cup.position.set(.08,1.2,.13);group.add(cup);
+  const drink=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.012,12),mat('#d7a15a',.25));drink.position.set(.08,1.305,.13);group.add(drink);
   barWaitressAgents.push({group,route:routes[i],waypoint:1,state:'patrol',busyUntil:0,serveUntil:0,order:null,side:i});
  });
- installBarSceneActions();
  const c=document.createElement('canvas');c.width=768;c.height=150;const q=c.getContext('2d');q.fillStyle='#211716';q.fillRect(0,0,768,150);q.strokeStyle='#d7b06a';q.lineWidth=8;q.strokeRect(8,8,752,134);q.fillStyle='#f6d58b';q.font='bold 58px Georgia';q.textAlign='center';q.textBaseline='middle';q.fillText('BAR DAS PUTAS',384,75);const sign=new THREE.Mesh(new THREE.PlaneGeometry(5.6,1.05),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sign.position.set(0,3.25,-13.84);target.add(sign);addVenueCapacitySign('BAR DAS PUTAS',0,13.82,'#211716');
 }
 function buildPartyHallInterior(){
@@ -1450,7 +1453,7 @@ if(kind==='room'){
   for(const [x,y,z,rot] of [[0,1.65,-4,0],[0,1.65,4,0],[-4,1.65,0,Math.PI/2],[4,1.65,0,Math.PI/2]]){const wall=new THREE.Mesh(new THREE.PlaneGeometry(8,3.6),safeWall);wall.position.set(x,y,z);wall.rotation.y=rot;target.add(wall)}
  }
  const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
-const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
+const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}if(roomName==='bar')installBarSceneActions();const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{const studioFloor=new THREE.Mesh(new THREE.PlaneGeometry(12,12),mat('#382b3d',.92));studioFloor.rotation.x=-Math.PI/2;studioFloor.position.y=-.015;target.add(studioFloor);const studioWall=new THREE.Mesh(new THREE.PlaneGeometry(10,4),mat('#251d2b',1));studioWall.position.set(0,2,-1.8);target.add(studioWall);const mirror=new THREE.Mesh(new THREE.TorusGeometry(1.05,.045,12,64),mat('#d8b35f',.3));mirror.position.set(0,1,-1.55);target.add(mirror);const displayRing=new THREE.Mesh(new THREE.TorusGeometry(.82,.025,8,48),mat('#e7c66c',.28));displayRing.rotation.x=Math.PI/2;displayRing.position.y=.018;target.add(displayRing);buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,1.12,3.65);camera.lookAt(0,.86,0)}
 const isLargeVenue=kind==='room'&&(roomName==='bar'||roomName==='party'),isExpandedInterior=kind==='room'&&['market','quarry','cars','esquadra'].includes(roomName),roomLimit=isLargeVenue?17.15:isExpandedInterior?9.15:3.35;
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
@@ -1669,16 +1672,16 @@ function updateBarServiceAI(delta,now){
   const dx=(player?.position.x??999)-npc.position.x,dz=(player?.position.z??999)-npc.position.z,dist=Math.hypot(dx,dz);
   if(player&&dist<nearest)nearest=dist;
   if(agent.state==='serving'){
-   if(now<agent.serveUntil){npc.userData.actionState={type:'wave',time:0};continue}
+   if(now<agent.serveUntil){if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
    agent.state='patrol';agent.order=null;agent.waypoint=(agent.waypoint+1)%agent.route.length;npc.userData.actionState={type:'idle',time:0};
   }
   if(player&&dist<2.5&&agent.state==='patrol'){agent.state='approach';agent.target={x:player.position.x+(agent.side===0?-1.05:1.05),z:player.position.z-0.15}}
   if(agent.state==='approach'&&player){
-   if(dist<1.45){agent.state='ready';npc.userData.actionState={type:'wave',time:0};}
+   if(dist<1.45){agent.state='ready';if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};}
    else{const tx=agent.target?.x??player.position.x,tz=agent.target?.z??player.position.z,vx=tx-npc.position.x,vz=tz-npc.position.z,len=Math.hypot(vx,vz)||1,step=Math.min(len,1.35*delta);npc.position.x+=vx/len*step;npc.position.z+=vz/len*step;npc.rotation.y=Math.atan2(vx,vz);updateFallbackHumanGait(npc,delta,1.2,true);npc.userData.actionState={type:'idle',time:0}}
   }else if(agent.state==='ready'){
    if(!player||dist>4){agent.state='patrol';agent.target=null}
-   else{npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);npc.userData.actionState={type:'wave',time:0}}
+   else{npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0}}
   }
   if(agent.state==='patrol'){
    const point=agent.route[agent.waypoint],vx=point.x-npc.position.x,vz=point.z-npc.position.z,len=Math.hypot(vx,vz);
