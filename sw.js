@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v31-avatar-render-fix-20261117';
+const CACHE_NAME = 'angola-life-3d-v32-avatar-preview-recovery-20261117';
 const APP_SHELL = [
   './',
   './index.html',
