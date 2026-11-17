@@ -770,7 +770,7 @@ function buildVenueYard(x,z,front,opts){
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
 function buildCommercialYard(x,z,front,opts){
- const half=8,frontZ=z+front*half,backZ=z-front*half;
+ const half=10,frontZ=z+front*half,backZ=z-front*half;
  const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
  box(half*2,.07,half*2,ground,x,-.11,z);
  for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
@@ -780,7 +780,7 @@ function buildCommercialYard(x,z,front,opts){
  box(3.7,.08,.12,metal,x,.08,frontZ);
  box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
  for(const side of [-1,1]){
-  const px=x+side*(half-2.35),pz=z+front*(half-2.4);
+  const px=x+side*(half-3.5),pz=z+front*(opts.d/2+2.8);
   if(opts.kind==='cars'){
    const car=createDetailedCar(side<0?'#426d87':'#b8a13d',false);
    car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);
@@ -791,7 +791,7 @@ function buildCommercialYard(x,z,front,opts){
    const truck=new THREE.Group(),yellow=mat('#c28a35',.78),dark=mat('#30383b',.9),glass=mat('#8aaab3',.35);
    box(1.45,1.15,2.0,yellow,0,1.05,.35,truck);box(1.42,1.0,1.25,yellow,0,1.35,-1.25,truck);box(1.2,.62,.08,glass,0,1.55,-1.9,truck);
    for(const wz of [-1.25,.55])for(const wx of [-.78,.78]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.18,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.36,wz);truck.add(wheel)}
-   truck.position.set(px,0,z+front*1.1);target.add(truck);addCityCollision(px,z+front*1.1,1.5,2.2,.08);
+   truck.position.set(px,0,pz);target.add(truck);addCityCollision(px,z+front*1.1,1.5,2.2,.08);
   }else{
    const van=createDetailedCar('#477c58',false);van.position.set(px,0,pz);van.rotation.y=Math.PI/2;target.add(van);addCityCollision(px,pz,2.25,1.28,.08);
   }
@@ -1057,8 +1057,8 @@ function buildVianaPoliceStation(){
  const officerRight=addPoliceOfficer(29.75,-21.65,0,1,true,false);officerRight.scale.setScalar(1/stationScale);
  // Viatura policial estacionada no exterior, junto à entrada.
  const car=createDetailedCar('#e8ecee',true);car.scale.setScalar(1/stationScale);
- car.position.set(32.2,0,-18.45);car.rotation.y=Math.PI/2;target.add(car);
- addCityCollision(32.2,-18.45,1.8,3.8,.2);
+ car.position.set(32.2,0,-13.2);car.rotation.y=Math.PI/2;target.add(car);
+ addCityCollision(32.2,-13.2,1.8,3.8,.2);
  // Postes de iluminação no pátio.
  [-1,1].forEach(side=>{
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.045,.06,3.1,8),metal);

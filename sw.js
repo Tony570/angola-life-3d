@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v10-povo-grande';
+const CACHE_NAME = 'angola-life-3d-v11-povo-grande-cars-clearance';
 const APP_SHELL = [
   './',
   './index.html',
