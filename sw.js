@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v33-city-startup-recovery-20261117';
+const CACHE_NAME = 'angola-life-3d-v34-startup-recovery-20261117';
 const APP_SHELL = [
   './',
   './index.html',
