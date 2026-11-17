@@ -1053,10 +1053,10 @@ function buildVianaPoliceStation(){
  const sign=new THREE.Mesh(new THREE.BoxGeometry(5.3,.9,.13),new THREE.MeshStandardMaterial({map:signTex,roughness:.8}));
  sign.position.set(28,2.82,-18.75);target.add(sign);
  // Guardas posicionados um de cada lado do portão, à escala do avatar e armados.
- addPoliceOfficer(26.25,-21.65,0,1,true,false);
- addPoliceOfficer(29.75,-21.65,0,1,true,false);
+ const officerLeft=addPoliceOfficer(26.25,-21.65,0,1,true,false);officerLeft.scale.setScalar(1/stationScale);
+ const officerRight=addPoliceOfficer(29.75,-21.65,0,1,true,false);officerRight.scale.setScalar(1/stationScale);
  // Viatura policial estacionada no exterior, junto à entrada.
- const car=createDetailedCar('#e8ecee',true);
+ const car=createDetailedCar('#e8ecee',true);car.scale.setScalar(1/stationScale);
  car.position.set(32.2,0,-18.45);car.rotation.y=Math.PI/2;target.add(car);
  addCityCollision(32.2,-18.45,1.8,3.8,.2);
  // Postes de iluminação no pátio.
