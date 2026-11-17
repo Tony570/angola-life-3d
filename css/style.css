@@ -36,6 +36,7 @@
 .life-icon.pink{background:linear-gradient(145deg,#ef76d9,#a62ba7);border-color:#ffb0e8}
 #life-chat{position:absolute;right:14px;bottom:18px}
 #life-phone{position:absolute;right:14px;top:220px}
+#life-audio{position:absolute;right:14px;top:281px}
 #life-globe{position:absolute;left:14px;top:344px}
 #life-task{position:absolute;left:14px;top:218px}
 #life-friends{position:absolute;left:14px;top:281px}
@@ -54,7 +55,7 @@
 #life-left{left:7px;top:116px;gap:6px}#life-right{right:7px;top:116px;gap:6px}
 .life-icon{width:43px;height:43px;border-radius:14px;font-size:21px}
 #life-task{top:165px}#life-friends{top:214px}#life-globe{top:263px}
-#life-phone{top:165px}#life-chat{right:8px;bottom:12px}
+#life-phone{top:165px}#life-audio{top:214px}#life-chat{right:8px;bottom:12px}
 #life-panel{right:58px;bottom:10px;width:min(320px,calc(100vw - 76px));max-height:65vh}
 }
 
@@ -67,7 +68,7 @@
 #life-wallet{top:52px;right:7px;gap:3px;max-width:47vw}
 .hud-chip{padding:6px 7px;font-size:10px;white-space:nowrap}
 #life-left{top:111px;left:7px;gap:7px}#life-right{top:111px;right:7px;gap:7px}
-#life-task{top:160px}#life-friends{top:209px}#life-globe{top:258px}#life-phone{top:160px}#life-menu{top:111px}
+#life-task{top:160px}#life-friends{top:209px}#life-globe{top:258px}#life-phone{top:160px}#life-audio{top:209px}#life-menu{top:111px}
 .life-icon{width:42px;height:42px;border-radius:14px;font-size:20px}
 #life-chat{right:8px;bottom:12px}
 @media(max-width:700px){#game .topbar{height:42px;padding:0 8px}#game .layout{height:calc(100dvh - 42px)}#game .topbar .brand-mark,#game #logout{display:none}#game .topbar .brand span:last-child{display:inline;font-size:11px}#game #page-avatar,#game #page-inventory,#game #page-profile{inset:42px 0 0}#life-panel{right:55px;width:min(310px,calc(100vw - 70px))}}
