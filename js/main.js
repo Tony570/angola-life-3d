@@ -1679,7 +1679,10 @@ function buildVianaStreets(){
  buildVianaOtherBuildings();
 }
 
-if(kind==='room'){
+if(kind==='avatar'){
+ houseAvatar=buildCharacter(target,avatar,{x:0,y:-.03,z:0},m=>mixer=m,true);
+ camera.position.set(0,1.55,5.4);camera.lookAt(0,.88,0);
+}else if(kind==='room'){
  const roomHouseGuests=new Map();activeHouseGuestSync=payload=>{if(!payload||payload.house_host_id!==user?.id||payload.zone!=='visiting-house'){const id=payload?.user_id;if(id&&roomHouseGuests.has(id)){const old=roomHouseGuests.get(id);target.remove(old);target.userData.characters=target.userData.characters.filter(ch=>ch!==old);roomHouseGuests.delete(id)}return}let guest=roomHouseGuests.get(payload.user_id);if(!guest){guest=buildCharacter(target,payload.avatar||{gender:'male',skin:'#b77b5c',hair:'#241b18',shirt:'#f2f2ee',pants:'#e6e8ee'},{x:Number(payload.x)||0,y:-.03,z:Number(payload.z)||0},()=>{},true);guest.userData.remotePlayerId=payload.user_id;roomHouseGuests.set(payload.user_id,guest)}guest.position.set(Number(payload.x)||0,-.03,Number(payload.z)||0);guest.rotation.y=Number(payload.rotation)||0;guest.userData.actionState={type:payload.walking?'walk':'idle',time:0}};
  // Protecção: um erro num móvel, porta ou interior especial nunca pode deixar a divisão invisível.
  try{buildRoom(roomName)}catch(roomError){
