@@ -545,6 +545,72 @@ function buildVenueSpeaker(x,z,accent='#d7a15a'){
  group.userData.audioSpeaker=true;group.userData.powerLight=ledMaterial;target.add(group);speakerMeshes.push(group);venueSpeakerIndicators.push(ledMaterial);return group;
 }
 
+function getBarCashKey(){return 'angola-life-bar-cash:'+(user?.id||'guest')}
+function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz'}
+function installBarSceneActions(){
+ barCashKey=getBarCashKey();const saved=Number(localStorage.getItem(barCashKey));barCash=Number.isFinite(saved)&&saved>=0?saved:500;
+ const nav=$('room-door-nav');if(!nav)return;
+ const service=document.createElement('button');service.id='bar-service-action';service.type='button';service.textContent='🍹 PEDIR À GARÇONETE';service.style.display='none';service.onclick=openBarServiceMenu;nav.appendChild(service);
+ const music=document.createElement('button');music.id='bar-dj-action';music.type='button';music.textContent='🎧 FALAR COM O DJ';music.onclick=()=>{wakeGameAudio();openBarMusicPanel('bar')};nav.appendChild(music);
+ const wallet=$('life-wallet');if(wallet&&!$('bar-cash-display')){const cash=document.createElement('span');cash.id='bar-cash-display';cash.className='hud-chip';wallet.appendChild(cash)}
+ refreshBarCash();
+}
+function openBarServiceMenu(){
+ if(!barWaitressAgents.length)return;
+ const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
+ const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
+ const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
+ openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz</strong></p>');
+ const panel=$('life-panel');panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=()=>{
+  const drink=drinks[Number(button.dataset.barBuy)];if(!drink)return;
+  const status=$('bar-service-status');
+  if(barCash<drink[1]){status.textContent='Não tens dinheiro suficiente para '+drink[0]+'.';return}
+  if(waiter.state==='serving'){status.textContent='A garçonete já está a preparar outro pedido. Aguarda um momento.';return}
+  barCash-=drink[1];localStorage.setItem(barCashKey,String(barCash));refreshBarCash();
+  const balance=$('bar-service-balance');if(balance)balance.textContent=new Intl.NumberFormat('pt-PT').format(barCash)+' Kz';
+  waiter.order=drink[0];waiter.state='serving';waiter.serveUntil=performance.now()+1800;waiter.group.userData.actionState={type:'wave',time:0};
+  status.textContent='Pedido recebido: '+drink[0]+'. A garçonete está a preparar e vai levar a bebida à tua mesa.';
+  panel.querySelectorAll('[data-bar-buy]').forEach(b=>b.disabled=true);
+ });
+}
+function updateBarServiceAI(delta,now){
+ if(!barWaitressAgents.length)return;
+ const player=houseAvatar,serviceButton=$('bar-service-action');
+ let nearest=Infinity;
+ for(const agent of barWaitressAgents){
+  const npc=agent.group;if(!npc)continue;
+  const dx=(player?.position.x??999)-npc.position.x,dz=(player?.position.z??999)-npc.position.z,dist=Math.hypot(dx,dz);
+  if(player&&dist<nearest)nearest=dist;
+  if(agent.state==='serving'){
+   if(now<agent.serveUntil){if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
+   agent.state='delivering';agent.deliveryUntil=now+1250;
+   const status=$('bar-service-status');if(status)status.textContent='A garçonete está a levar '+agent.order+' até à tua mesa.';
+  }
+  if(agent.state==='delivering'){
+   if(now<agent.deliveryUntil){if(player)npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
+   const status=$('bar-service-status');if(status)status.textContent='Pedido entregue: '+agent.order+'. Bom proveito!';
+   agent.state='patrol';agent.order=null;agent.waypoint=(agent.waypoint+1)%agent.route.length;npc.userData.actionState={type:'idle',time:0};
+  }
+  if(player&&dist<2.5&&agent.state==='patrol'){agent.state='approach';agent.target={x:player.position.x+(agent.side===0?-1.05:1.05),z:player.position.z-0.15}}
+  if(agent.state==='approach'&&player){
+   if(dist<1.45){agent.state='ready';if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};}
+   else{const tx=agent.target?.x??player.position.x,tz=agent.target?.z??player.position.z,vx=tx-npc.position.x,vz=tz-npc.position.z,len=Math.hypot(vx,vz)||1,step=Math.min(len,1.35*delta);npc.position.x+=vx/len*step;npc.position.z+=vz/len*step;npc.rotation.y=Math.atan2(vx,vz);updateFallbackHumanGait(npc,delta,1.2,true);npc.userData.actionState={type:'idle',time:0}}
+  }else if(agent.state==='ready'){
+   if(!player||dist>4){agent.state='patrol';agent.target=null}
+   else{npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0}}
+  }
+  if(agent.state==='patrol'){
+   const point=agent.route[agent.waypoint],vx=point.x-npc.position.x,vz=point.z-npc.position.z,len=Math.hypot(vx,vz);
+   if(len<.28){agent.waypoint=(agent.waypoint+1)%agent.route.length}
+   else{const step=Math.min(len,1.05*delta);npc.position.x+=vx/len*step;npc.position.z+=vz/len*step;npc.rotation.y=Math.atan2(vx,vz);updateFallbackHumanGait(npc,delta,1.0,true)}
+  }
+ }
+ const canOrder=nearest<4.2&&barWaitressAgents.some(a=>a.state==='ready'||a.state==='approach');
+ if(serviceButton)serviceButton.style.display=canOrder?'':'none';
+ if(barDjAgent){const dj=barDjAgent;dj.rotation.y=Math.sin(now*.0012)*.08;dj.position.y=.015+Math.abs(Math.sin(now*.006))*.025;const rig=dj.userData.fallbackRig;if(rig?.leftArm){rig.leftArm.rotation.z=-.35+Math.sin(now*.012)*.28;rig.rightArm.rotation.z=.35+Math.sin(now*.012+1.3)*.28;rig.leftForearm.rotation.x=-.2+Math.sin(now*.01)*.18;rig.rightForearm.rotation.x=-.2+Math.sin(now*.01+1.3)*.18}}
+}
+
+
 function buildBarInterior(){
  const w=36,d=28,h=4.8,floor=mat('#342a28',.62),wall=mat('#382c2b',.9),wood=mat('#5c3428',.48),gold=mat('#c69b58',.42),metal=mat('#343b40',.4),glass=mat('#8db9c4',.18),seat=mat('#633b36',.72);
  box(w,.2,d,floor,0,-.12,0);addLargeVenueWall('north',w,0,2.6,h,wall);addLargeVenueWall('south',w,null,0,h,wall);addLargeVenueWall('west',d,0,2.6,h,wall);addLargeVenueWall('east',d,0,2.6,h,wall);(doorDefs.bar||[]).forEach(addRoomDoor);
@@ -1635,71 +1701,6 @@ function openBarMusicPanel(roomName){wakeGameAudio();const venue=roomName==='par
 function stopGameAudio(){if(gameAudioState.ambientTimer)clearInterval(gameAudioState.ambientTimer);gameAudioState.ambientTimer=null;stopVenueMusic();if(gameAudioState.context&&gameAudioState.context.state!=='closed')gameAudioState.context.suspend().catch(()=>{})}
 
 function openLifePanel(title,html){const p=$('life-panel');p.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><h3>'+title+'</h3><button id="life-close" class="secondary">✕</button></div>'+html;p.classList.remove('hidden');$('life-close').onclick=()=>{if($('bar-audio-player'))stopVenueMusic();p.classList.add('hidden')}}
-function getBarCashKey(){return 'angola-life-bar-cash:'+(user?.id||'guest')}
-function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz'}
-function installBarSceneActions(){
- barCashKey=getBarCashKey();const saved=Number(localStorage.getItem(barCashKey));barCash=Number.isFinite(saved)&&saved>=0?saved:500;
- const nav=$('room-door-nav');if(!nav)return;
- const service=document.createElement('button');service.id='bar-service-action';service.type='button';service.textContent='🍹 PEDIR À GARÇONETE';service.style.display='none';service.onclick=openBarServiceMenu;nav.appendChild(service);
- const music=document.createElement('button');music.id='bar-dj-action';music.type='button';music.textContent='🎧 FALAR COM O DJ';music.onclick=()=>{wakeGameAudio();openBarMusicPanel('bar')};nav.appendChild(music);
- const wallet=$('life-wallet');if(wallet&&!$('bar-cash-display')){const cash=document.createElement('span');cash.id='bar-cash-display';cash.className='hud-chip';wallet.appendChild(cash)}
- refreshBarCash();
-}
-function openBarServiceMenu(){
- if(!barWaitressAgents.length)return;
- const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
- const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
- const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
- openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz</strong></p>');
- const panel=$('life-panel');panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=()=>{
-  const drink=drinks[Number(button.dataset.barBuy)];if(!drink)return;
-  const status=$('bar-service-status');
-  if(barCash<drink[1]){status.textContent='Não tens dinheiro suficiente para '+drink[0]+'.';return}
-  if(waiter.state==='serving'){status.textContent='A garçonete já está a preparar outro pedido. Aguarda um momento.';return}
-  barCash-=drink[1];localStorage.setItem(barCashKey,String(barCash));refreshBarCash();
-  const balance=$('bar-service-balance');if(balance)balance.textContent=new Intl.NumberFormat('pt-PT').format(barCash)+' Kz';
-  waiter.order=drink[0];waiter.state='serving';waiter.serveUntil=performance.now()+1800;waiter.group.userData.actionState={type:'wave',time:0};
-  status.textContent='Pedido recebido: '+drink[0]+'. A garçonete está a preparar e vai levar a bebida à tua mesa.';
-  panel.querySelectorAll('[data-bar-buy]').forEach(b=>b.disabled=true);
- });
-}
-function updateBarServiceAI(delta,now){
- if(!barWaitressAgents.length)return;
- const player=houseAvatar,serviceButton=$('bar-service-action');
- let nearest=Infinity;
- for(const agent of barWaitressAgents){
-  const npc=agent.group;if(!npc)continue;
-  const dx=(player?.position.x??999)-npc.position.x,dz=(player?.position.z??999)-npc.position.z,dist=Math.hypot(dx,dz);
-  if(player&&dist<nearest)nearest=dist;
-  if(agent.state==='serving'){
-   if(now<agent.serveUntil){if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
-   agent.state='delivering';agent.deliveryUntil=now+1250;
-   const status=$('bar-service-status');if(status)status.textContent='A garçonete está a levar '+agent.order+' até à tua mesa.';
-  }
-  if(agent.state==='delivering'){
-   if(now<agent.deliveryUntil){if(player)npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
-   const status=$('bar-service-status');if(status)status.textContent='Pedido entregue: '+agent.order+'. Bom proveito!';
-   agent.state='patrol';agent.order=null;agent.waypoint=(agent.waypoint+1)%agent.route.length;npc.userData.actionState={type:'idle',time:0};
-  }
-  if(player&&dist<2.5&&agent.state==='patrol'){agent.state='approach';agent.target={x:player.position.x+(agent.side===0?-1.05:1.05),z:player.position.z-0.15}}
-  if(agent.state==='approach'&&player){
-   if(dist<1.45){agent.state='ready';if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};}
-   else{const tx=agent.target?.x??player.position.x,tz=agent.target?.z??player.position.z,vx=tx-npc.position.x,vz=tz-npc.position.z,len=Math.hypot(vx,vz)||1,step=Math.min(len,1.35*delta);npc.position.x+=vx/len*step;npc.position.z+=vz/len*step;npc.rotation.y=Math.atan2(vx,vz);updateFallbackHumanGait(npc,delta,1.2,true);npc.userData.actionState={type:'idle',time:0}}
-  }else if(agent.state==='ready'){
-   if(!player||dist>4){agent.state='patrol';agent.target=null}
-   else{npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0}}
-  }
-  if(agent.state==='patrol'){
-   const point=agent.route[agent.waypoint],vx=point.x-npc.position.x,vz=point.z-npc.position.z,len=Math.hypot(vx,vz);
-   if(len<.28){agent.waypoint=(agent.waypoint+1)%agent.route.length}
-   else{const step=Math.min(len,1.05*delta);npc.position.x+=vx/len*step;npc.position.z+=vz/len*step;npc.rotation.y=Math.atan2(vx,vz);updateFallbackHumanGait(npc,delta,1.0,true)}
-  }
- }
- const canOrder=nearest<4.2&&barWaitressAgents.some(a=>a.state==='ready'||a.state==='approach');
- if(serviceButton)serviceButton.style.display=canOrder?'':'none';
- if(barDjAgent){const dj=barDjAgent;dj.rotation.y=Math.PI+Math.sin(now*.0012)*.08;dj.position.y=.015+Math.abs(Math.sin(now*.006))*.025;const rig=dj.userData.fallbackRig;if(rig?.leftArm){rig.leftArm.rotation.z=-.35+Math.sin(now*.012)*.28;rig.rightArm.rotation.z=.35+Math.sin(now*.012+1.3)*.28;rig.leftForearm.rotation.x=-.2+Math.sin(now*.01)*.18;rig.rightForearm.rotation.x=-.2+Math.sin(now*.01+1.3)*.18}}
-}
-
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&gameAudioState.venueAutoStarted&&!gameAudioState.venueManuallyPaused){const a=ensureVenuePlaylistAudio();if(a.paused)playVenueMusic()}});
 $('life-audio').onclick=openGameAudioPanel;
 $('life-name').textContent=profile?.display_name||'Novo residente';
