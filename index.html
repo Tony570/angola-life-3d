@@ -2,14 +2,14 @@
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Angola Life 3D</title>
+<title>Vida em Cabinda 3D</title>
 <meta name="theme-color" content="#111827">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <section id="auth" class="auth-wrap">
- <div class="hero"><div class="brand"><div class="brand-mark">A</div><span>ANGOLA LIFE 3D</span></div><h1>A tua vida.<br><span>O teu mundo.</span></h1><p>Cria o teu personagem, prepara a tua casa e começa uma nova vida num mundo virtual feito para explorar.</p><p class="small">UM NOVO MUNDO COMEÇA CONTIGO</p></div>
- <div class="auth-card"><div class="brand"><div class="brand-mark">A</div><span>ANGOLA LIFE 3D</span></div><div class="tabs"><button id="tab-login" class="active" type="button">Iniciar sessão</button><button id="tab-signup" class="secondary" type="button">Criar conta</button></div>
+ <div class="hero"><div class="brand"><div class="brand-mark">C</div><span>VIDA EM CABINDA 3D</span></div><h1>A tua vida.<br><span>O teu mundo.</span></h1><p>Cria o teu personagem, prepara a tua casa e começa uma nova vida num mundo virtual feito para explorar.</p><p class="small">UM NOVO MUNDO COMEÇA CONTIGO</p></div>
+ <div class="auth-card"><div class="brand"><div class="brand-mark">C</div><span>VIDA EM CABINDA 3D</span></div><div class="tabs"><button id="tab-login" class="active" type="button">Iniciar sessão</button><button id="tab-signup" class="secondary" type="button">Criar conta</button></div>
  <form id="login-form"><h2>Bem-vindo de volta</h2><p class="muted">Escolhe como queres entrar.</p><label>Entrar com</label><select id="login-method"><option value="email">Gmail / Email</option><option value="phone">Número de telefone</option></select><label id="login-id-label">Gmail ou email</label><input id="login-identifier" type="email" required autocomplete="username" placeholder="teu@gmail.com"><label>Palavra-passe</label><input id="login-password" type="password" required autocomplete="current-password" placeholder="A tua palavra-passe"><button style="width:100%;margin-top:18px">Entrar no jogo</button></form>
  <form id="signup-form" class="hidden"><h2>Cria a tua conta</h2><p class="muted">Escolhe se preferes usar Gmail/email ou número de telefone.</p><label>Nome de jogador</label><input id="signup-name" required minlength="3" maxlength="20" placeholder="Escolhe um nome"><label>Registar com</label><select id="signup-method"><option value="email">Gmail / Email</option><option value="phone">Número de telefone</option></select><label id="signup-id-label">Gmail ou email</label><input id="signup-identifier" type="email" required autocomplete="email" placeholder="teu@gmail.com"><label>Palavra-passe</label><input id="signup-password" type="password" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres"><button style="width:100%;margin-top:18px">Criar conta</button></form>
  <div id="phone-verify" class="hidden"><h2>Confirmar número</h2><p class="muted">Enviámos um código de 6 dígitos por SMS. Introduz o código para activar a conta.</p><label>Código SMS</label><input id="phone-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000"><button id="verify-phone" style="width:100%;margin-top:18px" type="button">Confirmar número</button></div>
@@ -31,7 +31,7 @@
  <button class="life-icon pink" id="life-chat" title="Chat público">▰</button>
  <div id="life-panel" class="hidden"></div>
 </div>
-<header class="topbar"><div class="brand"><div class="brand-mark">A</div><span>ANGOLA LIFE 3D</span></div><div class="top-actions"><span id="top-username" class="muted small"></span><button id="logout" class="ghost">Sair</button></div></header>
+<header class="topbar"><div class="brand"><div class="brand-mark">C</div><span>VIDA EM CABINDA 3D</span></div><div class="top-actions"><span id="top-username" class="muted small"></span><button id="logout" class="ghost">Sair</button></div></header>
 <div class="layout"><aside class="sidebar"><div class="user-mini"><div class="avatar-dot"></div><div><strong id="side-name">Jogador</strong><span class="muted small">Residente</span></div></div><nav class="nav"><button data-page="home" class="active">⌂ Casa</button><button data-page="avatar">♙ Avatar</button><button data-page="inventory">▦ Inventário</button><button data-page="profile">◎ Perfil</button></nav></aside>
 <main class="main">
 <section id="page-home"><div class="page-head"><div><h1>A tua primeira casa</h1><div class="muted">Bem-vindo ao teu novo começo.</div></div><span class="pill">CASA INICIAL</span></div><div class="grid-main"><div class="panel"><div id="home-scene" class="scene"><div class="scene-label">Arrasta para virar a câmara · Pinça para zoom · Toca para caminhar</div><div id="room-current">SALA</div><button id="city-back-home" class="hidden" type="button">← VOLTAR À CASA</button><div id="room-transition" aria-hidden="true">A entrar…</div><div id="room-door-nav"></div><div id="room-enter-prompt" class="hidden"><span id="room-enter-label">Entrar</span><button id="room-enter-button" type="button">ENTRAR</button></div><div id="move-pad" aria-label="Controlos de movimento"><button type="button" data-move="forward">▲</button><div><button type="button" data-move="left">◀</button><button type="button" data-move="backward">▼</button><button type="button" data-move="right">▶</button></div></div><div class="scene-controls"><button id="home-reset" class="secondary">Recentrar</button></div></div></div><div class="panel"><h3 class="section-title">A tua vida começa aqui</h3><p class="muted">Esta é a tua primeira casa, entregue vazia. Vamos escolher e organizar as mobílias numa próxima fase.</p><div class="stat-row"><div class="stat"><strong>01</strong><span class="muted small">Casa atribuída</span></div><div class="stat"><strong id="home-items">0</strong><span class="muted small">Mobílias</span></div></div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><h3 class="section-title">Próximo passo</h3><p class="muted small">Personaliza o teu avatar e consulta os objectos que tens no inventário.</p><button id="go-avatar" style="width:100%">Personalizar personagem</button></div></div></section>
@@ -44,7 +44,7 @@
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
 </script>
-<script type="module" src="js/main.js?v=povo-grande-cars-clearance-20261117"></script>
+<script type="module" src="js/main.js?v=vida-cabinda-terra-20261117"></script>
 <script>
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {

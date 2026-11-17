@@ -680,7 +680,7 @@ function buildHospitalExterior(x,z,front,o){
  const ctx=canvas.getContext('2d');ctx.fillStyle='#164d6b';ctx.fillRect(0,0,1024,180);
  const grad=ctx.createLinearGradient(0,0,1024,180);grad.addColorStop(0,'#174d6b');grad.addColorStop(1,'#287d91');ctx.fillStyle=grad;ctx.fillRect(0,0,1024,180);
  ctx.strokeStyle='#ffffff';ctx.lineWidth=8;ctx.strokeRect(7,7,1010,166);
- ctx.fillStyle='#fff';ctx.font='bold 62px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('HOSPITAL MUNICIPAL DE VIANA',512,88);
+ ctx.fillStyle='#fff';ctx.font='bold 62px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('HOSPITAL MUNICIPAL DE CABINDA',512,88);
  const signTex=new THREE.CanvasTexture(canvas);signTex.colorSpace=THREE.SRGBColorSpace;
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(7.1,1.25),new THREE.MeshBasicMaterial({map:signTex,side:THREE.DoubleSide}));sign.position.set(x,5.55,face+front*.16);target.add(sign);
  const sub=document.createElement('canvas');sub.width=512;sub.height=96;const sc=sub.getContext('2d');sc.fillStyle='#bd343b';sc.fillRect(0,0,512,96);sc.fillStyle='#fff';sc.font='bold 48px Arial';sc.textAlign='center';sc.textBaseline='middle';sc.fillText('URGÊNCIA 24 HORAS',256,49);
@@ -1082,53 +1082,38 @@ function buildVianaPoliceStation(){
 function buildVianaStreets(){
  target.clear();roomDoorMeshes=[];policeEntryMeshes=[];cityWorldEntrances=[];activeRoomDoor=null;cityCollisionBoxes=[];scene.background=new THREE.Color('#58a9ed');
  // Viana ampliada: malha viária em grelha, novos quarteirões residenciais e avenidas de ligação.
- const groundMat=mat('#b69a75',1),roadMat=mat('#3c4143',.99),patchMat=mat('#565653',1),sideMat=mat('#c5c0b5',.98),slabMat=mat('#d0cabe',1),curbMat=mat('#817c72',.98),drainMat=mat('#55534e',1),lineMat=mat('#d8c99b',.95);
+ const groundMat=mat('#b69a75',1),shoulderMat=mat('#a47b55',1),trackMat=mat('#805638',1);
+ // Textura de laterite: terra avermelhada, pó e pequenas variações naturais.
+ const dirtCanvas=document.createElement('canvas');dirtCanvas.width=256;dirtCanvas.height=256;
+ const dirtCtx=dirtCanvas.getContext('2d');dirtCtx.fillStyle='#a86f49';dirtCtx.fillRect(0,0,256,256);
+ let noiseSeed=82417;const rand=()=>{noiseSeed=(noiseSeed*1664525+1013904223)>>>0;return noiseSeed/4294967296};
+ for(let i=0;i<5200;i++){const x=rand()*256,y=rand()*256,r=.35+rand()*1.8;dirtCtx.fillStyle=rand()>.52?'rgba(82,53,34,.13)':'rgba(230,174,112,.15)';dirtCtx.beginPath();dirtCtx.arc(x,y,r,0,Math.PI*2);dirtCtx.fill()}
+ for(let i=0;i<34;i++){const x=rand()*256,y=rand()*256,r=5+rand()*19;dirtCtx.fillStyle=rand()>.5?'rgba(119,72,43,.10)':'rgba(218,157,96,.10)';dirtCtx.beginPath();dirtCtx.ellipse(x,y,r,r*.55,rand()*Math.PI,0,Math.PI*2);dirtCtx.fill()}
+ const dirtTexture=new THREE.CanvasTexture(dirtCanvas);dirtTexture.colorSpace=THREE.SRGBColorSpace;dirtTexture.wrapS=THREE.RepeatWrapping;dirtTexture.wrapT=THREE.RepeatWrapping;dirtTexture.repeat.set(3,3);
+ const roadMat=new THREE.MeshStandardMaterial({map:dirtTexture,color:'#f4d0ad',roughness:1});
  box(200,.18,200,groundMat,0,-.22,0);
- const streets=[-70,-42,-14,14,42,70],mainRoad=14,sideWidth=6.4,mainWidth=8.2,walkWidth=1.65,curbWidth=.2;
+ const streets=[-70,-42,-14,14,42,70],mainRoad=14,sideWidth=6.4,mainWidth=8.2;
  const roadWidth=c=>Math.abs(c)===70||c===mainRoad?mainWidth:sideWidth;
- // Uma avenida principal e ruas locais em grelha, sem edifícios ou casas.
+ // Estradas contínuas de terra batida, com cruzamentos ao mesmo nível.
  streets.forEach(x=>box(roadWidth(x),.12,144,roadMat,x,-.105,0));
  streets.forEach(z=>box(144,.12,roadWidth(z),roadMat,0,-.105,z));
- // Marcas discretas de desgaste no asfalto.
- [-31,-2,27].forEach(z=>box(2.8,.012,.72,patchMat,mainRoad+.9,-.039,z));
- [-34,5,34].forEach(x=>box(.72,.012,2.4,patchMat,x,-.039,-14.8));
- const makeSideRuns=(axis,fixed,list)=>{
-  let cursor=-100;
-  list.forEach(c=>{
-   const gap=roadWidth(c)/2+curbWidth+walkWidth,finish=c-gap;
-   if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
-   cursor=c+gap;
-  });
-  if(cursor<100){const len=100-cursor,mid=(100+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
- };
- streets.forEach(x=>[-1,1].forEach(side=>makeSideRuns('z',x+side*(roadWidth(x)/2+curbWidth+walkWidth/2),streets)));
- streets.forEach(z=>[-1,1].forEach(side=>makeSideRuns('x',z+side*(roadWidth(z)/2+curbWidth+walkWidth/2),streets)));
- // Lancis e valetas estreitas ao longo dos passeios.
- const makeEdges=(axis,fixed,list)=>{
-  let cursor=-100;
-  list.forEach(c=>{
-   const gap=roadWidth(c)/2+curbWidth+walkWidth,finish=c-gap;
-   if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
-   cursor=c+gap;
-  });
-  if(cursor<100){const len=100-cursor,mid=(100+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
- };
- streets.forEach(x=>[-1,1].forEach(side=>makeEdges('z',x+side*(roadWidth(x)/2+curbWidth/2),streets)));
- streets.forEach(z=>[-1,1].forEach(side=>makeEdges('x',z+side*(roadWidth(z)/2+curbWidth/2),streets)));
- // Juntas nas placas de cimento, interrompidas nos cruzamentos.
- streets.forEach(x=>[-1,1].forEach(side=>{const fixed=x+side*(roadWidth(x)/2+curbWidth+walkWidth/2);for(let z=-96;z<100;z+=4.5)if(!streets.some(c=>Math.abs(z-c)<roadWidth(c)/2+walkWidth+curbWidth))box(walkWidth,.008,.035,slabMat,fixed,.101,z)}));
- streets.forEach(z=>[-1,1].forEach(side=>{const fixed=z+side*(roadWidth(z)/2+curbWidth+walkWidth/2);for(let x=-96;x<100;x+=4.5)if(!streets.some(c=>Math.abs(x-c)<roadWidth(c)/2+walkWidth+curbWidth))box(.035,.008,walkWidth,slabMat,x,.101,fixed)}));
- // Marcas centrais descontínuas em instâncias, para manter o mapa leve.
- const dashGeometry=new THREE.BoxGeometry(.12,.014,2.25),dashCount=streets.length*40*2;
- const roadDashes=new THREE.InstancedMesh(dashGeometry,lineMat,dashCount);const dashDummy=new THREE.Object3D();let dashIndex=0;
- streets.forEach(x=>{for(let z=-97;z<=97;z+=6){if(streets.some(c=>Math.abs(z-c)<roadWidth(c)/2+2.2))continue;dashDummy.position.set(x,-.025,z);dashDummy.rotation.set(0,0,0);dashDummy.scale.set(1,1,1);dashDummy.updateMatrix();roadDashes.setMatrixAt(dashIndex++,dashDummy.matrix)}});
- streets.forEach(z=>{for(let x=-97;x<=97;x+=6){if(streets.some(c=>Math.abs(x-c)<roadWidth(c)/2+2.2))continue;dashDummy.position.set(x,-.025,z);dashDummy.rotation.set(0,Math.PI/2,0);dashDummy.updateMatrix();roadDashes.setMatrixAt(dashIndex++,dashDummy.matrix)}});
- roadDashes.count=dashIndex;roadDashes.instanceMatrix.needsUpdate=true;target.add(roadDashes);
- // Passadeiras na avenida principal em todos os cruzamentos.
- streets.forEach(z=>{for(let k=-3;k<=3;k++){box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z-(roadWidth(z)/2+1.2));box(.34,.014,.95,lineMat,mainRoad+k*.62,-.035,z+(roadWidth(z)/2+1.2))}});
- // Tampas de saneamento na estrada.
- [-35,0,35].forEach(z=>{const cover=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.025,16),mat('#686762',1));cover.position.set(mainRoad+2.2,-.035,z);target.add(cover);const rim=new THREE.Mesh(new THREE.TorusGeometry(.38,.025,5,16),mat('#858078',1));rim.rotation.x=Math.PI/2;rim.position.set(mainRoad+2.2,-.018,z);target.add(rim)});
-
+ // Bermas de terra solta, ligeiramente mais baixas do que o piso de circulação.
+ streets.forEach(x=>[-1,1].forEach(side=>box(1.05,.055,144,shoulderMat,x+side*(roadWidth(x)/2+.52),-.145,0)));
+ streets.forEach(z=>[-1,1].forEach(side=>box(144,.055,1.05,shoulderMat,0,-.145,z+side*(roadWidth(z)/2+.52))));
+ // Dois rastos discretos de pneus por faixa de circulação, sem linhas pintadas.
+ streets.forEach(x=>[-1,1].forEach(lane=>box(.2,.012,144,trackMat,x+lane*1.05,-.037,0)));
+ streets.forEach(z=>[-1,1].forEach(lane=>box(144,.012,.2,trackMat,0,-.037,z+lane*1.05)));
+ // Pequenas pedras e torrões nas bermas para quebrar o aspeto artificial.
+ const stoneMat=new THREE.MeshStandardMaterial({color:'#8b7259',roughness:1});
+ const stoneGeo=new THREE.DodecahedronGeometry(.095,0),stones=new THREE.InstancedMesh(stoneGeo,stoneMat,260),stoneDummy=new THREE.Object3D();
+ let stoneIndex=0;noiseSeed=19431;
+ for(let i=0;i<260;i++){
+  const axis=i%2===0?'x':'z',street=streets[Math.floor(rand()*streets.length)],side=rand()>.5?1:-1,along=-96+rand()*192;
+  const road=roadWidth(street),offset=road/2+.7+rand()*1.1;
+  stoneDummy.position.set(axis==='x'?street+side*offset:along,.015,axis==='x'?along:street+side*offset);
+  const scale=.35+rand()*.9;stoneDummy.scale.set(scale,scale*.45,scale);stoneDummy.rotation.set(rand()*.5,rand()*Math.PI,rand()*.5);stoneDummy.updateMatrix();stones.setMatrixAt(stoneIndex++,stoneDummy.matrix);
+ }
+ stones.count=stoneIndex;stones.instanceMatrix.needsUpdate=true;target.add(stones);
  // Pequeno jardim relvado ao lado do hospital, com canteiros e bancos simples.
  const lawnMat=mat('#4f963f',1),lawnEdge=mat('#c8c3a9',1),shrubMat=mat('#347a36',1);
  const benchMetal=mat('#6f777a',.82);

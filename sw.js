@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v11-povo-grande-cars-clearance';
+const CACHE_NAME = 'vida-em-cabinda-3d-v12-terra-20261117';
 const APP_SHELL = [
   './',
   './index.html',
