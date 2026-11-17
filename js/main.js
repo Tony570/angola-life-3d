@@ -351,10 +351,10 @@ function buildPoliceStationInterior(){
  // Duas cadeiras de trabalho, alinhadas com os computadores atrás do balcão.
  [-1.25,1.15].forEach(x=>hchair(x,-2.05,'#173f70',0));
  // Os dois agentes diante dos computadores ficam sentados, com postura de atendimento.
- addPoliceOfficer(-1.25,-2.05,0,1,false,true);
- addPoliceOfficer(1.15,-2.05,0,1,false,true);
+ addPoliceOfficer(-1.25,-2.05,0,1,true,true);
+ addPoliceOfficer(1.15,-2.05,0,1,true,true);
  // Terceiro agente permanece de pé junto aos arquivos.
- addPoliceOfficer(3.05,.05,Math.PI/2,1,false,false);
+ addPoliceOfficer(3.05,.05,Math.PI/2,1,true,false);
  // Segundo computador para o posto de atendimento da direita.
  box(.72,.5,.07,glass,1.15,1.51,-1.2);
  box(.78,.06,.48,metal,1.15,1.2,-1.13);
