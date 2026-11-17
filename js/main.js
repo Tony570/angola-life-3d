@@ -204,7 +204,7 @@ camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,7,5);scene.add(light);
-let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
+let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function createDetailedCar(color='#a83e36',police=false){
@@ -945,7 +945,7 @@ function buildVianaOtherBuildings(){
 function addPoliceOfficer(x,z,rotation=0,scale=1,armed=false,seated=false){
  // Todos os agentes têm a mesma altura de 36 cm do avatar.
  const uniformLook={gender:'male',skin:'#985b42',hair:'#171412',eyes:'#35251f',shirt:'#123b70',pants:'#102b4c',hairStyle:'curto'};
- const g=buildCharacter(target,uniformLook,{x,y:0,z},()=>{},false);
+ const g=buildCharacter(target,uniformLook,{x,y:0,z},m=>{g.userData.officerMixer=m},true);
  const details=new THREE.Group();details.scale.setScalar(CHARACTER_HEIGHT/.5);g.add(details);
  g.userData.seatedOfficer=seated;
  g.rotation.y=rotation;
@@ -1230,6 +1230,13 @@ function buildVianaStreets(){
  };
  addParkedCar(9,-9,'#a83e36',Math.PI/2);addParkedCar(-9,9,'#d0c8b6',Math.PI/2);addParkedCar(35,-8,'#426b86',Math.PI/2);addParkedCar(-35,8,'#b8a13d',Math.PI/2);
  buildVianaPoliceStation();
+ // Patrulha autónoma inicial: dois agentes percorrem a rua em frente à esquadra.
+ const patrolOne=addPoliceOfficer(18.5,-10.5,0,1,true,false);
+ const patrolTwo=addPoliceOfficer(37.5,-10.5,Math.PI,1,true,false);
+ cityPoliceAgents.push(
+  {group:patrolOne,route:[{x:18.5,z:-10.5},{x:25,z:-9.2},{x:32,z:-9.2},{x:37.5,z:-10.5},{x:32,z:-11.2},{x:25,z:-11.2}],waypoint:1,mode:'patrol',phase:0},
+  {group:patrolTwo,route:[{x:37.5,z:-10.5},{x:32,z:-11.2},{x:25,z:-11.2},{x:18.5,z:-10.5},{x:25,z:-9.2},{x:32,z:-9.2}],waypoint:1,mode:'patrol',phase:Math.PI}
+ );
  buildVianaOtherBuildings();
 }
 
@@ -1276,6 +1283,24 @@ window.addEventListener('keydown',onKeyDown);window.addEventListener('keyup',onK
 const moveButtons=[...host.querySelectorAll('[data-move]')];let activePadKey=null;const onPadDown=e=>{const b=e.target.closest('[data-move]');if(!b)return;e.preventDefault();activePadKey=b.dataset.move;moveKeys[activePadKey]=true};const clearPad=()=>{if(activePadKey){moveKeys[activePadKey]=false;activePadKey=null}};
 moveButtons.forEach(b=>b.addEventListener('pointerdown',onPadDown));const onWindowBlur=()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);activePadKey=null};window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('blur',onWindowBlur);
 let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);
+if(kind==='city'&&cityPoliceAgents.length){
+ for(const agent of cityPoliceAgents){
+  const officer=agent.group,player=houseAvatar;if(!officer)continue;
+  let dx=0,dz=0,playerDistance=Infinity;
+  if(player){dx=player.position.x-officer.position.x;dz=player.position.z-officer.position.z;playerDistance=Math.hypot(dx,dz)}
+  if(playerDistance<4.8)agent.mode='investigate';else if(playerDistance>6.5&&agent.mode==='investigate')agent.mode='patrol';
+  let tx,tz,speed;
+  if(agent.mode==='investigate'&&player){const distance=Math.max(.001,playerDistance);tx=player.position.x-dx/distance*1.35;tz=player.position.z-dz/distance*1.35;speed=.82;}
+  else{const point=agent.route[agent.waypoint];tx=point.x;tz=point.z;speed=.58;if(Math.hypot(tx-officer.position.x,tz-officer.position.z)<.42)agent.waypoint=(agent.waypoint+1)%agent.route.length;}
+  const vx=tx-officer.position.x,vz=tz-officer.position.z,dist=Math.hypot(vx,vz),walking=dist>.16;
+  if(walking){const step=Math.min(dist,speed*delta);officer.position.x+=vx/dist*step;officer.position.z+=vz/dist*step;const wanted=Math.atan2(vx,vz);let turn=(wanted-officer.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;officer.rotation.y+=turn*(1-Math.exp(-8*delta));}
+  else if(agent.mode==='investigate'&&player){const wanted=Math.atan2(dx,dz);let turn=(wanted-officer.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;officer.rotation.y+=turn*(1-Math.exp(-8*delta));}
+  if(officer.userData.officerMixer)officer.userData.officerMixer.update(delta);
+  const actions=officer.userData.animationActions;
+  if(actions){actions.walk.setEffectiveWeight(walking?1:0);actions.idle.setEffectiveWeight(walking?0:1);actions.walk.setEffectiveTimeScale(.9);}
+  else if(officer.userData.fallbackRig){const rig=officer.userData.fallbackRig;agent.phase+=delta*(walking?7:1.5);const swing=walking?Math.sin(agent.phase)*.42:0;rig.leftLeg.rotation.x=swing;rig.rightLeg.rotation.x=-swing;rig.leftArm.rotation.x=-swing*.65;rig.rightArm.rotation.x=swing*.65;}
+ }
+}
 if((kind==='room'||kind==='city')&&houseAvatar){
  let inputX=0,inputZ=0;
  const forwardX=-Math.sin(theta),forwardZ=-Math.cos(theta),rightX=Math.cos(theta),rightZ=-Math.sin(theta);
@@ -1301,7 +1326,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
-return()=>{cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
+return()=>{cityPoliceAgents.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
 let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
 function renderVianaCity(spawn=null){if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='POVO GRANDE';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='POVO GRANDE · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
