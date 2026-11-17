@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vida-em-cabinda-3d-v19-pele-som-angolano-20261117';
+const CACHE_NAME = 'vida-em-cabinda-3d-v20-musica-oficial-mussulo-20261117';
 const APP_SHELL = [
   './',
   './index.html',
