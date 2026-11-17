@@ -18,7 +18,7 @@
 <section id="game" class="app hidden">
 <div id="life-hud">
  <div id="life-player"><div id="life-face">🧑🏽</div><span id="life-level">1</span><div><strong id="life-name">Novo residente</strong><small>★ 0&nbsp;&nbsp; 🏠 1</small></div></div>
- <div id="life-wallet"><span class="hud-chip">⚡ 100/100</span><span class="hud-chip">💵 Dinheiro: 500</span></div>
+ <div id="life-wallet"><span class="hud-chip">⚡ 100/100</span><span class="hud-chip" id="life-wallet-balance">💵 Dinheiro: 500 Kz</span></div>
  <div id="life-left">
   <button class="life-icon pink" id="life-task" title="Tarefas">▤</button>
   <button class="life-icon" id="life-friends" title="Amigos">👥</button>
@@ -45,7 +45,7 @@
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
 </script>
-<script type="module" src="js/main.js?v=car-dealership-ai-v1-20261117"></script>
+<script type="module" src="js/main.js?v=player-garage-purchase-v1-20261117"></script>
 <script>
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {
