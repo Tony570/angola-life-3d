@@ -325,7 +325,7 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
 }
 function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
 gameAudioState.currentVenue=kind==='room'&&roomName==='bar'?'bar':null;
-if(gameAudioState.currentVenue==='bar')wakeGameAudio();else stopVenueMusic();
+if(gameAudioState.currentVenue==='bar'){gameAudioState.venueManuallyPaused=false;wakeGameAudio()}else stopVenueMusic();
 host.querySelectorAll('canvas').forEach(c=>c.remove());
 const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':kind==='avatar'?'#211b29':'#58a9ed');
 const camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.1,100);
