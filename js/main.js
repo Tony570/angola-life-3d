@@ -29,6 +29,7 @@ async function refreshPlayerWallet(){
  if(data)playerWalletBalance=Number(data.balance)||0;
  const display=$('life-wallet-balance');
  if(display)display.textContent='💵 Dinheiro: '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz';
+ refreshBarCash();
  const economyBalance=$('economy-balance');if(economyBalance)economyBalance.textContent=new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz';
 }
 let playerNeeds={energy:100,hunger:100,hydration:100};
@@ -618,9 +619,9 @@ function buildVenueSpeaker(x,z,accent='#d7a15a'){
 }
 
 function getBarCashKey(){return 'angola-life-bar-cash:'+(user?.id||'guest')}
-function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz'}
+function refreshBarCash(){barCash=playerWalletBalance;const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz'}
 function installBarSceneActions(){
- barCashKey=getBarCashKey();const saved=Number(localStorage.getItem(barCashKey));barCash=playerWalletBalance;
+ barCashKey=getBarCashKey();barCash=playerWalletBalance;
  const nav=$('room-door-nav');if(!nav)return;
  const service=document.createElement('button');service.id='bar-service-action';service.type='button';service.textContent='🍹 PEDIR À GARÇONETE';service.style.display='none';service.onclick=openBarServiceMenu;nav.appendChild(service);
  const music=document.createElement('button');music.id='bar-dj-action';music.type='button';music.textContent='🎧 VER MÚSICAS';music.onclick=()=>openBarMusicPanel('bar');nav.appendChild(music);
@@ -632,7 +633,7 @@ function openBarServiceMenu(){
  const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
- openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(barCash)+' Kz</strong></p>');
+ openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</strong></p>');
  const panel=$('life-panel');panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=async()=>{
   const drink=drinks[Number(button.dataset.barBuy)];if(!drink)return;
   const status=$('bar-service-status');
