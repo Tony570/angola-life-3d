@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vida-em-cabinda-3d-v13-carros-20261117';
+const CACHE_NAME = 'vida-em-cabinda-3d-v14-carros-vidro-20261117';
 const APP_SHELL = [
   './',
   './index.html',
