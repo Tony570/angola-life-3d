@@ -770,7 +770,7 @@ function buildVenueYard(x,z,front,opts){
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
 function buildCommercialYard(x,z,front,opts){
- const half=13.5,frontZ=z+front*half,backZ=z-front*half;
+ const half=8.6,frontZ=z+front*half,backZ=z-front*half;
  const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
  box(half*2,.07,half*2,ground,x,-.11,z);
  for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
@@ -780,7 +780,7 @@ function buildCommercialYard(x,z,front,opts){
  box(3.7,.08,.12,metal,x,.08,frontZ);
  box(2.2,.045,Math.max(.1,Math.abs(frontZ-(z+front*(opts.d/2+.1)))),paint,x,-.02,(frontZ+z+front*(opts.d/2+.1))/2);
  for(const side of [-1,1]){
-  const px=x+side*10.95,pz=z+front*10.9;
+  const px=x+side*(half-2.35),pz=z+front*(half-2.4);
   if(opts.kind==='cars'){
    const car=createDetailedCar(side<0?'#426d87':'#b8a13d',false);
    car.position.set(px,0,pz);car.rotation.y=Math.PI/2;target.add(car);
@@ -798,7 +798,7 @@ function buildCommercialYard(x,z,front,opts){
  }
  if(opts.kind==='market'){
   for(const side of [-1,1])for(let row=0;row<2;row++){
-   const sx=x+side*11.15,sz=z+(row-.5)*3.4,wood=mat('#76543b',.85),canopy=mat(side<0?'#b84e3b':'#d2b35d',.82);
+   const sx=x+side*(half-2.35),sz=z+(row-.5)*3.4,wood=mat('#76543b',.85),canopy=mat(side<0?'#b84e3b':'#d2b35d',.82);
    box(.95,.12,1.35,wood,sx,.78,sz);box(1.9,.12,1.8,canopy,sx,2.15,sz);
    for(const dx of [-.82,.82])for(const dz of [-.72,.72])box(.07,1.35,.07,metal,sx+dx,1.35,sz+dz);
    for(let k=0;k<5;k++){const fruit=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][k%3],.85));fruit.position.set(sx-.34+(k%3)*.34,1.02,sz-.3+Math.floor(k/3)*.45);target.add(fruit)}
@@ -926,11 +926,11 @@ function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
- buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:20.5,d:20.5,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:15.5,d:12.5,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
  // Mercado de bairro amplo, com espaço de circulação e exposição exterior.
- buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:20.5,d:20.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:15.5,d:12.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
  // Stand de automóveis com parque exterior e showroom interior.
- buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:20.5,d:20.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:15.5,d:9.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
  // Hotel com recepção e dez suítes identificadas.
  buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
@@ -973,6 +973,9 @@ function addPoliceOfficer(x,z,rotation=0,scale=1,armed=false,seated=false){
  return g;
 }
 function buildVianaPoliceStation(){
+  // A esquadra fica compacta para respeitar o espaço livre das ruas e dos passeios.
+  const parentTarget=target,stationGroup=new THREE.Group(),collisionStart=cityCollisionBoxes.length,stationScale=.72,stationCenter={x:28,z:-28};
+  target=stationGroup;
  // Recinto murado, com entrada controlada, edifício acessível e identificação policial.
  const wall=mat('#123f78',.96),trim=mat('#e4edf7',.9),roof=mat('#0b2d59',.95);
  const dark=mat('#19365b',.55),metal=mat('#aab8c7',.8),door=mat('#0b2d59',.8);
@@ -1064,6 +1067,16 @@ function buildVianaPoliceStation(){
   lamp.position.set(28+side*5.2,3.08,-29.5);target.add(lamp);
   addCityCollision(28+side*5.2,-29.5,.18,.18,.08);
  });
+  target=parentTarget;
+  parentTarget.add(stationGroup);
+  stationGroup.scale.setScalar(stationScale);
+  stationGroup.position.set(stationCenter.x*(1-stationScale),0,stationCenter.z*(1-stationScale));
+  cityCollisionBoxes.slice(collisionStart).forEach(c=>{
+   c.minX=stationCenter.x+(c.minX-stationCenter.x)*stationScale;
+   c.maxX=stationCenter.x+(c.maxX-stationCenter.x)*stationScale;
+   c.minZ=stationCenter.z+(c.minZ-stationCenter.z)*stationScale;
+   c.maxZ=stationCenter.z+(c.maxZ-stationCenter.z)*stationScale;
+  });
 }
 
 function buildVianaStreets(){
@@ -1086,7 +1099,7 @@ function buildVianaStreets(){
    if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
    cursor=c+gap;
   });
-  if(cursor<100){const len=100-cursor,mid=(72+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
+  if(cursor<100){const len=100-cursor,mid=(100+cursor)/2;if(axis==='z')box(walkWidth,.17,len,sideMat,fixed,.012,mid);else box(len,.17,walkWidth,sideMat,mid,.012,fixed)}
  };
  streets.forEach(x=>[-1,1].forEach(side=>makeSideRuns('z',x+side*(roadWidth(x)/2+curbWidth+walkWidth/2),streets)));
  streets.forEach(z=>[-1,1].forEach(side=>makeSideRuns('x',z+side*(roadWidth(z)/2+curbWidth+walkWidth/2),streets)));
@@ -1098,7 +1111,7 @@ function buildVianaStreets(){
    if(finish>cursor+.2){const len=finish-cursor,mid=(finish+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
    cursor=c+gap;
   });
-  if(cursor<100){const len=100-cursor,mid=(72+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
+  if(cursor<100){const len=100-cursor,mid=(100+cursor)/2;if(axis==='z'){box(curbWidth,.22,len,curbMat,fixed,.025,mid);box(.12,.035,len,drainMat,fixed+(fixed<0?-.12:.12),-.015,mid)}else{box(len,.22,curbWidth,curbMat,mid,.025,fixed);box(len,.035,.12,drainMat,mid,-.015,fixed+(fixed<0?-.12:.12))}}
  };
  streets.forEach(x=>[-1,1].forEach(side=>makeEdges('z',x+side*(roadWidth(x)/2+curbWidth/2),streets)));
  streets.forEach(z=>[-1,1].forEach(side=>makeEdges('x',z+side*(roadWidth(z)/2+curbWidth/2),streets)));
@@ -1265,7 +1278,7 @@ const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THR
 const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?98:roomLimit;destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
 const onPointerDown=e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;};
 const onPointerMove=e=>{if(!dragging)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;lastX=e.clientX;lastY=e.clientY;if(moved){if(kind==='room'||kind==='city'){theta-=dx*.009;phi=THREE.MathUtils.clamp(phi+dy*.006,kind==='city'?.42:.62,kind==='city'?1.15:1.12);updateOrbit()}else{target.rotation.y+=dx*.008}}};
-const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='city'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const entryHit=raycaster.intersectObjects(policeEntryMeshes,true)[0];if(entryHit?.object.userData.worldEntry){const entry=entryHit.object.userData.worldEntry;destination=new THREE.Vector3(entry.x,-.03,entry.z+entry.front*(entry.d/2+1.55))}else if(entryHit?.object.userData.hospitalEntry){destination=new THREE.Vector3(-28,-.03,-23.1)}else if(entryHit){destination=new THREE.Vector3(28,-.03,-17.2)}else{setDestination(e)}}else if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
+const onPointerUp=e=>{if(!dragging)return;dragging=false;if(kind==='city'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const entryHit=raycaster.intersectObjects(policeEntryMeshes,true)[0];if(entryHit?.object.userData.worldEntry){const entry=entryHit.object.userData.worldEntry;destination=new THREE.Vector3(entry.x,-.03,entry.z+entry.front*(entry.d/2+1.55))}else if(entryHit?.object.userData.hospitalEntry){destination=new THREE.Vector3(-28,-.03,-23.1)}else if(entryHit){destination=new THREE.Vector3(28,-.03,-20.224)}else{setDestination(e)}}else if(kind==='room'&&!moved){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);const hits=raycaster.intersectObjects(roomDoorMeshes,true);const doorHit=hits.find(h=>h.object.userData.roomDoor||h.object.parent?.userData.roomDoor);if(doorHit){const obj=doorHit.object.userData.roomDoor?doorHit.object:doorHit.object.parent;activeRoomDoor=obj.userData.door;const prompt=$('room-enter-prompt'),label=$('room-enter-label');if(label)label.textContent='Entrar em '+(activeRoomDoor.label||'divisão');if(prompt)prompt.classList.remove('hidden')}else{setDestination(e)}}};
 const touchDistance=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
 const onTouchStart=e=>{if(e.touches.length===2){e.preventDefault();dragging=false;pinchStart=touchDistance(e.touches);pinchDistance=distance}};
 const onTouchMove=e=>{if(e.touches.length===2&&pinchStart>0){e.preventDefault();distance=THREE.MathUtils.clamp(pinchDistance*pinchStart/touchDistance(e.touches),kind==='city'?9:5,kind==='city'?95:(isLargeVenue?48:18));updateOrbit()}};
@@ -1299,7 +1312,7 @@ if((kind==='room'||kind==='city')&&houseAvatar){
  houseAvatar.position.y=-.03;
  const model=houseAvatar.userData.characterModel;
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
- if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+18.55)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
+ if(kind==='city'){const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+21.196)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
