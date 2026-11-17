@@ -770,7 +770,7 @@ function buildVenueYard(x,z,front,opts){
  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.8,.72),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),side:THREE.DoubleSide}));sign.position.set(x,2.05,frontZ);sign.rotation.y=front===1?0:Math.PI;target.add(sign);
 }
 function buildCommercialYard(x,z,front,opts){
- const half=8.6,frontZ=z+front*half,backZ=z-front*half;
+ const half=8,frontZ=z+front*half,backZ=z-front*half;
  const ground=mat(opts.kind==='quarry'?'#8b887e':opts.kind==='market'?'#b6a17b':'#858b8d',.98),fence=mat('#7b8588',.92),paint=mat('#eee8d4',.82),metal=mat('#343b40',.65);
  box(half*2,.07,half*2,ground,x,-.11,z);
  for(const side of [-1,1]){box(.18,1.35,half*2,fence,x+side*half,.62,z);addCityCollision(x+side*half,z,.18,half*2,.08)}
@@ -926,20 +926,20 @@ function buildVianaOtherBuildings(){
  // Hospital no quarteirão esquerdo, junto à esquadra.
  buildVianaBuilding('HOSPITAL',-28,-28,1,{kind:'hospital',w:15.5,d:9.5,h:6.35,wall:'#edf3f4',trim:'#ffffff',roof:'#d9dfe2',sign:'#164d6b'});
  // Empresa da pedreira, com fachada industrial simples.
- buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:15.5,d:12.5,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
+ buildVianaBuilding('EMPRESA DA PEDREIRA',0,-28,1,{kind:'quarry',w:14,d:12,h:4.8,wall:'#b7a27c',trim:'#e1d2b5',roof:'#625d52',sign:'#4b5147'});
  // Mercado de bairro amplo, com espaço de circulação e exposição exterior.
- buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:15.5,d:12.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
+ buildVianaBuilding('MERCADO',28,0,-1,{kind:'market',w:14,d:12.5,h:4.4,wall:'#d6b77e',trim:'#f2dfb9',roof:'#9a5938',sign:'#87432c'});
  // Stand de automóveis com parque exterior e showroom interior.
- buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:15.5,d:9.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
+ buildVianaBuilding('LOJA DE CARROS',-28,0,-1,{kind:'cars',w:14,d:9.5,h:4.8,wall:'#cbd5d9',trim:'#f0f3f2',roof:'#687b83',sign:'#344f60'});
  // Hotel com recepção e dez suítes identificadas.
- buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:12.4,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
+ buildVianaBuilding('HOTEL · 10 SUÍTES',0,0,-1,{kind:'hotel',w:11.5,d:10.2,h:4.6,wall:'#d8c5a6',trim:'#f0e3cc',roof:'#78624e',sign:'#69513d'});
  // Bar de entretenimento para adultos, com balcão e equipa própria.
  buildVianaBuilding('BAR DAS PUTAS',-28,28,-1,{kind:'bar',w:11,d:12.5,h:5.2,wall:'#c58b62',trim:'#ead0ad',roof:'#75452f',sign:'#693b2b'});
  // Salão de festas.
  buildVianaBuilding('SALÃO DE FESTAS',28,28,-1,{kind:'party',w:11,d:12.5,h:5.6,wall:'#c5b5ce',trim:'#eee4f0',roof:'#66556e',sign:'#55405e'});
  // Dois pequenos estabelecimentos no mesmo quarteirão comercial.
- buildVianaBuilding('SALÃO DE BELEZA',-3.4,28,-1,{kind:'salon',w:5.7,d:6.8,h:3.2,wall:'#d9aebd',trim:'#f4dce4',roof:'#80566b',sign:'#864e68'});
- buildVianaBuilding('LOJA DE ROUPAS',3.4,28,-1,{kind:'clothes',w:5.7,d:6.8,h:3.2,wall:'#9bbfc0',trim:'#e0eeee',roof:'#486c70',sign:'#365960'});
+ buildVianaBuilding('SALÃO DE BELEZA',-3.9,28,-1,{kind:'salon',w:5.7,d:6.8,h:3.2,wall:'#d9aebd',trim:'#f4dce4',roof:'#80566b',sign:'#864e68'});
+ buildVianaBuilding('LOJA DE ROUPAS',3.9,28,-1,{kind:'clothes',w:5.7,d:6.8,h:3.2,wall:'#9bbfc0',trim:'#e0eeee',roof:'#486c70',sign:'#365960'});
 }
 
 function addPoliceOfficer(x,z,rotation=0,scale=1,armed=false,seated=false){
