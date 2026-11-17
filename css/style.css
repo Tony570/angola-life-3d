@@ -131,3 +131,16 @@
 /* Estúdio escuro para apresentar os novos avatares estilizados */
 #page-avatar .avatar-stage,.inventory-avatar-stage{background:radial-gradient(ellipse at 50% 35%,#55435d 0,#2b2335 58%,#17131e 100%)}
 #page-avatar .avatar-options,.inventory-wardrobe-layout .avatar-options{border-color:#806b48}
+
+
+/* Mercado ampliado e controlos de compras no telemóvel */
+.market-buy-controls{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.market-buy-controls input{width:54px;min-width:54px;margin:0!important;padding:8px 5px;text-align:center}
+#life-panel .market-buy-controls button{margin:0;padding:8px 10px;white-space:nowrap}
+#life-panel .life-list{max-height:34vh;overflow:auto}
+#life-panel h4{margin:12px 0 5px;color:#f3d27b}
+@media(max-width:700px){
+ .market-buy-controls{gap:3px}
+ .market-buy-controls input{width:45px;min-width:45px;padding:7px 3px;font-size:12px}
+ #life-panel .market-buy-controls button{padding:7px 8px;font-size:11px}
+}
