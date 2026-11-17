@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vida-em-cabinda-3d-v24-ayzan-playlist-20261117';
+const CACHE_NAME = 'angola-life-3d-v25-social-world-20261117';
 const APP_SHELL = [
   './',
   './index.html',
