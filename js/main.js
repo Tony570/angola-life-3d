@@ -1658,7 +1658,7 @@ function openBarServiceMenu(){
   if(waiter.state==='serving'){status.textContent='A garçonete já está a preparar outro pedido. Aguarda um momento.';return}
   barCash-=drink[1];localStorage.setItem(barCashKey,String(barCash));refreshBarCash();
   const balance=$('bar-service-balance');if(balance)balance.textContent=new Intl.NumberFormat('pt-PT').format(barCash)+' Kz';
-  waiter.order=drink[0];waiter.state='serving';waiter.serveUntil=performance.now()+3800;waiter.group.userData.actionState={type:'wave',time:0};
+  waiter.order=drink[0];waiter.state='serving';waiter.serveUntil=performance.now()+1800;waiter.group.userData.actionState={type:'wave',time:0};
   status.textContent='Pedido recebido: '+drink[0]+'. A garçonete está a preparar e vai levar a bebida à tua mesa.';
   panel.querySelectorAll('[data-bar-buy]').forEach(b=>b.disabled=true);
  });
@@ -1673,6 +1673,12 @@ function updateBarServiceAI(delta,now){
   if(player&&dist<nearest)nearest=dist;
   if(agent.state==='serving'){
    if(now<agent.serveUntil){if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
+   agent.state='delivering';agent.deliveryUntil=now+1250;
+   const status=$('bar-service-status');if(status)status.textContent='A garçonete está a levar '+agent.order+' até à tua mesa.';
+  }
+  if(agent.state==='delivering'){
+   if(now<agent.deliveryUntil){if(player)npc.rotation.y=Math.atan2(player.position.x-npc.position.x,player.position.z-npc.position.z);if(npc.userData.actionState?.type!=='wave')npc.userData.actionState={type:'wave',time:0};continue}
+   const status=$('bar-service-status');if(status)status.textContent='Pedido entregue: '+agent.order+'. Bom proveito!';
    agent.state='patrol';agent.order=null;agent.waypoint=(agent.waypoint+1)%agent.route.length;npc.userData.actionState={type:'idle',time:0};
   }
   if(player&&dist<2.5&&agent.state==='patrol'){agent.state='approach';agent.target={x:player.position.x+(agent.side===0?-1.05:1.05),z:player.position.z-0.15}}
