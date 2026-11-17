@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v28-market-kitchen-20261117';
+const CACHE_NAME = 'angola-life-3d-v29-market-kitchen-20261117';
 const APP_SHELL = [
   './',
   './index.html',
