@@ -5,9 +5,9 @@ const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let user=null,profile=null,inventory=[],activeCategory='todos',avatar={gender:'male',skin:'#c98962',hair:'#241b18',shirt:'#3867a8',pants:'#26364b',hairStyle:'curto',eyes:'#35251f'};
+let user=null,profile=null,inventory=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#c98962',hair:'#241b18',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',modelVersion:2};
 const gltfLoader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-const CHARACTER_HEIGHT=0.36; // altura do avatar: 36 cm
+const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
 function say(id,msg){$(id).textContent=msg}
@@ -21,9 +21,9 @@ $('login-form').addEventListener('submit',async e=>{e.preventDefault();say('auth
 $('signup-form').addEventListener('submit',async e=>{e.preventDefault();say('auth-message','A criar a tua conta…');const method=$('signup-method').value;const value=$('signup-identifier').value.trim();const username=$('signup-name').value.trim().replace(/\s+/g,'_').toLowerCase();const options={data:{username,display_name:$('signup-name').value.trim()}};const credentials={password:$('signup-password').value,options};credentials[method==='phone'?'phone':'email']=value;if(method==='email')options.emailRedirectTo='https://tony570.github.io/angola-life-3d/';const {data,error}=await sb.auth.signUp(credentials);if(error){say('auth-message',error.message);return}if(data.session){await boot();return}if(method==='phone'){pendingPhone=value;$('login-form').classList.add('hidden');$('signup-form').classList.add('hidden');$('phone-verify').classList.remove('hidden');$('tab-login').classList.add('hidden');$('tab-signup').classList.add('hidden');say('auth-message','Aguardamos a confirmação do número.');return}say('auth-message','Conta criada. Confirma o email e depois entra no jogo. Se o código não chegar, será necessário activar o envio de email no serviço de autenticação.')});
 $('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(!pendingPhone||!/^[0-9]{6}$/.test(token)){say('auth-message','Introduz o código SMS de 6 dígitos.');return}say('auth-message','A confirmar número…');const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});if(error){say('auth-message',error.message);return}if(data.session)await boot()};
 $('logout').onclick=async()=>{await sb.auth.signOut();user=null;$('game').classList.add('hidden');$('auth').classList.remove('hidden');$('phone-verify').classList.add('hidden');$('tab-login').classList.remove('hidden');$('tab-signup').classList.remove('hidden');setTab('login')};
-function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}renderAvatar()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
+function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderAvatar()}if(page==='inventory'){if(disposeHome){disposeHome();disposeHome=null}if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderInventoryPage()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
-async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;avatar={...avatar,...(p.avatar||{})};$('life-name').textContent=p.display_name||p.username||'Residente';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
+async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};if(!savedAvatar.modelVersion){if(savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';if(savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';avatar.modelVersion=2;}$('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
 async function loadInventory(){const {data,error}=await sb.from('inventory_items').select('*').eq('user_id',user.id).order('category');if(error){console.error(error);inventory=[]}else inventory=data||[];renderInventory()}
 function fillProfile(){$('profile-display').textContent=profile.display_name;$('profile-handle').textContent='@'+profile.username;$('profile-name').value=profile.username;$('profile-display-input').value=profile.display_name;$('profile-bio').value=profile.bio||''}
 $('save-profile').onclick=async()=>{const username=$('profile-name').value.trim().toLowerCase().replace(/\s+/g,'_');const display_name=$('profile-display-input').value.trim();if(!username||!display_name){say('profile-message','Preenche os dois nomes.');return}const {data,error}=await sb.from('profiles').update({username,display_name,bio:$('profile-bio').value.trim(),updated_at:new Date().toISOString()}).eq('id',user.id).select().single();if(error){say('profile-message',error.message);return}profile=data;fillProfile();$('side-name').textContent=profile.display_name;say('profile-message','Perfil guardado com sucesso.')};
@@ -91,6 +91,34 @@ function findGaitBones(model){
  for(const [key,bone] of Object.entries(bones))base[key]={rotation:bone.rotation.clone(),position:bone.position.clone()};
  return {bones,base,ready:!!(bones.LThigh&&bones.RThigh&&bones.LArm&&bones.RArm)};
 }
+function updateCharacterActionPose(root,delta=0){
+ if(!root)return;
+ const state=root.userData.actionState||{type:'idle',time:0};
+ if(state.type==='wave'){state.time=(state.time||0)+delta;if(state.time>1.9){state.type='idle';state.time=0}}
+ if(state.type!=='sit'&&state.type!=='wave')return;
+ const pose=root.userData.poseRig;
+ if(pose?.bones&&pose?.base){
+  for(const [key,bone] of Object.entries(pose.bones)){const base=pose.base[key];if(base){bone.rotation.copy(base.rotation);bone.position.copy(base.position)}}
+  const apply=(key,x=0,z=0)=>{const bone=pose.bones[key],base=pose.base[key];if(bone&&base){bone.rotation.x=base.rotation.x+x;bone.rotation.z=base.rotation.z+z}};
+  if(state.type==='sit'){
+   apply('LThigh',-1.12);apply('RThigh',-1.12);apply('LCalf',1.35);apply('RCalf',1.35);
+   apply('LArm',-.12);apply('RArm',-.12);apply('LForearm',.22);apply('RForearm',.22);
+   const hips=pose.bones.Hips,base=pose.base.Hips;if(hips&&base)hips.position.y=base.position.y-.035;
+  }else{
+   apply('RArm',0,-1.28);apply('RForearm',0,-.38+Math.sin(state.time*10)*.34);apply('RHand',0,Math.sin(state.time*10)*.12);
+  }
+  return;
+ }
+ const rig=root.userData.fallbackRig;if(!rig)return;
+ for(const key of ['leftArm','rightArm','leftForearm','rightForearm','leftLeg','rightLeg','leftCalf','rightCalf'])if(rig[key])rig[key].rotation.set(0,0,0);
+ if(state.type==='sit'){
+  if(rig.leftLeg)rig.leftLeg.rotation.x=-.92;if(rig.rightLeg)rig.rightLeg.rotation.x=-.92;
+  if(rig.leftCalf)rig.leftCalf.rotation.x=1.22;if(rig.rightCalf)rig.rightCalf.rotation.x=1.22;
+ }else{
+  if(rig.rightArm)rig.rightArm.rotation.z=-1.22;
+  if(rig.rightForearm)rig.rightForearm.rotation.z=-.4+Math.sin(state.time*10)*.34;
+ }
+}
 function updateProceduralGait(root,phase,weight){
  const gait=root.userData.proceduralGait;if(!gait)return;
  const {bones,base}=gait,swing=Math.sin(phase),opposite=Math.sin(phase+Math.PI);
@@ -106,19 +134,29 @@ function updateProceduralGait(root,phase,weight){
 }
 function createFallbackHuman(look){
  const figure=new THREE.Group(),rig={};
- const skin=new THREE.MeshStandardMaterial({color:look.skin||'#c98962',roughness:.82}),shirt=new THREE.MeshStandardMaterial({color:look.shirt||'#3867a8',roughness:.8}),pants=new THREE.MeshStandardMaterial({color:look.pants||'#26364b',roughness:.85}),hair=new THREE.MeshStandardMaterial({color:look.hair||'#241b18',roughness:.9}),dark=new THREE.MeshStandardMaterial({color:'#241b18',roughness:.7}),iris=new THREE.MeshStandardMaterial({color:look.eyes||'#35251f',roughness:.45}),white=new THREE.MeshStandardMaterial({color:'#f4eee7',roughness:.6}),shoe=new THREE.MeshStandardMaterial({color:'#20242a',roughness:.9});
- const sphere=(parent,mat,pos,scale)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(1,14,12),mat);m.position.set(...pos);m.scale.set(...scale);parent.add(m);return m};
- const capsule=(parent,mat,r,len,pos)=>{const m=new THREE.Mesh(new THREE.CapsuleGeometry(r,len,4,10),mat);m.position.set(...pos);parent.add(m);return m};
- capsule(figure,shirt,.145,.31,[0,1.12,0]);sphere(figure,shirt,[0,1.34,0],[.16,.13,.105]);capsule(figure,skin,.047,.055,[0,1.39,0]);
+ const skin=new THREE.MeshStandardMaterial({color:look.skin||'#c98962',roughness:.82}),shirt=new THREE.MeshStandardMaterial({color:look.shirt||'#f2f2ee',roughness:.8}),pants=new THREE.MeshStandardMaterial({color:look.pants||'#e6e8ee',roughness:.85}),hair=new THREE.MeshStandardMaterial({color:look.hair||'#241b18',roughness:.9}),dark=new THREE.MeshStandardMaterial({color:'#241b18',roughness:.7}),iris=new THREE.MeshStandardMaterial({color:look.eyes||'#35251f',roughness:.45}),white=new THREE.MeshStandardMaterial({color:'#f4eee7',roughness:.6});
+ const sphere=(parent,material,pos,scale)=>{const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,18,14),material);mesh.position.set(...pos);mesh.scale.set(...scale);parent.add(mesh);return mesh};
+ const capsule=(parent,material,radius,length,pos)=>{const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,12),material);mesh.position.set(...pos);parent.add(mesh);return mesh};
+ // Tronco com regata sem mangas, pescoço e cabeça proporcionais.
+ capsule(figure,shirt,.145,.31,[0,1.12,0]);sphere(figure,shirt,[0,1.34,0],[.16,.13,.105]);
+ capsule(figure,skin,.047,.055,[0,1.39,0]);
  sphere(figure,skin,[0,1.57,0],[.112,.145,.105]);sphere(figure,hair,[0,1.665,-.008],[.113,.065,.108]);sphere(figure,hair,[0,1.60,-.092],[.105,.075,.026]);
+ if(look.gender==='female')sphere(figure,shirt,[0,1.12,-.012],[.151,.18,.105]);
  if(look.hairStyle==='comprido'){sphere(figure,hair,[-.09,1.52,-.015],[.045,.17,.07]);sphere(figure,hair,[.09,1.52,-.015],[.045,.17,.07]);sphere(figure,hair,[0,1.48,-.075],[.095,.12,.055])}
  else if(look.hairStyle==='medio'){sphere(figure,hair,[0,1.625,.075],[.09,.055,.045])}
  else if(look.hairStyle==='encaracolado'){for(let i=0;i<9;i++){const a=i*Math.PI*2/9;sphere(figure,hair,[Math.cos(a)*.075,1.68+Math.sin(a)*.018,Math.sin(a)*.075],[.042,.045,.042])}}
  sphere(figure,skin,[-.115,1.57,0],[.026,.043,.026]);sphere(figure,skin,[.115,1.57,0],[.026,.043,.026]);sphere(figure,skin,[0,1.545,.101],[.025,.035,.026]);
- for(const x of [-.043,.043]){sphere(figure,white,[x,1.59,.088],[.023,.014,.009]);sphere(figure,iris,[x,1.59,.096],[.009,.010,.006]);sphere(figure,dark,[x,1.59,.101],[.004,.006,.003])}sphere(figure,dark,[0,1.515,.094],[.026,.006,.006]);
+ for(const x of [-.043,.043]){sphere(figure,white,[x,1.59,.088],[.023,.014,.009]);sphere(figure,iris,[x,1.59,.096],[.009,.010,.006]);sphere(figure,dark,[x,1.59,.101],[.004,.006,.003])}
+ sphere(figure,dark,[0,1.515,.094],[.026,.006,.006]);
  for(const side of [-1,1]){
-  const arm=new THREE.Group();arm.position.set(side*.19,1.28,0);figure.add(arm);rig[side<0?'leftArm':'rightArm']=arm;capsule(arm,shirt,.052,.20,[0,-.14,0]);capsule(arm,skin,.039,.16,[0,-.34,0]);sphere(arm,skin,[0,-.44,0],[.043,.05,.035]);
-  const leg=new THREE.Group();leg.position.set(side*.075,.88,0);figure.add(leg);rig[side<0?'leftLeg':'rightLeg']=leg;capsule(leg,pants,.067,.25,[0,-.19,0]);capsule(leg,pants,.052,.23,[0,-.43,0]);capsule(leg,shoe,.047,.10,[0,-.59,.035]);
+  const arm=new THREE.Group();arm.position.set(side*.19,1.28,0);figure.add(arm);rig[side<0?'leftArm':'rightArm']=arm;
+  capsule(arm,skin,.052,.20,[0,-.14,0]);
+  const forearm=new THREE.Group();forearm.position.set(0,-.27,0);arm.add(forearm);rig[side<0?'leftForearm':'rightForearm']=forearm;
+  capsule(forearm,skin,.039,.16,[0,-.09,0]);sphere(forearm,skin,[0,-.19,.005],[.043,.05,.035]);
+  const leg=new THREE.Group();leg.position.set(side*.075,.88,0);figure.add(leg);rig[side<0?'leftLeg':'rightLeg']=leg;
+  capsule(leg,pants,.068,.13,[0,-.12,0]);
+  const calf=new THREE.Group();calf.position.set(0,-.25,0);leg.add(calf);rig[side<0?'leftCalf':'rightCalf']=calf;
+  capsule(calf,skin,.052,.23,[0,-.15,0]);capsule(calf,skin,.047,.10,[0,-.31,.045]);
  }
  figure.scale.setScalar(CHARACTER_HEIGHT/1.72);figure.userData.gaitRig=rig;return figure;
 }
@@ -150,7 +188,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',asset=characterAssets[gender],root=new THREE.Group();
- root.userData.keepWorldScale=true;
+ root.userData.keepWorldScale=true;root.userData.actionState={type:'idle',time:0};if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  // Mostrar imediatamente um personagem humano, sem depender do carregamento remoto do modelo 3D.
  const immediateFallback=createFallbackHuman(look);
@@ -182,7 +220,7 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
   const idleClip=gltf.animations.find(clip=>/idle/i.test(clip.name));
   const walkClip=gltf.animations.find(clip=>/relaxed walk/i.test(clip.name))||gltf.animations.find(clip=>/^walk$/i.test(clip.name))||gltf.animations.find(clip=>/walk/i.test(clip.name));
   if(idleClip&&walkClip){
-   const characterMixer=new THREE.AnimationMixer(model);
+   const characterMixer=new THREE.AnimationMixer(model);root.userData.characterMixer=characterMixer;
    const idleAction=characterMixer.clipAction(idleClip);
    const walkAction=characterMixer.clipAction(walkClip);
    idleAction.setLoop(THREE.LoopRepeat,Infinity);walkAction.setLoop(THREE.LoopRepeat,Infinity);
@@ -198,17 +236,17 @@ function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animat
  return root
 }function makeRenderer(host,kind,roomName='sala',entrySpawn=null){
 host.querySelectorAll('canvas').forEach(c=>c.remove());
-const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':'#58a9ed');
+const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':kind==='avatar'?'#dce4ea':'#58a9ed');
 const camera=new THREE.PerspectiveCamera(42,host.clientWidth/host.clientHeight,.1,100);
 camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5.4);
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(host.clientWidth,host.clientHeight);renderer.shadowMap.enabled=false;host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(-3,7,5);scene.add(light);
-let target=new THREE.Group();scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[],cityPoliceVehicles=[],cityDrivableCars=[];const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
+let target=new THREE.Group();target.userData.characters=[];scene.add(target);let mixer=null,houseAvatar=null;const clock=new THREE.Clock();let cityCollisionBoxes=[],cityWorldEntrances=[],cityPoliceAgents=[],cityPoliceVehicles=[],cityDrivableCars=[],sceneSeatAnchors=[];let nearbySeat=null;const addCityCollision=(x,z,w,d,pad=.42)=>cityCollisionBoxes.push({minX:x-w/2-pad,maxX:x+w/2+pad,minZ:z-d/2-pad,maxZ:z+d/2+pad});const cityBlocked=(x,z,radius=.38)=>cityCollisionBoxes.some(c=>{const dx=Math.max(c.minX-x,0,x-c.maxX),dz=Math.max(c.minZ-z,0,z-c.maxZ);return dx*dx+dz*dz<radius*radius});
 const mat=(c,r=.8)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
 function box(w,h,d,m,x,y,z,parent=target){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
 function createDetailedCar(color='#a83e36',police=false){
- const g=new THREE.Group(),body=mat(color,.48),glass=new THREE.MeshStandardMaterial({color:'#263e4c',roughness:.28,transparent:true,opacity:.42,depthWrite:false}),rubber=mat('#171a1d',.96),hub=mat('#c1c8ca',.42),chrome=mat('#aeb9bf',.38);
+ const g=new THREE.Group(),body=mat(color,.48),glass=new THREE.MeshStandardMaterial({color:'#263e4c',roughness:.28,transparent:true,opacity:.42,depthWrite:false}),rubber=mat('#171a1d',.96),hub=mat('#c1c8ca',.42),chrome=mat('#aeb9bf',.38);g.userData.damageLevel=0;g.userData.damageMarks=[];
  const shell=(points,depth,material,bevel=.08)=>{
   const shape=new THREE.Shape();shape.moveTo(points[0][0],points[0][1]);
   for(let i=1;i<points.length;i++){const p=points[i];if(p.length===4)shape.quadraticCurveTo(p[0],p[1],p[2],p[3]);else shape.lineTo(p[0],p[1])}
@@ -250,8 +288,11 @@ function createDetailedCar(color='#a83e36',police=false){
   addBox(.27,.15,.25,red,-.2,1.48,0);addBox(.27,.15,.25,blue,.2,1.48,0);
   addBox(.9,.12,.06,mat('#f1f2ee',.55),-.2,.88,.69);
  }
+ const damageMaterial=mat('#292b2c',.72);
+ for(const side of [-1,1]){const mark=new THREE.Mesh(new THREE.BoxGeometry(.42,.055,.018),damageMaterial);mark.position.set(.15,.53,side*.685);mark.visible=false;g.add(mark);g.userData.damageMarks.push(mark)}
  return g;
 }
+function markVehicleCollision(vehicle){const car=vehicle?.group||vehicle;if(!car)return;car.visible=true;car.userData.damageLevel=(car.userData.damageLevel||0)+1;const marks=car.userData.damageMarks||[];const mark=marks[Math.min(car.userData.damageLevel-1,marks.length-1)];if(mark)mark.visible=true}
 const roomNames={sala:'SALA',quarto:'QUARTO',cozinha:'COZINHA',banheiro:'CASA DE BANHO',garagem:'GARAGEM',esquadra:'ESQUADRA DA POLÍCIA',hospital:'HOSPITAL · RECEPÇÃO','hospital-tratamento':'SALA DE TRATAMENTO','hospital-consultorio':'CONSULTÓRIO MÉDICO',bar:'BAR DAS PUTAS',hotel:'HOTEL · RECEPÇÃO',market:'MERCADO',quarry:'EMPRESA DA PEDREIRA',cars:'LOJA DE CARROS',party:'SALÃO DE FESTAS',salon:'SALÃO DE BELEZA',clothes:'LOJA DE ROUPAS','bar-private-1':'SALA PRIVADA 1','bar-private-2':'SALA PRIVADA 2',...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),'HOTEL · SUÍTE '+String(i+1).padStart(2,'0')]))};
 const doorDefs={
  sala:[{label:'QUARTO',dest:'quarto',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2},{label:'COZINHA',dest:'cozinha',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
@@ -564,7 +605,7 @@ function buildPoliceSectorLayout(){
  for(const x of [-8.1,-2.9,2.9,8.1])box(.16,3.05,6.1,wall,x,1.5,-4.9);
 }
 function buildRoom(name){
- target.clear();roomDoorMeshes=[];activeRoomDoor=null;scene.background=new THREE.Color(name==='garagem'?'#aebbc7':'#c6d0d7');
+ target.clear();target.userData.characters=[];sceneSeatAnchors.length=0;roomDoorMeshes=[];activeRoomDoor=null;scene.background=new THREE.Color(name==='garagem'?'#aebbc7':'#c6d0d7');
  if(name==='bar'){buildBarInterior();return}
  if(name==='bar-private-1'||name==='bar-private-2'){buildBarPrivateRoom(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  if(name==='party'){buildPartyHallInterior();return}
@@ -591,7 +632,7 @@ function hcyl(r,h,m,x,y,z,p=target){const o=new THREE.Mesh(new THREE.CylinderGeo
 function hsph(a,b,c,m,x,y,z,p=target){const o=new THREE.Mesh(new THREE.SphereGeometry(1,24,18),m);o.scale.set(a,b,c);o.position.set(x,y,z);p.add(o);return o}
 function hwall(w,h,m,x,y,z,rot=0){const o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);o.position.set(x,y,z);o.rotation.y=rot;o.material.side=THREE.DoubleSide;target.add(o)}
 function hospitalShell(n){const f=new THREE.Mesh(new THREE.PlaneGeometry(8,8),mat('#e8edf0'));f.rotation.x=-Math.PI/2;f.position.y=-.025;target.add(f);const w=mat('#f4f6f5'),ex=doorDefs[n]||[],op={north:null,south:null,east:null,west:null};ex.forEach(d=>op[d.side]=d.center);for(const side of ['north','south','east','west']){const c=op[side],hor=side==='north'||side==='south',z=side==='north'?-4:4,x=side==='west'?-4:4,rot=hor?0:Math.PI/2,wx=hor?0:x,wz=hor?z:0;if(c===null){hwall(8,3.6,w,wx,1.8,wz,rot);continue}const gap=1.55,l=c-gap/2,r=c+gap/2,a=Math.max(0,l+4),b=Math.max(0,4-r);if(a>.03)hwall(a,3.6,w,hor?(-4+l)/2:wx,1.8,hor?wz:(-4+l)/2,rot);if(b>.03)hwall(b,3.6,w,hor?(r+4)/2:wx,1.8,hor?wz:(r+4)/2,rot);hwall(gap,1.15,w,wx,3.025,wz,rot)}}
-function hchair(x,z,color='#4b86a8',rot=0){const g=new THREE.Group(),f=mat(color),m=mat('#aeb9bf');hcap(.32,.12,f,0,.55,0,g,Math.PI/2).scale.set(1,.82,.72);hcap(.31,.42,f,0,.91,-.23,g).scale.set(.9,1,.5);hcyl(.045,.43,m,0,.25,0,g);for(let i=0;i<4;i++){const a=i*Math.PI/2,l=hcyl(.03,.38,m,Math.cos(a)*.2,.18,Math.sin(a)*.2,g);l.rotation.z=Math.cos(a)*-.32;l.rotation.x=Math.sin(a)*.32}g.position.set(x,0,z);g.rotation.y=rot;target.add(g)}
+function hchair(x,z,color='#4b86a8',rot=0){const g=new THREE.Group(),f=mat(color),m=mat('#aeb9bf');hcap(.32,.12,f,0,.55,0,g,Math.PI/2).scale.set(1,.82,.72);hcap(.31,.42,f,0,.91,-.23,g).scale.set(.9,1,.5);hcyl(.045,.43,m,0,.25,0,g);for(let i=0;i<4;i++){const a=i*Math.PI/2,l=hcyl(.03,.38,m,Math.cos(a)*.2,.18,Math.sin(a)*.2,g);l.rotation.z=Math.cos(a)*-.32;l.rotation.x=Math.sin(a)*.32}g.position.set(x,0,z);g.rotation.y=rot;target.add(g);sceneSeatAnchors.push({x:x+Math.sin(rot)*.14,z:z+Math.cos(rot)*.14,y:.55,rotation:rot})}
 function hbed(x,z,rot=0){const g=new THREE.Group(),w=mat('#f5f7f7'),b=mat('#8fb5c9'),m=mat('#9aa8b0'),rub=mat('#333b40');hcap(.34,1.25,w,0,.78,0,g,Math.PI/2).scale.set(1,.62,.78);hcap(.29,1.2,b,0,1,0,g,Math.PI/2).scale.set(1,.58,.76);hcap(.3,.16,w,-.82,1.02,0,g,Math.PI/2);for(const side of [-1,1]){const rail=hcyl(.035,1.55,m,0,1.23,side*.34,g);rail.rotation.z=Math.PI/2;for(const e of [-.66,.66])hcyl(.025,.42,m,e,.94,side*.34,g)}for(const px of [-.7,.7])for(const pz of [-.25,.25]){hcyl(.035,.62,m,px,.4,pz,g);hsph(.095,.07,.095,rub,px,.13,pz,g)}g.position.set(x,0,z);g.rotation.y=rot;target.add(g)}
 function hdesk(x,z,w=2.4){const g=new THREE.Group(),wood=mat('#d9c8ad'),white=mat('#f6f7f5'),m=mat('#aab5bc');hcap(.34,w,wood,0,1.02,0,g,Math.PI/2).scale.set(1,.62,.72);hcap(.24,w*.92,white,0,1.24,0,g,Math.PI/2).scale.set(1,.28,.75);for(const px of [-w*.34,w*.34])hcyl(.05,.86,m,px,.52,0,g);hsph(.46,.29,.075,mat('#263b48'),0,1.65,-.12,g);const sc=new THREE.Mesh(new THREE.PlaneGeometry(.72,.4),mat('#79b8cf'));sc.position.set(0,1.66,-.047);g.add(sc);hcyl(.045,.2,m,0,1.43,-.12,g);hcap(.11,.48,m,0,1.29,.28,g,Math.PI/2);g.position.set(x,0,z);target.add(g)}
 
@@ -943,11 +984,11 @@ function buildVianaOtherBuildings(){
 }
 
 function addPoliceOfficer(x,z,rotation=0,scale=1,armed=false,seated=false){
- // Todos os agentes têm a mesma altura de 36 cm do avatar.
+ // Os agentes usam o mesmo modelo humano de 1,72 m, com uniforme próprio.
  const uniformLook={gender:'male',skin:'#985b42',hair:'#171412',eyes:'#35251f',shirt:'#123b70',pants:'#102b4c',hairStyle:'curto'};
  const g=buildCharacter(target,uniformLook,{x,y:0,z},m=>{g.userData.officerMixer=m},true);
  const details=new THREE.Group();details.scale.setScalar(CHARACTER_HEIGHT/.5);g.add(details);
- g.userData.seatedOfficer=seated;
+ g.userData.seatedOfficer=seated;g.userData.actionState=seated?{type:'sit',time:0}:{type:'idle',time:0};if(seated){g.position.y=.55-.86;updateCharacterActionPose(g,0)}
  g.rotation.y=rotation;
  const gold=mat('#d9b24f',.55),black=mat('#151b24',.88),blue=mat('#0b2d59',.82);
  const sphere=(radius,material,px,py,pz)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(radius,18,14),material);m.position.set(px,py,pz);m.castShadow=true;details.add(m);return m};
@@ -1080,7 +1121,7 @@ function buildVianaPoliceStation(){
 }
 
 function buildVianaStreets(){
- target.clear();roomDoorMeshes=[];policeEntryMeshes=[];cityWorldEntrances=[];activeRoomDoor=null;cityCollisionBoxes=[];cityDrivableCars=[];scene.background=new THREE.Color('#58a9ed');
+ target.clear();target.userData.characters=[];sceneSeatAnchors.length=0;roomDoorMeshes=[];policeEntryMeshes=[];cityWorldEntrances=[];activeRoomDoor=null;cityCollisionBoxes=[];cityDrivableCars=[];scene.background=new THREE.Color('#58a9ed');
  // Viana ampliada: malha viária em grelha, novos quarteirões residenciais e avenidas de ligação.
  const groundMat=mat('#b69a75',1),shoulderMat=mat('#a47b55',1),trackMat=mat('#805638',1);
  // Textura de laterite: terra avermelhada, pó e pequenas variações naturais.
@@ -1130,6 +1171,7 @@ function buildVianaStreets(){
   box(1.45,.12,.42,mat('#805a3d',.9),-38.5+side*2.25,.48,-28);
   box(.09,.48,.09,benchMetal,-39.05+side*2.25,.25,-28);
   box(.09,.48,.09,benchMetal,-37.95+side*2.25,.25,-28);
+  sceneSeatAnchors.push({x:-38.5+side*2.25,z:-27.48,y:.54,rotation:0});
  });
  // Casas populares, quintais e vegetação para dar escala e vida ao bairro.
  const addTree=(x,z,scale=1)=>{
@@ -1242,7 +1284,7 @@ function buildVianaStreets(){
  const patrolCar=createDetailedCar('#e8ecee',true);
  patrolCar.position.set(42,0,-14);patrolCar.rotation.y=0;target.add(patrolCar);
  const driver=addPoliceOfficer(0,0,Math.PI/2,1,true,true);
- target.remove(driver);patrolCar.add(driver);driver.position.set(-.48,.48,0);driver.scale.setScalar(.78);
+ target.remove(driver);patrolCar.add(driver);driver.position.set(-.48,.10,0);driver.scale.setScalar(.45);
  const vehicleRoute=[
   {x:42,z:-14},{x:42,z:-42},{x:14,z:-42},{x:-14,z:-42},{x:-42,z:-42},{x:-70,z:-42},
   {x:-70,z:-14},{x:-70,z:14},{x:-42,z:14},{x:-14,z:14},{x:14,z:14},{x:42,z:14},{x:70,z:14},
@@ -1276,16 +1318,22 @@ if(kind==='room'){
  }
  const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
 const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
-}else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,.24,.78);camera.lookAt(0,.19,0)}
+}else if(kind==='city'){buildVianaStreets();const citySpawn=entrySpawn||{x:14,z:-14};houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true);camera.position.set(citySpawn.x+28,42,citySpawn.z+28);camera.lookAt(citySpawn.x,0,citySpawn.z)}else{const studioFloor=new THREE.Mesh(new THREE.PlaneGeometry(12,12),mat('#d5dce1',.92));studioFloor.rotation.x=-Math.PI/2;studioFloor.position.y=-.015;target.add(studioFloor);const studioWall=new THREE.Mesh(new THREE.PlaneGeometry(10,4),mat('#dce3e8',1));studioWall.position.set(0,2,-1.8);target.add(studioWall);const mirror=new THREE.Mesh(new THREE.TorusGeometry(1.05,.045,12,64),mat('#f5f7f8',.35));mirror.position.set(0,1,-1.55);target.add(mirror);buildCharacter(target,avatar,{x:0,y:0,z:0},m=>mixer=m);camera.position.set(0,1.12,3.65);camera.lookAt(0,.86,0)}
 const isLargeVenue=kind==='room'&&(roomName==='bar'||roomName==='party'),isExpandedInterior=kind==='room'&&['market','quarry','cars','esquadra'].includes(roomName),roomLimit=isLargeVenue?17.15:isExpandedInterior?9.15:3.35;
 let destination=null;const moveKeys={forward:false,backward:false,left:false,right:false};
 const driveKeys={accelerate:false,brake:false,left:false,right:false};let vehicleState=null,nearbyVehicle=null;
 let dragging=false,lastX=0,lastY=0,moved=false,theta=Math.PI/4,phi=.92,distance=isLargeVenue?31:isExpandedInterior?25:13.5,pinchStart=0,pinchDistance=0;
 const cameraTarget=new THREE.Vector3(0,0,0);
 function updateOrbit(){phi=THREE.MathUtils.clamp(phi,kind==='city'?.38:.72,kind==='city'?1.05:.98);distance=THREE.MathUtils.clamp(distance,kind==='city'?6:(isLargeVenue?16:10),kind==='city'?95:((isLargeVenue||isExpandedInterior)?48:18));camera.position.set(cameraTarget.x+Math.sin(theta)*Math.cos(phi)*distance,cameraTarget.y+Math.sin(phi)*distance,cameraTarget.z+Math.cos(theta)*Math.cos(phi)*distance);camera.lookAt(cameraTarget)}
-function enterVehicle(vehicle){if(kind!=='city'||vehicleState||!houseAvatar||!vehicle?.group)return;const car=vehicle.group;vehicleState={vehicle,speed:0,originalScale:houseAvatar.scale.clone()};target.remove(houseAvatar);car.add(houseAvatar);houseAvatar.position.set(-.43,.49,.18);houseAvatar.rotation.set(0,Math.PI/2,0);houseAvatar.scale.multiplyScalar(2.1);houseAvatar.visible=true;if(vehicle.driver)vehicle.driver.visible=false;destination=null;velocityX=0;velocityZ=0;Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);$('vehicle-prompt')?.classList.add('hidden');$('vehicle-controls')?.classList.remove('hidden');$('move-pad')?.classList.add('hidden');$('room-enter-prompt')?.classList.add('hidden');theta=Math.atan2(-Math.cos(car.rotation.y),Math.sin(car.rotation.y));phi=.48;distance=10.5;cameraTarget.set(car.position.x,.12,car.position.z);updateOrbit()}
-function exitVehicle(){if(!vehicleState||!houseAvatar)return;const {vehicle,originalScale}=vehicleState,car=vehicle.group,yaw=car.rotation.y;const offsets=[new THREE.Vector3(-.2,0,-1.22),new THREE.Vector3(-.2,0,1.22)];let exitPoint=null;for(const offset of offsets){offset.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);const candidate=new THREE.Vector3(car.position.x+offset.x,-.03,car.position.z+offset.z);if(!cityBlocked(candidate.x,candidate.z,.4)){exitPoint=candidate;break}}if(!exitPoint)exitPoint=new THREE.Vector3(car.position.x,-.03,car.position.z+2.1);car.remove(houseAvatar);target.add(houseAvatar);houseAvatar.position.copy(exitPoint);houseAvatar.rotation.set(0,yaw+Math.PI/2,0);houseAvatar.scale.copy(originalScale);houseAvatar.visible=true;if(vehicle.driver)vehicle.driver.visible=true;vehicleState=null;velocityX=0;velocityZ=0;Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);$('vehicle-controls')?.classList.add('hidden');$('move-pad')?.classList.remove('hidden');$('vehicle-prompt')?.classList.add('hidden');theta=Math.atan2(-Math.cos(yaw),Math.sin(yaw));cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}
+function enterVehicle(vehicle){if(kind!=='city'||vehicleState||!houseAvatar||!vehicle?.group)return;const car=vehicle.group;vehicleState={vehicle,speed:0,originalScale:houseAvatar.scale.clone()};target.remove(houseAvatar);car.add(houseAvatar);houseAvatar.position.set(-.43,.10,.18);houseAvatar.rotation.set(0,Math.PI/2,0);houseAvatar.scale.multiplyScalar(.44);houseAvatar.userData.actionState={type:'sit',time:0,vehicle:true};houseAvatar.visible=true;if(vehicle.driver)vehicle.driver.visible=false;destination=null;velocityX=0;velocityZ=0;Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);$('vehicle-prompt')?.classList.add('hidden');$('vehicle-controls')?.classList.remove('hidden');$('character-actions')?.classList.add('hidden');$('move-pad')?.classList.add('hidden');$('room-enter-prompt')?.classList.add('hidden');theta=Math.atan2(-Math.cos(car.rotation.y),Math.sin(car.rotation.y));phi=.48;distance=10.5;cameraTarget.set(car.position.x,.12,car.position.z);updateOrbit()}
+function exitVehicle(){if(!vehicleState||!houseAvatar)return;const {vehicle,originalScale}=vehicleState,car=vehicle.group,yaw=car.rotation.y;const offsets=[new THREE.Vector3(-.2,0,-1.22),new THREE.Vector3(-.2,0,1.22)];let exitPoint=null;for(const offset of offsets){offset.applyAxisAngle(new THREE.Vector3(0,1,0),yaw);const candidate=new THREE.Vector3(car.position.x+offset.x,-.03,car.position.z+offset.z);if(!cityBlocked(candidate.x,candidate.z,.4)){exitPoint=candidate;break}}if(!exitPoint)exitPoint=new THREE.Vector3(car.position.x,-.03,car.position.z+2.1);car.remove(houseAvatar);target.add(houseAvatar);houseAvatar.position.copy(exitPoint);houseAvatar.rotation.set(0,yaw+Math.PI/2,0);houseAvatar.scale.copy(originalScale);houseAvatar.userData.actionState={type:'idle',time:0};houseAvatar.visible=true;if(vehicle.driver)vehicle.driver.visible=true;vehicleState=null;velocityX=0;velocityZ=0;Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);$('vehicle-controls')?.classList.add('hidden');$('character-actions')?.classList.remove('hidden');$('move-pad')?.classList.remove('hidden');$('vehicle-prompt')?.classList.add('hidden');theta=Math.atan2(-Math.cos(yaw),Math.sin(yaw));cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}
 const vehicleEnterButton=$('vehicle-enter-button'),vehicleExitButton=$('vehicle-exit-button');if(vehicleEnterButton)vehicleEnterButton.onclick=()=>{if(nearbyVehicle)enterVehicle(nearbyVehicle)};if(vehicleExitButton)vehicleExitButton.onclick=exitVehicle;
+function standCharacterUp(){if(!houseAvatar||houseAvatar.userData.actionState?.type!=='sit')return;const seat=houseAvatar.userData.actionState.seat;if(seat){const offset=new THREE.Vector3(0,0,.62).applyAxisAngle(new THREE.Vector3(0,1,0),seat.rotation||0);houseAvatar.position.x+=offset.x;houseAvatar.position.z+=offset.z}houseAvatar.position.y=-.03;houseAvatar.userData.actionState={type:'idle',time:0};}
+function sitCharacter(){if(!houseAvatar||!nearbySeat||vehicleState)return;destination=null;velocityX=0;velocityZ=0;houseAvatar.position.set(nearbySeat.x,(nearbySeat.y||.55)-.86,nearbySeat.z);houseAvatar.rotation.y=nearbySeat.rotation||0;houseAvatar.userData.actionState={type:'sit',time:0,seat:nearbySeat};}
+function waveCharacter(){if(!houseAvatar||vehicleState)return;if(houseAvatar.userData.actionState?.type==='sit')standCharacterUp();houseAvatar.userData.actionState={type:'wave',time:0};}
+const sitButton=$('character-sit-button'),waveButton=$('character-wave-button');
+if(sitButton)sitButton.onclick=()=>{if(houseAvatar?.userData.actionState?.type==='sit')standCharacterUp();else sitCharacter()};
+if(waveButton)waveButton.onclick=waveCharacter;
 if(kind==='city'){theta=Math.PI/4;phi=.72;distance=26;if(houseAvatar)cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z)}if(kind==='room'||kind==='city')updateOrbit();
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),.03),hit=new THREE.Vector3();
 const setDestination=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;raycaster.setFromCamera(pointer,camera);if(raycaster.ray.intersectPlane(ground,hit)){const limit=kind==='city'?98:roomLimit;destination=new THREE.Vector3(THREE.MathUtils.clamp(hit.x,-limit,limit),-.03,THREE.MathUtils.clamp(hit.z,-limit,limit))}};
@@ -1306,6 +1354,7 @@ const blockGameBrowserMenu=e=>{if(e.target.closest?.('#vehicle-controls, #move-p
 host.addEventListener('contextmenu',blockGameBrowserMenu);host.addEventListener('selectstart',blockGameBrowserMenu);host.addEventListener('dragstart',blockGameBrowserMenu);
 const onWindowBlur=()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);activePadKey=null;activeDriveKey=null};window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('pointerup',clearDrive);window.addEventListener('pointercancel',clearDrive);window.addEventListener('blur',onWindowBlur);
 let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0,receptionShown=false;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);
+for(const character of target.userData.characters||[]){if(character===houseAvatar||character.userData.characterMixer===mixer)continue;const isPatrol=cityPoliceAgents.some(agent=>agent.group===character);if(!isPatrol&&character.userData.characterMixer)character.userData.characterMixer.update(delta);if(!isPatrol)updateCharacterActionPose(character,delta)}
 if(kind==='city'&&cityPoliceAgents.length){
  for(const agent of cityPoliceAgents){
   const officer=agent.group,player=houseAvatar;if(!officer)continue;
@@ -1337,22 +1386,24 @@ if(kind==='room'&&roomName==='esquadra'&&houseAvatar&&!receptionShown){
   const panel=$('life-panel');panel.addEventListener('click',e=>{if(e.target?.id==='police-reception-back'){openLifePanel('Recepção da Esquadra','<p class="life-muted">Em que podemos ajudar?</p><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button>')}},{once:false});
  }
 }
+if(kind==='city')cityDrivableCars.forEach(v=>{if(v.group)v.group.visible=true});
 if(kind==='city'&&cityPoliceVehicles.length){
  for(const patrol of cityPoliceVehicles){
   const car=patrol.group,point=patrol.route[patrol.waypoint];if(!car||!point||vehicleState?.vehicle?.group===car)continue;
   const dx=point.x-car.position.x,dz=point.z-car.position.z,dist=Math.hypot(dx,dz);
   if(dist<.65){patrol.waypoint=(patrol.waypoint+1)%patrol.route.length;continue}
-  const step=Math.min(dist,patrol.speed*delta);car.position.x+=dx/dist*step;car.position.z+=dz/dist*step;
+  const step=Math.min(dist,patrol.speed*delta),nx=car.position.x+dx/dist*step,nz=car.position.z+dz/dist*step;const otherCar=cityDrivableCars.find(v=>v.group!==car&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<2.12);if(otherCar){markVehicleCollision({group:car});markVehicleCollision(otherCar);patrol.waypoint=(patrol.waypoint+1)%patrol.route.length;car.visible=true;continue}car.position.x=nx;car.position.z=nz;car.visible=true;
   car.rotation.y=Math.atan2(-dz,dx);
  }
 }
-if(kind==='city'&&vehicleState){const car=vehicleState.vehicle.group;let speed=vehicleState.speed;if(driveKeys.accelerate)speed=Math.min(15,speed+7.2*delta);else if(driveKeys.brake){if(speed>.35)speed=Math.max(0,speed-13*delta);else speed=Math.max(-4.5,speed-5.2*delta)}else speed*=Math.exp(-1.65*delta);const steering=(driveKeys.left?1:0)-(driveKeys.right?1:0),steerAmount=Math.min(1,Math.abs(speed)/2.5);if(steering)car.rotation.y+=steering*delta*1.35*steerAmount*(speed>=0?1:-1);const nx=car.position.x+Math.cos(car.rotation.y)*speed*delta,nz=car.position.z-Math.sin(car.rotation.y)*speed*delta,axisX=Math.cos(car.rotation.y)*1.28,axisZ=-Math.sin(car.rotation.y)*1.28,blocked=[{x:nx,z:nz},{x:nx+axisX,z:nz+axisZ},{x:nx-axisX,z:nz-axisZ}].some(p=>cityBlocked(p.x,p.z,.48)),other=cityDrivableCars.some(v=>v.group!==car&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<1.95);if(!blocked&&!other){car.position.x=nx;car.position.z=nz}else speed*=.18;vehicleState.speed=speed;houseAvatar.position.set(-.43,.49,.18);cameraTarget.set(car.position.x,.12,car.position.z);theta=Math.atan2(-Math.cos(car.rotation.y),Math.sin(car.rotation.y));updateOrbit();const speedDisplay=$('vehicle-speed');if(speedDisplay)speedDisplay.textContent=Math.round(Math.abs(speed)*3.6)+' km/h'}
+if(kind==='city'&&vehicleState){const car=vehicleState.vehicle.group;let speed=vehicleState.speed;if(driveKeys.accelerate)speed=Math.min(15,speed+7.2*delta);else if(driveKeys.brake){if(speed>.35)speed=Math.max(0,speed-13*delta);else speed=Math.max(-4.5,speed-5.2*delta)}else speed*=Math.exp(-1.65*delta);const steering=(driveKeys.left?1:0)-(driveKeys.right?1:0),steerAmount=Math.min(1,Math.abs(speed)/2.5);if(steering)car.rotation.y+=steering*delta*1.35*steerAmount*(speed>=0?1:-1);const nx=car.position.x+Math.cos(car.rotation.y)*speed*delta,nz=car.position.z-Math.sin(car.rotation.y)*speed*delta,axisX=Math.cos(car.rotation.y)*1.28,axisZ=-Math.sin(car.rotation.y)*1.28,blocked=[{x:nx,z:nz},{x:nx+axisX,z:nz+axisZ},{x:nx-axisX,z:nz-axisZ}].some(p=>cityBlocked(p.x,p.z,.48)),otherVehicle=cityDrivableCars.find(v=>v.group!==car&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<2.12);if(!blocked&&!otherVehicle){car.position.x=nx;car.position.z=nz}else{speed=0;markVehicleCollision(vehicleState.vehicle);if(otherVehicle)markVehicleCollision(otherVehicle)}car.visible=true;vehicleState.speed=speed;houseAvatar.position.set(-.43,.10,.18);updateCharacterActionPose(houseAvatar,delta);cameraTarget.set(car.position.x,.12,car.position.z);theta=Math.atan2(-Math.cos(car.rotation.y),Math.sin(car.rotation.y));updateOrbit();const speedDisplay=$('vehicle-speed');if(speedDisplay)speedDisplay.textContent=Math.round(Math.abs(speed)*3.6)+' km/h'}
 if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState){
  let inputX=0,inputZ=0;
  const forwardX=-Math.sin(theta),forwardZ=-Math.cos(theta),rightX=Math.cos(theta),rightZ=-Math.sin(theta);
  if(moveKeys.forward){inputX+=forwardX;inputZ+=forwardZ}if(moveKeys.backward){inputX-=forwardX;inputZ-=forwardZ}
  if(moveKeys.right){inputX+=rightX;inputZ+=rightZ}if(moveKeys.left){inputX-=rightX;inputZ-=rightZ}
- const hasInput=Math.hypot(inputX,inputZ)>.001;
+ let hasInput=Math.hypot(inputX,inputZ)>.001;
+ if(hasInput&&houseAvatar.userData.actionState?.type==='sit')standCharacterUp();if(hasInput&&houseAvatar.userData.actionState?.type==='wave')houseAvatar.userData.actionState={type:'idle',time:0};
  if(hasInput){const length=Math.hypot(inputX,inputZ);inputX/=length;inputZ/=length;destination=null}
  let desiredX=0,desiredZ=0;
  const speedLimit=kind==='city'?4.1:2.15;
@@ -1365,20 +1416,32 @@ if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState){
  if(Math.abs(houseAvatar.position.x)>=limit-.01)velocityX=0;if(Math.abs(houseAvatar.position.z)>=limit-.01)velocityZ=0;
  const speed=Math.hypot(velocityX,velocityZ),walking=speed>.035;
  if(walking){const wanted=Math.atan2(velocityX,velocityZ);let turn=(wanted-houseAvatar.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;houseAvatar.rotation.y+=turn*(1-Math.exp(-14*delta))}
- houseAvatar.position.y=-.03;
- const model=houseAvatar.userData.characterModel;
- if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0;actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06}
+ houseAvatar.position.y=houseAvatar.userData.actionState?.type==='sit'?((houseAvatar.userData.actionState.seat?.y)||.55)-.86:-.03;
+ const model=houseAvatar.userData.characterModel,actionType=houseAvatar.userData.actionState?.type||'idle';
+ if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=actionType==='sit'||actionType==='wave'?0:(walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0);actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}else if(houseAvatar.userData.fallbackRig){const r=houseAvatar.userData.fallbackRig;walkPhase+=delta*(walking?8:2);const swing=walking?Math.sin(walkPhase)*.48:0;if(actionType==='idle'){r.leftLeg.rotation.x=swing;r.rightLeg.rotation.x=-swing;r.leftArm.rotation.x=-swing*.72;r.rightArm.rotation.x=swing*.72;r.leftArm.rotation.z=.06;r.rightArm.rotation.z=-.06;if(r.leftCalf)r.leftCalf.rotation.x=Math.max(0,-swing)*.6;if(r.rightCalf)r.rightCalf.rotation.x=Math.max(0,swing)*.6}}
+ updateCharacterActionPose(houseAvatar,delta);
  if(kind==='city'){const nearest=cityDrivableCars.map(v=>({vehicle:v,distance:Math.hypot(houseAvatar.position.x-v.group.position.x,houseAvatar.position.z-v.group.position.z)})).sort((a,b)=>a.distance-b.distance)[0];nearbyVehicle=nearest&&nearest.distance<3.7?nearest.vehicle:null;const cp=$('vehicle-prompt'),cl=$('vehicle-prompt-label');if(cp){if(nearbyVehicle){cp.classList.remove('hidden');if(cl)cl.textContent=nearbyVehicle.label+' · Pressiona E para entrar'}else cp.classList.add('hidden')}const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+21.196)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
 }
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
 return()=>{cityPoliceAgents.length=0;cityPoliceVehicles.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('pointerup',clearDrive);window.removeEventListener('pointercancel',clearDrive);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));driveButtons.forEach(b=>b.removeEventListener('pointerdown',onDriveDown));host.removeEventListener('contextmenu',blockGameBrowserMenu);host.removeEventListener('selectstart',blockGameBrowserMenu);host.removeEventListener('dragstart',blockGameBrowserMenu);if(vehicleEnterButton)vehicleEnterButton.onclick=null;if(vehicleExitButton)vehicleExitButton.onclick=null;$('vehicle-prompt')?.classList.add('hidden');$('vehicle-controls')?.classList.add('hidden');scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
-let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
+let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null,disposeInventory=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
 function renderVianaCity(spawn=null){if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='POVO GRANDE';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='POVO GRANDE · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
 $('home-reset').onclick=renderHome;$('city-back-home').onclick=()=>{$('move-pad').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='Arrasta para virar a câmara · Pinça para zoom · Toca para caminhar';renderHome()};
 $('room-enter-button').onclick=()=>{if(!activeRoomDoor)return;const door=activeRoomDoor;activeRoomDoor=null;$('room-enter-prompt').classList.add('hidden');if(door.dest==='map'){$('life-globe').click();return}const transition=$('room-transition');if(transition)transition.classList.add('active');setTimeout(()=>{if(door.dest==='city'){renderVianaCity(door.spawn||null)}else{renderHome(door.dest,door.spawn||{x:0,z:1.65,face:0})}requestAnimationFrame(()=>setTimeout(()=>{if(transition)transition.classList.remove('active')},80))},240)};
 $('save-avatar').onclick=async()=>{say('avatar-message','A guardar…');const {error}=await sb.from('profiles').update({avatar:{...avatar,completed:true},updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('avatar-message',error.message);return}avatar.completed=true;profile.avatar=avatar;$('avatar-gender').disabled=true;say('avatar-message','Personagem guardado. A entrar na tua primeira casa…');showPage('home')}
+const wardrobeCatalog={
+ tops:[{label:'Regata branca',icon:'👕',look:{shirt:'#f2f2ee'}},{label:'Camiseta azul',icon:'👕',look:{shirt:'#3867a8'}},{label:'Camiseta vermelha',icon:'👕',look:{shirt:'#a83f43'}},{label:'Camiseta verde',icon:'👕',look:{shirt:'#43866b'}}],
+ bottoms:[{label:'Bermuda branca',icon:'🩳',look:{pants:'#e6e8ee'}},{label:'Bermuda cinzenta',icon:'🩳',look:{pants:'#9da3a8'}},{label:'Calças escuras',icon:'👖',look:{pants:'#26364b'}},{label:'Jeans azul',icon:'👖',look:{pants:'#344e70'}}],
+ outfits:[{label:'Conjunto da referência',icon:'🧍',look:{shirt:'#f2f2ee',pants:'#e6e8ee'}},{label:'Casual azul',icon:'🧍',look:{shirt:'#3867a8',pants:'#26364b'}},{label:'Verde e cinzento',icon:'🧍',look:{shirt:'#43866b',pants:'#9da3a8'}}]
+};
+function updateWardrobeGender(){document.querySelectorAll('[data-gender-choice]').forEach(button=>button.classList.toggle('active',button.dataset.genderChoice===avatar.gender))}
+function renderWardrobe(){const host=$('wardrobe-items');if(!host)return;host.innerHTML='';const items=wardrobeCatalog[activeWardrobe]||[];items.forEach(item=>{const button=document.createElement('button');button.type='button';button.className='choice-card wardrobe-choice'+(Object.entries(item.look).every(([key,value])=>avatar[key]===value)?' selected':'');button.innerHTML='<span class="choice-art">'+item.icon+'</span><span><b></b><small>Equipar no personagem</small></span>';button.querySelector('b').textContent=item.label;button.onclick=()=>{Object.assign(avatar,item.look);renderWardrobe();if(disposeInventory){disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}};host.append(button)})}
+function renderInventoryPage(){updateWardrobeGender();renderWardrobe();if(disposeInventory)disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}
+document.querySelectorAll('[data-gender-choice]').forEach(button=>button.onclick=()=>{avatar.gender=button.dataset.genderChoice;updateWardrobeGender();renderWardrobe();if(disposeInventory){disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}});
+document.querySelectorAll('[data-wardrobe]').forEach(button=>button.onclick=()=>{activeWardrobe=button.dataset.wardrobe;document.querySelectorAll('[data-wardrobe]').forEach(b=>b.classList.toggle('active',b===button));renderWardrobe()});
+$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:2};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
 const icons={cabelo:'💇',roupa:'👕',calçado:'👟',acessório:'⌚'};
 function renderInventory(){const filtered=inventory.filter(x=>activeCategory==='todos'||x.category===activeCategory);$('inventory-count').textContent=inventory.length+' OBJECTOS';$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;$('inventory-grid').innerHTML='';if(!filtered.length){$('inventory-grid').innerHTML='<p class="muted">Ainda não tens objectos nesta categoria.</p>';return}filtered.forEach(item=>{const el=document.createElement('div');el.className='item';el.innerHTML='<div class="item-icon">'+(icons[item.category]||'📦')+'</div><strong></strong><div class="muted small"></div><button class="secondary"></button>';el.querySelector('strong').textContent=item.label;el.querySelector('.muted').textContent=item.category;const b=el.querySelector('button');b.textContent=item.equipped?'Equipado':'Equipar';b.disabled=item.equipped;b.onclick=()=>equip(item);$('inventory-grid').append(el)})}
 async function equip(item){const clear=await sb.from('inventory_items').update({equipped:false}).eq('user_id',user.id).eq('category',item.category);if(clear.error){alert(clear.error.message);return}const chosen=await sb.from('inventory_items').update({equipped:true}).eq('id',item.id).eq('user_id',user.id);if(chosen.error){alert(chosen.error.message);return}inventory=inventory.map(x=>({...x,equipped:x.id===item.id?true:(x.category===item.category?false:x.equipped)}));renderInventory()}

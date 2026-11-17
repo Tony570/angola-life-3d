@@ -104,3 +104,25 @@
 #vehicle-exit-button{min-width:190px;min-height:46px;font-size:14px;padding:12px 16px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #vehicle-prompt,#vehicle-prompt *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 @media(max-width:700px){#vehicle-controls{right:8px;bottom:8px;padding:10px;gap:9px;border-radius:18px}.vehicle-drive-pad{grid-template-columns:repeat(3,70px);grid-template-rows:repeat(2,66px);gap:7px}.vehicle-drive-pad button{width:70px;height:66px;min-width:70px;min-height:66px;font-size:29px;border-radius:17px}#vehicle-speed{min-width:182px;min-height:40px;font-size:18px}#vehicle-exit-button{min-width:182px;min-height:44px;font-size:13px}}
+
+/* Avatar humano, guarda-roupa e acções sociais */
+#page-avatar .avatar-layout{grid-template-columns:minmax(0,1fr) 370px;align-items:stretch}
+#page-avatar .avatar-stage{height:610px;background:radial-gradient(ellipse at 50% 42%,#f2f4f5 0,#c6d3dc 58%,#a7b9c7 100%)}
+#page-avatar .avatar-options{max-height:610px;overflow:auto}
+.inventory-wardrobe-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px;margin-bottom:14px;align-items:stretch}
+.inventory-preview-panel{min-width:0}
+.inventory-avatar-stage{height:440px;background:radial-gradient(ellipse at 50% 42%,#f2f4f5 0,#c6d3dc 58%,#a7b9c7 100%)}
+.gender-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px}
+.gender-tabs button{padding:10px;background:#101a2a;color:#dce8f5;border:1px solid #405674;border-radius:12px;font-weight:800}
+.gender-tabs button.active{background:#d6b45e;color:#17243a;border-color:#f3d27b}
+.wardrobe-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:12px}
+.wardrobe-tabs button{padding:10px 6px;background:#101a2a;color:#dce8f5;border:1px solid #405674;border-radius:12px;font-weight:800}
+.wardrobe-tabs button.active{background:#d6b45e;color:#17243a;border-color:#f3d27b}
+.wardrobe-choice .choice-art{font-size:26px}
+#save-wardrobe{width:100%;margin-top:12px}
+.character-actions{position:absolute;z-index:11;left:14px;bottom:128px;display:flex;gap:8px;align-items:center;pointer-events:auto}
+.character-actions button{min-height:42px;padding:9px 14px;border-radius:14px;background:#173b68ed;border:2px solid #e7c46f;color:#fff;font-weight:900;box-shadow:0 3px 10px #0006;touch-action:manipulation}
+.character-actions button:active{background:#d5a744;color:#14243d}
+.character-actions .hidden{display:none!important}
+@media(max-width:850px){#page-avatar .avatar-layout,.inventory-wardrobe-layout{grid-template-columns:1fr}#page-avatar .avatar-stage{height:420px;min-height:360px}#page-avatar .avatar-options{max-height:none}.inventory-avatar-stage{height:370px}}
+@media(max-width:700px){.character-actions{left:8px;bottom:112px;gap:6px}.character-actions button{min-height:38px;padding:8px 10px;font-size:11px}.inventory-avatar-stage{height:330px}.inventory-wardrobe-layout{gap:8px}}
