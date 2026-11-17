@@ -1317,7 +1317,7 @@ if(kind==='city'&&cityPoliceAgents.length){
 }
 if(kind==='room'&&roomName==='esquadra'&&houseAvatar&&!receptionShown){
  const receptionDistance=Math.hypot(houseAvatar.position.x,houseAvatar.position.z+0.15);
- if(receptionDistance<2.15){
+ if(receptionDistance<3.2){
   receptionShown=true;
   openLifePanel('Recepção da Esquadra','<p class="life-muted">Bom dia. Seja bem-vindo à esquadra. Em que podemos ajudar?</p><div class="life-list"><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button></div>');
   const bindReception=(id,title,body)=>{const b=$('life-panel').querySelector('#'+id);if(b)b.onclick=()=>openLifePanel(title,'<p class="life-muted">'+body+'</p><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');};
