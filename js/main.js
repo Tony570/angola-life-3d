@@ -1822,7 +1822,7 @@ async function refreshVisibleWorldChat(){
 }
 async function startSocialRealtime(){
  if(!user||socialWorldChannel)return;
- const channel=sb.channel('angola-life-world');
+ const channel=sb.channel('angola-life-world',{config:{private:true}});
  channel
   .on('presence',{event:'sync'},()=>{socialPresenceState=channel.presenceState();const onlineIds=new Set(getSocialOnlinePlayers().map(p=>p.user_id));for(const id of [...socialRemoteStates.keys()])if(!onlineIds.has(id)){socialRemoteStates.delete(id);activeCityRemoteSync?.({user_id:id,zone:'offline'})}renderSocialOnlinePlayers()})
   .on('broadcast',{event:'player_state'},({payload})=>{if(!payload?.user_id||payload.user_id===user.id)return;socialRemoteStates.set(payload.user_id,payload);activeCityRemoteSync?.(payload)})
