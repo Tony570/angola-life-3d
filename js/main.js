@@ -36,6 +36,59 @@ let playerNeeds={energy:100,hunger:100,hydration:100};
 function renderNeedsHud(){const el=$('life-energy-display');if(el)el.textContent='⚡ '+playerNeeds.energy+'%'}
 async function refreshPlayerNeeds(){if(!user)return;const {data,error}=await sb.rpc('get_player_needs');if(error){console.warn('Necessidades:',error.message);return}if(data)playerNeeds={energy:Number(data.energy),hunger:Number(data.hunger),hydration:Number(data.hydration)};renderNeedsHud()}
 function needsSummary(){return '<div class="life-row"><span>⚡ Energia</span><b>'+playerNeeds.energy+'%</b></div><div class="life-row"><span>🍲 Fome</span><b>'+playerNeeds.hunger+'%</b></div><div class="life-row"><span>💧 Hidratação</span><b>'+playerNeeds.hydration+'%</b></div>'}
+
+const marketCatalog=[
+ ['rice','Arroz (1 kg)',1500,'🍚'],['beans','Feijão (1 kg)',1800,'🫘'],['pasta','Massa (1 kg)',1200,'🍝'],['potato','Batata (1 kg)',1000,'🥔'],['tomato','Tomate (1 kg)',900,'🍅'],['onion','Cebola (1 kg)',800,'🧅'],['meat','Carne (1 kg)',4500,'🥩'],['chicken','Frango (1 kg)',3500,'🍗'],['fish','Peixe (1 kg)',3000,'🐟'],['oil','Óleo (1 L)',2000,'🫗'],['salt','Sal (1 kg)',500,'🧂']
+];
+const mealCatalog=[
+ ['rice_chicken','Arroz com frango','🍗','Arroz + frango + óleo'],['beans_rice','Feijão com arroz','🫘','Feijão + arroz'],['fish_potato','Peixe com batata','🐟','Peixe + batata + óleo'],['pasta_meat','Massa com carne','🍝','Massa + carne + tomate']
+];
+async function loadFoodInventory(){
+ if(!user)return [];
+ const {data,error}=await sb.from('player_food_inventory').select('item_key,quantity').eq('user_id',user.id).gt('quantity',0);
+ if(error){console.warn('Inventário alimentar:',error.message);return []}
+ return data||[];
+}
+function foodCount(items,key){return Number(items.find(x=>x.item_key===key)?.quantity||0)}
+async function openMarketPanel(){
+ if(activeRoomName!=='market')return;
+ await refreshPlayerWallet();
+ const items=await loadFoodInventory();
+ const rows=marketCatalog.map(([key,label,price,emoji])=>'<div class="life-row"><span><b>'+emoji+' '+label+'</b><br><small>'+new Intl.NumberFormat('pt-PT').format(price)+' Kz · Stock: '+foodCount(items,key)+'</small></span><span class="market-buy-controls"><input aria-label="Quantidade de '+label+'" type="number" min="1" max="99" value="1" data-market-qty="'+key+'"><button class="secondary" data-market-buy="'+key+'">Comprar</button></span></div>').join('');
+ openLifePanel('🛒 Mercado de Povo Grande','<p class="life-muted">Escolhe os produtos e as quantidades. O valor é descontado da tua carteira e os ingredientes seguem para o teu inventário.</p><p><b>Saldo:</b> <span id="market-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p><div class="life-list">'+rows+'</div><p id="market-message" class="life-muted">Os preços apresentados são os preços definidos no jogo.</p>');
+ $('life-panel').querySelectorAll('[data-market-buy]').forEach(button=>button.onclick=async()=>{
+  const key=button.dataset.marketBuy,qty=Number($('life-panel').querySelector('[data-market-qty="'+key+'"]')?.value||1);
+  if(!Number.isInteger(qty)||qty<1||qty>99){$('market-message').textContent='Escolhe uma quantidade entre 1 e 99.';return}
+  button.disabled=true;button.textContent='A comprar…';
+  const {data,error}=await sb.rpc('market_buy_food',{p_item:key,p_quantity:qty});
+  if(error){$('market-message').textContent=error.message;button.disabled=false;button.textContent='Comprar';return}
+  await refreshPlayerWallet();await openMarketPanel();
+  const msg=$('market-message');if(msg)msg.textContent='Compra concluída: '+data.quantity+' × '+data.item+'. Total: '+new Intl.NumberFormat('pt-PT').format(data.total)+' Kz.';
+ });
+}
+async function openKitchenPanel(){
+ if(activeRoomName!=='cozinha'||activeHouseVisit)return;
+ const items=await loadFoodInventory();
+ await refreshPlayerNeeds();
+ const stock=marketCatalog.map(([key,label,,emoji])=>'<div class="life-row"><span>'+emoji+' '+label+'</span><b>'+foodCount(items,key)+'</b></div>').join('');
+ const recipes=mealCatalog.map(([key,label,emoji,description])=>'<div class="life-row"><span><b>'+emoji+' '+label+'</b><br><small>'+description+'</small></span><button class="secondary" data-cook-recipe="'+key+'">Preparar</button></div>').join('');
+ const meals=mealCatalog.map(([key,label,emoji])=>({key:'meal_'+key,label,emoji})).filter(m=>foodCount(items,m.key)>0);
+ const mealRows=meals.length?meals.map(m=>'<div class="life-row"><span>'+m.emoji+' '+m.label+'<br><small>Quantidade: '+foodCount(items,m.key)+' · +25 energia · +45 fome</small></span><button class="secondary" data-eat-meal="'+m.key+'">Comer</button></div>').join(''):'<p class="life-muted">Ainda não tens refeições preparadas. Cozinha uma receita para guardar aqui.</p>';
+ openLifePanel('🍳 Cozinha de casa','<p class="life-muted">Prepara refeições com os ingredientes que compraste no mercado. Os ingredientes são retirados do inventário e a refeição fica guardada até a comeres.</p><h4>Ingredientes disponíveis</h4><div class="life-list">'+stock+'</div><h4>Receitas</h4><div class="life-list">'+recipes+'</div><h4>Refeições guardadas</h4><div class="life-list">'+mealRows+'</div><p id="kitchen-message" class="life-muted"></p>');
+ $('life-panel').querySelectorAll('[data-cook-recipe]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;button.textContent='A preparar…';
+  const {data,error}=await sb.rpc('cook_player_recipe',{p_recipe:button.dataset.cookRecipe});
+  if(error){$('kitchen-message').textContent=error.message;button.disabled=false;button.textContent='Preparar';return}
+  await openKitchenPanel();const msg=$('kitchen-message');if(msg)msg.textContent='Prato preparado e guardado: '+data.label+'.';
+ });
+ $('life-panel').querySelectorAll('[data-eat-meal]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;button.textContent='A comer…';
+  const {data,error}=await sb.rpc('eat_player_meal',{p_item:button.dataset.eatMeal});
+  if(error){$('kitchen-message').textContent=error.message;button.disabled=false;button.textContent='Comer';return}
+  await Promise.all([refreshPlayerNeeds(),openKitchenPanel()]);const msg=$('kitchen-message');if(msg)msg.textContent='Comeste '+data.item+'. Energia e saciedade recuperadas.';
+ });
+}
+
 async function openEconomyPanel(){
  await Promise.all([refreshPlayerWallet(),refreshPlayerNeeds()]);
  const foods=[['water','💧 Água',100,'+2 energia · +20 hidratação'],['juice','🧃 Sumo',250,'+5 energia · +15 hidratação'],['fruit','🍎 Fruta',200,'+5 energia · +15 fome'],['sandwich','🥪 Sandes',500,'+10 energia · +25 fome'],['meal','🍛 Refeição completa',1000,'+20 energia · +40 fome']];
@@ -802,11 +855,13 @@ function buildVianaCommercialInterior(name){
  for(let i=-1;i<=1;i++){box(1.05,.045,.42,white,i*2.45,3.35,-.4);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),new THREE.MeshStandardMaterial({color:'#fff0c5',emissive:'#d9b66c',emissiveIntensity:.45}));lamp.position.set(i*2.45,3.18,-.4);target.add(lamp)}
  if(isMarket){
   // Prateleiras, balcões, caixas de fruta e produtos organizados por secção.
-  for(const side of [-1,1])for(let row=0;row<2;row++){const x=side*3.15,z=-2.35+row*2.15;furnMarketRack(x,z,wood,metal);for(let level=0;level<3;level++){for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
+  for(const side of [-1,1])for(let row=0;row<3;row++){const x=side*3.15,z=-2.5+row*2.05;furnMarketRack(x,z,wood,metal);for(let level=0;level<3;level++){for(let k=0;k<4;k++){const colors=['#d84b38','#e4b83f','#57934c','#c77b38'];const fruit=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),mat(colors[(k+level)%4],.8));fruit.position.set(x-.22+(k%2)*.3,.63+level*.67,z-.42+Math.floor(k/2)*.55);target.add(fruit)}}}
   for(let i=0;i<3;i++){const x=-2.2+i*2.2;box(1.65,.85,.78,wood,x,.48,.75);for(let k=0;k<5;k++){const produce=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),mat(['#d94d35','#e6bd38','#4d8a43'][i],.85));produce.position.set(x-.55+k*.27,.99,.75);target.add(produce)}}
   furnCounter(2.8,1,.68,mat('#a66d42'),white,metal,0,-3.15);
   for(let i=0;i<6;i++){const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.36,10),mat(i%2?'#4f8a73':'#c08b42'));bottle.position.set(-1.1+i*.44,1.34,-3.15);target.add(bottle)}
-  buildCharacter(target,{gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#7d5941',pants:'#35475b',hairStyle:'medio'},{x:0,y:0,z:-2.15},()=>{},false);
+  addWorkAgent({gender:'female',skin:'#c98962',hair:'#241b18',shirt:'#7d5941',pants:'#35475b',hairStyle:'medio'},{x:0,y:0,z:-2.15},[[0,-2.15],[.42,-2.15],[.42,-1.82],[0,-1.82]],'Atendente da caixa');
+  addWorkAgent({gender:'male',skin:'#985b42',hair:'#171412',shirt:'#b5a15e',pants:'#35404b',hairStyle:'curto'},{x:-3,y:0,z:-1.9},[[-3,-1.9],[-3,1.7],[-2.4,1.7],[-2.4,-1.9]],'Repositor do mercado');
+  addWorkAgent({gender:'female',skin:'#dca77c',hair:'#38251d',shirt:'#3867a8',pants:'#26364b',hairStyle:'medio'},{x:2.6,y:0,z:2.8},[[2.6,2.8],[2.6,.8],[1.4,.8],[1.4,-1.7],[0,-2.45],[1.5,-2.45],[2.6,-1],[2.6,2.8]],'Cliente do mercado');
  }else if(isQuarry){
   // Balcão administrativo à entrada e armazém de materiais de construção.
   furnCounter(2.65,.95,.72,wood,white,metal,0,-2.75);
@@ -913,7 +968,7 @@ function buildRoom(name){
  if(name==='bar'){buildBarInterior();return}
  if(name==='bar-private-1'||name==='bar-private-2'){buildBarPrivateRoom(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  if(name==='party'){buildPartyHallInterior();return}
- if(['market','quarry','cars','salon','clothes'].includes(name)){if(['market','quarry','cars'].includes(name))buildExpandedInterior(()=>buildVianaCommercialInterior(name),2.3);else buildVianaCommercialInterior(name);return}
+ if(['market','quarry','cars','salon','clothes'].includes(name)){if(['market','quarry','cars'].includes(name))buildExpandedInterior(()=>buildVianaCommercialInterior(name),name==='market'?3.25:2.3);else buildVianaCommercialInterior(name);return}
  if(name==='hotel'||name.startsWith('hotel-suite-')){buildHotelInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
  if(name==='esquadra'){buildExpandedInterior(()=>buildPoliceStationInterior(),2.3);buildPoliceSectorLayout();(doorDefs.esquadra||[]).forEach(addRoomDoor);return}
  if(name==='hospital'||name==='hospital-tratamento'||name==='hospital-consultorio'){buildHospitalInterior(name);(doorDefs[name]||[]).forEach(addRoomDoor);return}
@@ -925,7 +980,16 @@ function buildRoom(name){
  /* Sem tecto: a câmara mantém sempre a vista aberta sobre o interior. */
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
- if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88);const stored=playerVehicles.filter(v=>v.owner_id===user?.id&&v.is_stored);stored.slice(0,4).forEach((v,i)=>{const car=createDetailedCar(v.color,false);car.scale.setScalar(.48);car.position.set((i%2===0?-1.85:1.85),0,i<2?-.65:1.45);car.rotation.y=Math.PI;car.userData.garageVehicleId=v.id;target.add(car)})}
+ if(name==='cozinha'){
+  const cabinet=mat('#8b603e',.82),stone=mat('#d5d4ca',.5),steel=mat('#77868b',.38),dark=mat('#292f35',.55);
+  // Cozinha funcional: bancada, lava-loiça, fogão, frigorífico e armários.
+  box(3.7,.92,.72,cabinet,0,.48,-3.05);box(3.78,.12,.82,stone,0,1,-3.05);
+  box(.92,1.9,.82,mat('#e5e9e8',.38),-3.05,.95,-2.9);box(.98,.08,.86,steel,-3.05,1.93,-2.9);
+  box(1.2,.08,.78,dark,1.25,1.08,-3.05);for(const x of [.9,1.6])for(const z of [-3.28,-2.82]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.14,.025,6,16),steel);ring.rotation.x=Math.PI/2;ring.position.set(x,1.14,z);target.add(ring)}
+  box(2.5,.65,.48,cabinet,0,2.45,-3.65);box(2.55,.08,.52,stone,0,2.82,-3.65);
+  box(1.1,.12,.8,steel,-2.5,.95,1.9);box(1.15,.08,.85,stone,-2.5,1.04,1.9);
+}
+if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88);const stored=playerVehicles.filter(v=>v.owner_id===user?.id&&v.is_stored);stored.slice(0,4).forEach((v,i)=>{const car=createDetailedCar(v.color,false);car.scale.setScalar(.48);car.position.set((i%2===0?-1.85:1.85),0,i<2?-.65:1.45);car.rotation.y=Math.PI;car.userData.garageVehicleId=v.id;target.add(car)})}
 }
 
 
@@ -1739,7 +1803,7 @@ if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState){
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
 return()=>{if(kind==='room'&&(roomName==='bar'||roomName==='party')){gameAudioState.currentVenue=null;stopVenueMusic();}if(playerVehicleRealtimeChannel){sb.removeChannel(playerVehicleRealtimeChannel);playerVehicleRealtimeChannel=null;}cityPoliceAgents.length=0;cityPoliceVehicles.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('pointerup',clearDrive);window.removeEventListener('pointercancel',clearDrive);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));driveButtons.forEach(b=>b.removeEventListener('pointerdown',onDriveDown));host.removeEventListener('contextmenu',blockGameBrowserMenu);host.removeEventListener('selectstart',blockGameBrowserMenu);host.removeEventListener('dragstart',blockGameBrowserMenu);if(vehicleEnterButton)vehicleEnterButton.onclick=null;if(vehicleExitButton)vehicleExitButton.onclick=null;$('vehicle-prompt')?.classList.add('hidden');$('vehicle-controls')?.classList.add('hidden');scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture&&value!==sharedSkinMap&&value!==sharedSkinBump)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
-let activeRoomDoor=null;let activeRoomName='sala';let disposeHome=null,disposeAvatar=null,disposeInventory=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){activeRoomName=roomName;activeCityRemoteSync=null;updateSocialPresence(activeHouseVisit?.role==='visitor'?'visiting-house':'home');if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn);if(activeHouseVisit?.role==='visitor'){const current=$('room-current');if(current)current.textContent='CASA DE '+(activeHouseVisit.hostName||'AMIGO');const nav=$('room-door-nav');if(nav){const leave=document.createElement('button');leave.type='button';leave.textContent='🚪 SAIR DA CASA DO AMIGO';leave.onclick=()=>{activeHouseVisit=null;renderHome('sala')};nav.appendChild(leave)}}if(roomName==='garagem'){const nav=$('room-door-nav');if(nav){const b=document.createElement('button');b.type='button';b.textContent='🚗 VER OS MEUS CARROS';b.onclick=openPlayerGaragePanel;nav.appendChild(b)}}}
+let activeRoomDoor=null;let activeRoomName='sala';let disposeHome=null,disposeAvatar=null,disposeInventory=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){activeRoomName=roomName;activeCityRemoteSync=null;updateSocialPresence(activeHouseVisit?.role==='visitor'?'visiting-house':'home');if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn);const roomNav=$('room-door-nav');if(roomNav&&roomName==='market'){const marketBtn=document.createElement('button');marketBtn.type='button';marketBtn.textContent='🛒 COMPRAR ALIMENTOS';marketBtn.onclick=openMarketPanel;roomNav.appendChild(marketBtn)}if(roomNav&&roomName==='cozinha'&&!activeHouseVisit){const kitchenBtn=document.createElement('button');kitchenBtn.type='button';kitchenBtn.textContent='🍳 COZINHAR / COMER';kitchenBtn.onclick=openKitchenPanel;roomNav.appendChild(kitchenBtn)}if(activeHouseVisit?.role==='visitor'){const current=$('room-current');if(current)current.textContent='CASA DE '+(activeHouseVisit.hostName||'AMIGO');const nav=$('room-door-nav');if(nav){const leave=document.createElement('button');leave.type='button';leave.textContent='🚪 SAIR DA CASA DO AMIGO';leave.onclick=()=>{activeHouseVisit=null;renderHome('sala')};nav.appendChild(leave)}}if(roomName==='garagem'){const nav=$('room-door-nav');if(nav){const b=document.createElement('button');b.type='button';b.textContent='🚗 VER OS MEUS CARROS';b.onclick=openPlayerGaragePanel;nav.appendChild(b)}}}
 function renderVianaCity(spawn=null){if(activeHouseVisit?.role==='visitor')activeHouseVisit=null;activeHouseGuestSync=null;updateSocialPresence('city');if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='POVO GRANDE';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='POVO GRANDE · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
 $('home-reset').onclick=renderHome;$('city-back-home').onclick=()=>{$('move-pad').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='Arrasta para virar a câmara · Pinça para zoom · Toca para caminhar';renderHome()};
