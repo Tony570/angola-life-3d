@@ -3,7 +3,7 @@ const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=id=>document.getElementById(id);
-let user=null,profile=null,inventory=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#eef2f5',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:4};
+let user=null,profile=null,inventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#eef2f5',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:4};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
@@ -20,7 +20,54 @@ $('verify-phone').onclick=async()=>{const token=$('phone-code').value.trim();if(
 $('logout').onclick=async()=>{stopGameAudio();await sb.auth.signOut();user=null;$('game').classList.add('hidden');$('auth').classList.remove('hidden');$('phone-verify').classList.add('hidden');$('tab-login').classList.remove('hidden');$('tab-signup').classList.remove('hidden');setTab('login')};
 function showPage(page){document.querySelectorAll('[id^="page-"]').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='avatar'){if(disposeHome){disposeHome();disposeHome=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderAvatar()}if(page==='inventory'){if(disposeHome){disposeHome();disposeHome=null}if(disposeAvatar){disposeAvatar();disposeAvatar=null}renderInventoryPage()}if(page==='home'){if(disposeAvatar){disposeAvatar();disposeAvatar=null}if(disposeInventory){disposeInventory();disposeInventory=null}renderHome()}}$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
-async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};if((savedAvatar.modelVersion||0)<4){if(!savedAvatar.hair||['#241b18','#171412'].includes(savedAvatar.hair))avatar.hair=avatar.gender==='male'?'#eef2f5':'#38251d';if(!savedAvatar.shirt||savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';if(!savedAvatar.pants||savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';avatar.beardStyle=avatar.gender==='male'?'goatee':'none';avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=4;}$('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
+
+async function refreshPlayerWallet(){
+ if(!user)return;
+ const {data,error}=await sb.from('player_wallets').select('balance').eq('user_id',user.id).maybeSingle();
+ if(error){console.error('Carteira:',error);return}
+ if(data)playerWalletBalance=Number(data.balance)||0;
+ const display=$('life-wallet-balance');
+ if(display)display.textContent='💵 Dinheiro: '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz';
+}
+async function loadPlayerVehicles(){
+ if(!user)return;
+ const {data,error}=await sb.from('player_vehicles').select('id,owner_id,model,color,purchase_price,purchased_at,is_stored,pos_x,pos_z,rotation,passenger_ids').order('purchased_at',{ascending:false});
+ if(error){console.error('Garagem:',error);return}
+ playerVehicles=data||[];
+}
+async function openPlayerGaragePanel(){
+ await Promise.all([refreshPlayerWallet(),loadPlayerVehicles()]);
+ const own=playerVehicles.filter(v=>v.owner_id===user?.id);
+ const other=playerVehicles.filter(v=>v.owner_id!==user?.id&&!v.is_stored);
+ const ownHtml=own.length?own.map(v=>{
+  const occupied=1+(v.passenger_ids||[]).length;
+  const action=v.is_stored?'<button class="secondary" data-garage-action="retrieve" data-vehicle-id="'+v.id+'">🚗 Retirar da garagem</button>':'<button class="secondary" data-garage-action="store" data-vehicle-id="'+v.id+'">🏠 Guardar na garagem</button>';
+  return '<div class="life-row"><span><b>'+escapeLife(v.model)+'</b><br><small>'+new Intl.NumberFormat('pt-PT').format(v.purchase_price)+' Kz · '+(v.is_stored?'Na garagem':'Na cidade')+' · '+occupied+'/4 lugares</small></span>'+action+'</div>';
+ }).join(''):'<p class="life-muted">Ainda não compraste nenhum veículo. Visita a loja de carros para escolher o teu primeiro.</p>';
+ const otherHtml=other.length?other.map(v=>{
+  const seated=(v.passenger_ids||[]).includes(user.id);
+  const action=seated?'<button class="secondary" data-garage-action="leave" data-vehicle-id="'+v.id+'">Sair do veículo</button>':'<button class="secondary" data-garage-action="board" data-vehicle-id="'+v.id+'" '+((v.passenger_ids||[]).length>=3?'disabled':'')+'>Entrar como passageiro</button>';
+  return '<div class="life-row"><span><b>'+escapeLife(v.model)+'</b><br><small>Veículo de outro jogador · '+(1+(v.passenger_ids||[]).length)+'/4 lugares</small></span>'+action+'</div>';
+ }).join(''):'<p class="life-muted">Não há veículos de outros jogadores disponíveis neste momento.</p>';
+ openLifePanel('Garagem particular','<p class="life-muted">Os teus veículos ficam associados à tua conta e continuam guardados quando sais do jogo.</p><p><b>Saldo:</b> '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</p><h4>Os meus veículos</h4>'+ownHtml+'<h4>Veículos na cidade</h4>'+otherHtml);
+ const panel=$('life-panel');
+ panel.querySelectorAll('[data-garage-action]').forEach(button=>button.onclick=async()=>{
+  const action=button.dataset.garageAction,id=button.dataset.vehicleId;
+  button.disabled=true;
+  if(action==='store'&&window.__angolaCurrentVehicleId===id&&typeof window.__angolaExitVehicle==='function')window.__angolaExitVehicle();
+  let result;
+  if(action==='retrieve')result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'retrieve',p_x:0,p_z:0,p_rotation:0});
+  else if(action==='store')result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'store',p_x:0,p_z:0,p_rotation:0});
+  else if(action==='board')result=await sb.rpc('board_player_vehicle',{p_vehicle_id:id});
+  else result=await sb.rpc('leave_player_vehicle',{p_vehicle_id:id});
+  if(result?.error){alert(result.error.message||'Não foi possível concluir a operação.');button.disabled=false;return}
+  await loadPlayerVehicles();
+  if(action==='retrieve')renderVianaCity({x:0,z:0});
+  await openPlayerGaragePanel();
+ });
+}
+
+async function boot(){const {data:{user:u}}=await sb.auth.getUser();if(!u)return;user=u;$('auth').classList.add('hidden');$('game').classList.remove('hidden');$('top-username').textContent=u.email||u.phone||'';const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();if(error){say('global-message','Não foi possível carregar o perfil: '+error.message);return}profile=p;await refreshPlayerWallet();await loadPlayerVehicles();const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};if((savedAvatar.modelVersion||0)<4){if(!savedAvatar.hair||['#241b18','#171412'].includes(savedAvatar.hair))avatar.hair=avatar.gender==='male'?'#eef2f5':'#38251d';if(!savedAvatar.shirt||savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';if(!savedAvatar.pants||savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';avatar.beardStyle=avatar.gender==='male'?'goatee':'none';avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=4;}$('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';await loadInventory();$('side-name').textContent=p.display_name||p.username;$('home-items').textContent=inventory.length;$('profile-items').textContent=inventory.length;fillProfile();showPage(profile.avatar?.completed===true?'home':'avatar')}
 async function loadInventory(){const {data,error}=await sb.from('inventory_items').select('*').eq('user_id',user.id).order('category');if(error){console.error(error);inventory=[]}else inventory=data||[];renderInventory()}
 function fillProfile(){$('profile-display').textContent=profile.display_name;$('profile-handle').textContent='@'+profile.username;$('profile-name').value=profile.username;$('profile-display-input').value=profile.display_name;$('profile-bio').value=profile.bio||''}
 $('save-profile').onclick=async()=>{const username=$('profile-name').value.trim().toLowerCase().replace(/\s+/g,'_');const display_name=$('profile-display-input').value.trim();if(!username||!display_name){say('profile-message','Preenche os dois nomes.');return}const {data,error}=await sb.from('profiles').update({username,display_name,bio:$('profile-bio').value.trim(),updated_at:new Date().toISOString()}).eq('id',user.id).select().single();if(error){say('profile-message',error.message);return}profile=data;fillProfile();$('side-name').textContent=profile.display_name;say('profile-message','Perfil guardado com sucesso.')};
@@ -391,7 +438,7 @@ const doorDefs={
  quarto:[{label:'SALA',dest:'sala',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2},{label:'CASA DE BANHO',dest:'banheiro',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  cozinha:[{label:'SALA',dest:'sala',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  banheiro:[{label:'QUARTO',dest:'quarto',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
- garagem:[],
+ garagem:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:14,z:-17.5,face:Math.PI}}],
  esquadra:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:28,z:-17.2,face:Math.PI}}],
  hospital:[{label:'SALA DE TRATAMENTO',dest:'hospital-tratamento',side:'east',center:0,spawn:{x:-2.55,z:0,face:Math.PI/2},hospitalDoor:true},{label:'CONSULTÓRIO MÉDICO',dest:'hospital-consultorio',side:'west',center:0,spawn:{x:2.55,z:0,face:-Math.PI/2},hospitalDoor:true},{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:-28,z:-22.65,face:Math.PI}}],
  'hospital-tratamento':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:2.55,z:0,face:Math.PI}}],
@@ -694,8 +741,19 @@ function addWorkAgent(look,position,route,role){
  workAgents.push({group:npc,route:route.map(p=>({x:p[0],z:p[1]})),waypoint:1,state:'working',pause:0,phase:Math.random()*Math.PI*2});
  return npc;
 }
-function openCarPriceList(){
- openLifePanel('Tabela de preços · Loja de carros','<p class="life-muted">Bem-vindo à nossa loja. Estes são os veículos disponíveis para venda:</p><div class="life-row"><b>Toyota Corolla</b><strong>12.000.000 Kz</strong></div><div class="life-row"><b>Hyundai Tucson</b><strong>18.500.000 Kz</strong></div><div class="life-row"><b>Toyota Land Cruiser Prado</b><strong>25.000.000 Kz</strong></div><p class="life-muted">Escolhe o veículo que desejas. Os preços estão apresentados em kwanzas.</p>');
+async function openCarPriceList(){
+ await refreshPlayerWallet();
+ const catalog=[['Toyota Corolla',12000000,'#a83e36'],['Hyundai Tucson',18500000,'#426d87'],['Toyota Land Cruiser Prado',25000000,'#d0b65b']];
+ const rows=catalog.map(v=>'<div class="life-row"><span><b>'+v[0]+'</b><br><small>'+new Intl.NumberFormat('pt-PT').format(v[1])+' Kz</small></span><button class="secondary" data-buy-car="'+v[0]+'" data-car-color="'+v[2]+'">Comprar</button></div>').join('');
+ openLifePanel('Loja de carros · Tabela de preços','<p class="life-muted">Escolhe o veículo. O valor será descontado da tua carteira quando a compra for confirmada.</p><p><b>Saldo disponível:</b> <span id="car-shop-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p>'+rows);
+ $('life-panel').querySelectorAll('[data-buy-car]').forEach(button=>button.onclick=async()=>{
+  button.disabled=true;button.textContent='A comprar…';
+  const {data,error}=await sb.rpc('buy_player_vehicle',{p_model:button.dataset.buyCar,p_color:button.dataset.carColor});
+  if(error){alert(error.message);button.disabled=false;button.textContent='Comprar';return}
+  await refreshPlayerWallet();await loadPlayerVehicles();
+  alert('Compra concluída! '+data.model+' já pertence à tua conta e está guardado na garagem.');
+  openPlayerGaragePanel();
+ });
 }
 function buildVianaCommercialInterior(name){
  const isMarket=name==='market',isQuarry=name==='quarry',isCars=name==='cars',isParty=name==='party',isSalon=name==='salon',isClothes=name==='clothes';
@@ -837,7 +895,7 @@ function buildRoom(name){
  /* Sem tecto: a câmara mantém sempre a vista aberta sobre o interior. */
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
- if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88)}
+ if(name==='garagem'){box(2.1,1.35,.12,mat('#d8e2e8'),0,1.5,-3.88);const stored=playerVehicles.filter(v=>v.owner_id===user?.id&&v.is_stored);stored.slice(0,4).forEach((v,i)=>{const car=createDetailedCar(v.color,false);car.scale.setScalar(.48);car.position.set((i%2===0?-1.85:1.85),0,i<2?-.65:1.45);car.rotation.y=Math.PI;car.userData.garageVehicleId=v.id;target.add(car)})}
 }
 
 
@@ -1649,7 +1707,7 @@ if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState){
 renderer.render(scene,camera)};animate();
 const resize=()=>{if(!host.isConnected)return;camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)};const ro=new ResizeObserver(resize);ro.observe(host);
 return()=>{if(kind==='room'&&(roomName==='bar'||roomName==='party')){gameAudioState.currentVenue=null;stopVenueMusic();}cityPoliceAgents.length=0;cityPoliceVehicles.length=0;cancelAnimationFrame(raf);ro.disconnect();renderer.domElement.removeEventListener('pointerdown',onPointerDown);renderer.domElement.removeEventListener('touchstart',onTouchStart);renderer.domElement.removeEventListener('touchmove',onTouchMove);renderer.domElement.removeEventListener('touchend',onTouchEnd);renderer.domElement.removeEventListener('touchcancel',onTouchEnd);window.removeEventListener('pointermove',onPointerMove);window.removeEventListener('pointerup',onPointerUp);window.removeEventListener('keydown',onKeyDown);window.removeEventListener('keyup',onKeyUp);window.removeEventListener('pointerup',clearPad);window.removeEventListener('pointercancel',clearPad);window.removeEventListener('pointerup',clearDrive);window.removeEventListener('pointercancel',clearDrive);window.removeEventListener('blur',onWindowBlur);moveButtons.forEach(b=>b.removeEventListener('pointerdown',onPadDown));driveButtons.forEach(b=>b.removeEventListener('pointerdown',onDriveDown));host.removeEventListener('contextmenu',blockGameBrowserMenu);host.removeEventListener('selectstart',blockGameBrowserMenu);host.removeEventListener('dragstart',blockGameBrowserMenu);if(vehicleEnterButton)vehicleEnterButton.onclick=null;if(vehicleExitButton)vehicleExitButton.onclick=null;$('vehicle-prompt')?.classList.add('hidden');$('vehicle-controls')?.classList.add('hidden');scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const materials=Array.isArray(o.material)?o.material:[o.material];materials.forEach(material=>{for(const value of Object.values(material)){if(value?.isTexture&&value!==sharedSkinMap&&value!==sharedSkinBump)value.dispose()}material.dispose()})}});renderer.dispose();renderer.domElement.remove()}}
-let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null,disposeInventory=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn)}
+let activeRoomDoor=null;let disposeHome=null,disposeAvatar=null,disposeInventory=null;function renderHome(roomName='sala',spawn={x:0,z:1.65,face:0}){if(disposeHome)disposeHome();const back=$('city-back-home');if(back)back.classList.add('hidden');disposeHome=makeRenderer($('home-scene'),'room',roomName,spawn);if(roomName==='garagem'){const nav=$('room-door-nav');if(nav){const b=document.createElement('button');b.type='button';b.textContent='🚗 VER OS MEUS CARROS';b.onclick=openPlayerGaragePanel;nav.appendChild(b)}}}
 function renderVianaCity(spawn=null){if(disposeHome)disposeHome();$('life-panel').classList.add('hidden');$('room-current').textContent='POVO GRANDE';$('room-door-nav').innerHTML='';$('room-enter-prompt').classList.add('hidden');$('move-pad').classList.add('hidden');$('city-back-home').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='POVO GRANDE · AO AR LIVRE · Toca no chão para caminhar · Arrasta para rodar a câmara';disposeHome=makeRenderer($('home-scene'),'city','sala',spawn)}
 function renderAvatar(){setupAvatarControls();if(disposeAvatar)disposeAvatar();disposeAvatar=makeRenderer($('avatar-scene'),'avatar')}
 $('home-reset').onclick=renderHome;$('city-back-home').onclick=()=>{$('move-pad').classList.remove('hidden');$('home-scene').querySelector('.scene-label').textContent='Arrasta para virar a câmara · Pinça para zoom · Toca para caminhar';renderHome()};
@@ -1728,6 +1786,7 @@ $('life-audio').onclick=openGameAudioPanel;
 $('life-name').textContent=profile?.display_name||'Novo residente';
 $('life-task').onclick=()=>openLifePanel('Tarefas diárias','<p class="life-muted">Personaliza o teu avatar, visita a tua casa e conhece novos moradores.</p><div class="life-row">🎯 Completar o perfil <span>Em breve</span></div><div class="life-row">🏡 Explorar a casa <span>Disponível</span></div>');
 $('life-globe').onclick=()=>openLifePanel('Explorar o mundo','<p class="life-muted">Escolhe para onde queres ir no teu mapa.</p><button class="secondary" id="life-map-city">🌍 Entrar no mapa da cidade</button><button class="secondary" id="life-map-garage">🚗 Ir para a minha garagem</button><button class="secondary" id="life-back-home">🏠 Voltar à sala</button>');
+$('life-panel').addEventListener('click',e=>{if(e.target.id==='life-map-city')renderVianaCity();if(e.target.id==='life-map-garage'){renderHome('garagem');openPlayerGaragePanel()}if(e.target.id==='life-back-home')renderHome()});
 
 $('life-menu').onclick=()=>openLifePanel('Menu do jogo','<button class="secondary" id="life-open-avatar">👤 Personalizar avatar</button><button class="secondary" id="life-open-inventory">🎒 Inventário</button><button class="secondary" id="life-open-profile">⭐ Perfil</button>');
 
