@@ -39,6 +39,7 @@ function showPage(page){
 }$('inventory-close').onclick=()=>showPage('home');
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
 
+function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz'}
 async function refreshPlayerWallet(){
  if(!user)return;
  const {data,error}=await sb.from('player_wallets').select('balance').eq('user_id',user.id).maybeSingle();
