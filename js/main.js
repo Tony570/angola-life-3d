@@ -745,23 +745,40 @@ function installBarSceneActions(){
  const wallet=$('life-wallet');if(wallet&&!$('bar-cash-display')){const cash=document.createElement('span');cash.id='bar-cash-display';cash.className='hud-chip';wallet.appendChild(cash)}
  refreshBarCash();
 }
-function openBarServiceMenu(){
+async function openBarServiceMenu(){
  if(!barWaitressAgents.length)return;
  const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
+ const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle();
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
- openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</strong></p>');
- const panel=$('life-panel');panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=async()=>{
+ const roles=[['gerente','Gerente',130000],['barman','Barman',85000],['empregado_mesa','Empregado de mesa',70000],['caixa','Caixa',75000],['seguranca','Segurança',80000],['limpeza','Limpeza',55000]];
+ let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar também funciona como centro de recrutamento. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
+ if(job&&job.status==='hired'){
+  jobsHtml+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+escapeLife(job.role)+' · '+new Intl.NumberFormat("pt-PT").format(job.salary)+' Kz/dia</small></span><span class="badge">Contratado</span></div><button id="bar-job-salary">Receber salário</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
+ }else if(job&&job.status==='pending'){
+  jobsHtml+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+escapeLife(job.role)+' · '+new Intl.NumberFormat("pt-PT").format(job.salary)+' Kz/dia</small></span><span class="badge">Pendente</span></div><button id="bar-job-interview">Realizar entrevista</button>';
+ }else{
+  jobsHtml+='<label for="bar-job-role">Escolhe uma vaga</label><select id="bar-job-role">'+roles.map(r=>'<option value="'+r[0]+'">'+r[1]+' · '+new Intl.NumberFormat("pt-PT").format(r[2])+' Kz/dia</option>').join('')+'</select><button id="bar-job-apply">Candidatar-me a uma vaga</button>';
+ }
+ openLifePanel('Atendimento · Bar das Putas','<p class="life-muted" id="bar-service-status">A garçonete está pronta para receber o teu pedido.</p><div class="life-list">'+rows+'</div><p class="life-muted">Saldo: <strong id="bar-service-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</strong></p>'+jobsHtml+'<p class="life-muted" id="bar-job-status"></p>');
+ const panel=$('life-panel');
+ panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=async()=>{
   const drink=drinks[Number(button.dataset.barBuy)];if(!drink)return;
   const status=$('bar-service-status');
   if(playerWalletBalance<drink[1]){status.textContent='Não tens dinheiro suficiente para '+drink[0]+'.';return}
   if(waiter.state==='serving'){status.textContent='A garçonete já está a preparar outro pedido. Aguarda um momento.';return}
-  const {error}=await sb.rpc('buy_bar_drink',{p_drink:drink[0]});if(error){status.textContent=error.message;return}await refreshPlayerWallet();await refreshPlayerNeeds();
+  button.disabled=true;
+  const {error}=await sb.rpc('buy_bar_drink',{p_drink:drink[0]});if(error){status.textContent=error.message;button.disabled=false;return}
+  await refreshPlayerWallet();await refreshPlayerNeeds();
   const balance=$('bar-service-balance');if(balance)balance.textContent=new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz';
   waiter.order=drink[0];waiter.state='serving';waiter.serveUntil=performance.now()+1800;waiter.group.userData.actionState={type:'wave',time:0};
   status.textContent='Pedido recebido: '+drink[0]+'. A garçonete está a preparar e vai levar a bebida à tua mesa.';
   panel.querySelectorAll('[data-bar-buy]').forEach(b=>b.disabled=true);
  });
+ const apply=$('bar-job-apply'),interview=$('bar-job-interview'),salary=$('bar-job-salary');
+ if(apply)apply.onclick=async()=>{apply.disabled=true;const {data,error}=await sb.rpc('largo_apply_public_job',{p_employer:'bar',p_role:$('bar-job-role').value});if(error){$('bar-job-status').textContent=error.message;apply.disabled=false;return}await openBarServiceMenu();const msg=$('bar-job-status');if(msg)msg.textContent='Candidatura registada. Podes realizar a entrevista.'};
+ if(interview)interview.onclick=async()=>{interview.disabled=true;const {data,error}=await sb.rpc('largo_complete_public_job_interview',{p_employer:'bar'});if(error){$('bar-job-status').textContent=error.message;interview.disabled=false;return}await openBarServiceMenu();const msg=$('bar-job-status');if(msg)msg.textContent='Entrevista concluída. Foste contratado. Salário diário: '+new Intl.NumberFormat('pt-PT').format(data.salary)+' Kz.'};
+ if(salary)salary.onclick=async()=>{salary.disabled=true;const {data,error}=await sb.rpc('largo_claim_public_job_salary',{p_employer:'bar'});if(error){$('bar-job-status').textContent=error.message;salary.disabled=false;return}await refreshPlayerWallet();await openBarServiceMenu();const msg=$('bar-job-status');if(msg)msg.textContent='Salário recebido na carteira virtual: '+new Intl.NumberFormat('pt-PT').format(data.salary)+' Kz.'};
 }
 function updateBarServiceAI(delta,now){
  if(!barWaitressAgents.length)return;

@@ -74,12 +74,13 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       html+='<h4>As minhas contas · '+cfg.bank+'</h4><div class="life-list">'+accountRows+'</div>';
       if((accounts||[]).length){
         html+='<h4>Depósitos e levantamentos</h4><label for="largo-bank-account">Conta</label><select id="largo-bank-account">'+accounts.map(a=>'<option value="'+a.id+'">'+esc(a.account_number)+' · '+esc(a.account_type)+' · '+money(a.balance)+'</option>').join('')+'</select><label for="largo-bank-amount">Valor em Kz</label><input id="largo-bank-amount" type="number" min="1" step="1" placeholder="Ex.: 10000"><div class="life-row"><button id="largo-deposit">Depositar</button><button class="secondary" id="largo-withdraw">Levantar</button></div>';
+        html+='<h4>Transferência bancária · BCI / BAI</h4><label for="largo-bank-recipient">Número da conta de destino</label><input id="largo-bank-recipient" maxlength="32" placeholder="Número da conta BCI ou BAI"><label for="largo-bank-transfer-amount">Valor em Kz</label><input id="largo-bank-transfer-amount" type="number" min="1" step="1" placeholder="Ex.: 10000"><button id="largo-bank-transfer">Transferir entre contas</button><p class="life-muted">Podes transferir entre contas BCI e BAI, incluindo contas de outros jogadores.</p>';
       }
       html+='<h4>Movimentos bancários recentes</h4><div class="life-list">'+((txs||[]).filter(t=>true).map(t=>'<div class="life-row"><span>'+esc(t.description||t.transaction_type)+'<br><small>'+new Date(t.created_at).toLocaleString('pt-PT')+'</small></span><b>'+money(t.amount)+'</b></div>').join('')||'<p class="life-muted">Sem movimentos bancários.</p>')+'</div>';
     } else if(kind==='chevron'){
       const {data:job,error}=await sb.from('largo_chevron_employments').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).maybeSingle();
-      const roles=[['soldador_industrial','Soldador industrial',220000],['tecnico_instrumentacao','Técnico de instrumentação',210000],['operador_petrolifero','Operador petrolífero',190000],['administrativo','Administrativo',160000]];
-      html+='<h4>Oportunidades de emprego</h4><p class="life-muted">Candidatura e contratação simuladas no jogo. Depois de contratado, podes receber um salário a cada 24 horas.</p>';
+      const roles=[['soldador_industrial','Soldador industrial',220000],['tecnico_instrumentacao','Técnico de instrumentação',210000],['operador_petrolifero','Operador petrolífero',190000],['electricista_industrial','Electricista industrial',205000],['mecanico_industrial','Mecânico industrial',195000],['engenheiro_petrolifero','Engenheiro petrolífero',280000],['administrativo','Administrativo',160000]];
+      html+='<h4>Oportunidades de emprego</h4><p class="life-muted">Recrutamento da Chevron. Depois da entrevista, o contrato fica activo e o salário é creditado na carteira a cada 24 horas.</p>';
       if(job&&!error&&job.status==='hired'){
         html+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · Salário: '+money(job.salary)+'</small></span><span class="badge">Contratado</span></div><button id="largo-claim-salary">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
       }else if(job&&!error&&job.status==='pending'){
@@ -92,6 +93,16 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     } else if(kind==='taf'){
       html+='<h4>Utilização do campo</h4><div class="life-list">'+serviceButton('Aluguer do campo · 1 hora','taf-hour',5000)+'</div><p class="life-muted">O campo está disponível para jogos e treinos.</p>';
     } else if(kind==='government'){
+      const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).eq('employer','government').maybeSingle();
+      const jobs=[['administrativo','Assistente administrativo',145000],['atendimento_publico','Atendimento público',115000],['tecnico_administrativo','Técnico administrativo',165000],['fiscal_provincial','Fiscal provincial',180000],['motorista','Motorista',105000]];
+      html+='<h4>Centro de emprego provincial</h4><p class="life-muted">Consulta as vagas, candidata-te e realiza a entrevista. Os salários são pagos directamente na tua carteira virtual a cada 24 horas.</p>';
+      if(job&&job.status==='hired'){
+        html+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Contratado</span></div><button id="largo-government-salary">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
+      }else if(job&&job.status==='pending'){
+        html+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><button id="largo-government-interview">Realizar entrevista</button>';
+      }else{
+        html+='<label for="largo-government-role">Vaga pretendida</label><select id="largo-government-role">'+jobs.map(j=>'<option value="'+j[0]+'">'+j[1]+' · '+money(j[2])+'/dia</option>').join('')+'</select><button id="largo-government-apply">Enviar candidatura</button>';
+      }
       html+='<h4>Atendimento público e taxas</h4><div class="life-list">'+serviceButton('Emissão de certidão','government-certificate',1500)+serviceButton('Autenticação de documento','government-authentication',2500)+'</div><p class="life-muted">Os restantes pedidos de informação são gratuitos.</p>';
     } else if(kind==='residential-10'||kind==='residential-tower'||kind==='residential-family'){
       const listings=kind==='residential-10'?Array.from({length:10},(_,i)=>({code:'A'+String(i+1).padStart(2,'0'),label:'Apartamento '+(i<2?'T1':i<6?'T2':'T3')+' · Bloco de 10',price:i<2?12000000:i<6?18500000:22000000})):kind==='residential-tower'?Array.from({length:10},(_,i)=>({code:'T'+String(i+1).padStart(2,'0'),label:'Apartamento · Torre Residencial',price:28500000})):Array.from({length:6},(_,i)=>({code:'F'+String(i+1).padStart(2,'0'),label:'Apartamento T2 · Residencial Familiar',price:16000000}));
@@ -108,6 +119,8 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     const panel=document.getElementById('life-panel');if(!panel)return;
     const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();await render(success(data));};
     if(cfg.bank){
+      const transfer=document.getElementById('largo-bank-transfer');
+      if(transfer)transfer.onclick=()=>run(transfer,()=>sb.rpc('largo_transfer_bank_account',{p_from_account:document.getElementById('largo-bank-account').value,p_to_account_number:document.getElementById('largo-bank-recipient').value.trim(),p_amount:Number(document.getElementById('largo-bank-transfer-amount').value)}),d=>'Transferência concluída: '+money(d.amount)+' para a conta '+d.to_account+'.');
       const open=document.getElementById('largo-open-account');if(open)open.onclick=()=>run(open,()=>sb.rpc('largo_open_bank_account',{p_bank_code:cfg.bank,p_account_type:document.getElementById('largo-account-type').value}),d=>'Conta '+d.account_number+' aberta com sucesso. Taxa: '+money(d.fee)+'.');
       const deposit=document.getElementById('largo-deposit'),withdraw=document.getElementById('largo-withdraw');
       const operation=op=>{const account=document.getElementById('largo-bank-account').value,amount=Number(document.getElementById('largo-bank-amount').value);return sb.rpc('largo_bank_cash_operation',{p_account_id:account,p_operation:op,p_amount:amount})};
@@ -115,6 +128,9 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+'.');
     }
     const apply=document.getElementById('largo-apply-chevron');if(apply)apply.onclick=()=>run(apply,()=>sb.rpc('largo_apply_chevron_job',{p_role:document.getElementById('largo-chevron-role').value}),d=>'Candidatura registada. A entrevista está disponível.');
+    const govApply=document.getElementById('largo-government-apply');if(govApply)govApply.onclick=()=>run(govApply,()=>sb.rpc('largo_apply_public_job',{p_employer:'government',p_role:document.getElementById('largo-government-role').value}),d=>'Candidatura ao Governo Provincial registada. Realiza a entrevista.');
+    const govInterview=document.getElementById('largo-government-interview');if(govInterview)govInterview.onclick=()=>run(govInterview,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:'government'}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.');
+    const govSalary=document.getElementById('largo-government-salary');if(govSalary)govSalary.onclick=()=>run(govSalary,()=>sb.rpc('largo_claim_public_job_salary',{p_employer:'government'}),d=>'Salário recebido na carteira: '+money(d.salary)+'.');
     const interview=document.getElementById('largo-interview-chevron');if(interview)interview.onclick=()=>run(interview,()=>sb.rpc('largo_complete_chevron_interview'),d=>'Entrevista concluída. Contrato activo e salário diário de '+money(d.salary)+'.');
     const salary=document.getElementById('largo-claim-salary');if(salary)salary.onclick=()=>run(salary,()=>sb.rpc('largo_claim_chevron_salary'),d=>'Salário recebido: '+money(d.salary)+'.');
     panel.querySelectorAll('[data-largo-buy]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_pay_service',{p_service_key:button.dataset.largoBuy}),d=>'Pagamento concluído: '+d.label+' · '+money(d.amount)+'.'));
