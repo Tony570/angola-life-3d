@@ -749,10 +749,10 @@ async function openBarServiceMenu(){
  if(!barWaitressAgents.length)return;
  const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
- const [{data:job},{data:profileJob}]=await Promise.all([
-  sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle(),
+ const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle();
+ /*
   sb.from('largo_chevron_employments').select('role,salary,status,last_paid_at').eq('user_id',user.id).maybeSingle()
- ]);
+ ]); */
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
  const roles=[['gerente','Gerente',130000],['barman','Barman',85000],['empregado_mesa','Empregado de mesa',70000],['caixa','Caixa',75000],['seguranca','Segurança',80000],['limpeza','Limpeza',55000]];
  let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar também funciona como centro de recrutamento. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
