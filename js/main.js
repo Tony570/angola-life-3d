@@ -1879,7 +1879,7 @@ if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState){
  if(hasInput){desiredX=inputX*speedLimit;desiredZ=inputZ*speedLimit}
  else if(destination){const vx=destination.x-houseAvatar.position.x,vz=destination.z-houseAvatar.position.z,dist=Math.hypot(vx,vz);if(dist<.12){destination=null}else{desiredX=vx/dist*Math.min(speedLimit,dist/Math.max(delta,.001));desiredZ=vz/dist*Math.min(speedLimit,dist/Math.max(delta,.001))}}
  const response=1-Math.exp(-(hasInput?8:6.5)*delta);velocityX+=(desiredX-velocityX)*response;velocityZ+=(desiredZ-velocityZ)*response;
- const limit=kind==='city'?98:roomLimit;
+ const limit=kind==='city'?330:roomLimit;
  const oldX=houseAvatar.position.x,oldZ=houseAvatar.position.z,nextX=THREE.MathUtils.clamp(oldX+velocityX*delta,-limit,limit),nextZ=THREE.MathUtils.clamp(oldZ+velocityZ*delta,-limit,limit);
  if(kind==='city'){const radius=.38;if(!cityBlocked(nextX,oldZ,radius)){houseAvatar.position.x=nextX}else velocityX=0;if(!cityBlocked(houseAvatar.position.x,nextZ,radius)){houseAvatar.position.z=nextZ}else velocityZ=0}else{houseAvatar.position.x=nextX;houseAvatar.position.z=nextZ}
  if(Math.abs(houseAvatar.position.x)>=limit-.01)velocityX=0;if(Math.abs(houseAvatar.position.z)>=limit-.01)velocityZ=0;
