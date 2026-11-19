@@ -1,5 +1,5 @@
 // Largo do Ambiente — expansão independente da cidade existente.
-export function buildLargoDoAmbiente({ THREE, target, addCityCollision }) {
+export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorldEntrances, entryMeshes }) {
   const mat = (color, roughness=0.86) => new THREE.MeshStandardMaterial({ color, roughness });
   const concrete=mat('#c8c5b9'), asphalt=mat('#5b5b55'), curb=mat('#d7d1c1'), grass=mat('#668653'), dark=mat('#263238'), glass=new THREE.MeshStandardMaterial({color:'#79b7c8',roughness:.24,metalness:.12});
   const box=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;target.add(o);return o};
@@ -29,13 +29,15 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision }) {
     box(w*.42,2.25,.14,dark,x,1.25,z-d/2-.12);
     label(name,x,h+.9,z-d/2-.16,Math.min(w*1.2,18),.95,opts.sign||'#173d55');
     collision(x,z,w,d);
+    if(opts.dest){const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,z-d/2-.28);entry.userData.worldEntry={dest:opts.dest,label:name,x,z,front:-1,d};target.add(entry);if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);}
   };
   // Terreno próprio a leste: não remove nem desloca construções já existentes.
   box(250,.22,220,mat('#b59a76'),205,-.22,12);
-  // Avenida de ligação ao bairro antigo e ruas internas.
+  // Avenida de ligação contínua ao bairro antigo, sem interrupção entre as malhas viárias.
+  box(82,.12,8.2,asphalt,111,-.075,14);
   box(150,.12,10,asphalt,175,-.08,0);box(10,.12,180,asphalt,145,-.08,12);
   box(10,.12,180,asphalt,205,-.08,12);box(10,.12,180,asphalt,265,-.08,12);
-  for(const z of [-48,0,48,96])box(150,.12,8,asphalt,205,-.075,z);
+  for(const z of [-78,-48,0,48,96])box(150,.12,8,asphalt,205,-.075,z);
   for(const x of [140,150,200,210,260,270])box(.5,.08,180,curb,x,-.02,12);
   // Largo ajardinado central, com fonte, bancos, caminhos e iluminação.
   box(46,.18,42,grass,175,-.02,22);
@@ -51,23 +53,26 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision }) {
   for(const [x,z] of [[153,5],[197,5],[153,39],[197,39],[165,2],[185,42]]){tree(x,z,.9);lamp(x+2,z+1)}
   label('LARGO DO AMBIENTE',175,7,0,23,2.6,'#174b37');
   // Governo Provincial com vinte pisos.
-  building('GOVERNO PROVINCIAL',210,-22,24,18,20,'#d7d6cf',{sign:'#7b2632',roof:'#555b61'});
+  building('GOVERNO PROVINCIAL',210,-22,24,18,20,'#d7d6cf',{sign:'#7b2632',roof:'#555b61',dest:'government'});
   // Bancos com fachadas institucionais.
-  building('BANCO BCI',155,-28,13,10,2,'#e8e5d9',{sign:'#176b48'});
-  building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c'});
+  building('BANCO BCI',155,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
+  building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c',dest:'bank-bai'});
   // Restaurante Polónia, com esplanada.
-  building('RESTAURANTE POLÓNIA',155,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f'});
+  building('RESTAURANTE POLÓNIA',155,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
   for(let i=0;i<4;i++){box(1.5,.12,1.5,mat('#754d35'),148+i*4, .35,81);box(.12,1.05,.12,mat('#f0e3c6'),148+i*4,.9,81)}
   // Paróquia Católica com torre, cruz e nave.
   box(20,.22,14,concrete,180,.12,72);box(18,7,13,mat('#e6ddc8'),180,3.7,72);box(8,10,8,mat('#ded3bd'),180,5.1,62);
   const tower=box(4,17,4,mat('#d7cbb4'),180,8.7,62);box(.45,2.6,.45,mat('#f4e8ce'),180,18.6,62);box(1.8,.4,.45,mat('#f4e8ce'),180,19.1,62);
   box(2.2,3.5,.18,mat('#563c2d'),180,1.9,65.35);label('PARÓQUIA CATÓLICA',180,8.2,64.8,12,1.1,'#704d37');collision(180,72,20,14);
+  const parishEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));parishEntry.position.set(180,1.2,64.65);parishEntry.userData.worldEntry={dest:'parish',label:'PARÓQUIA CATÓLICA',x:180,z:72,front:-1,d:14};target.add(parishEntry);if(cityWorldEntrances)cityWorldEntrances.push(parishEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(parishEntry);
   // Três edifícios residenciais, incluindo um bloco com dez apartamentos.
-  building('RESIDENCIAL · 10 APARTAMENTOS',235,70,20,15,5,'#d8c7a8',{sign:'#345b70'});
-  building('TORRE RESIDENCIAL',235,25,18,16,12,'#c7d0d1',{sign:'#37566b'});
-  building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c'});
+  building('RESIDENCIAL · 10 APARTAMENTOS',235,70,20,15,5,'#d8c7a8',{sign:'#345b70',dest:'residential-10'});
+  building('TORRE RESIDENCIAL',235,25,18,16,12,'#c7d0d1',{sign:'#37566b',dest:'residential-tower'});
+  building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c',dest:'residential-family'});
+  // Empresa Chevron com recepção, escritórios e departamentos.
+  building('CHEVRON',235,-60,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
   // Esquadra de polícia.
-  building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76'});
+  building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
   box(3,.1,2,mat('#183d6d'),265,.25,-12);label('POLÍCIA',265,3.1,-28,7,.8,'#123d76');
   // Campo de futebol TAF, colocado fora das avenidas.
   box(48,.18,30,mat('#477b45'),265,.02,72);
@@ -76,6 +81,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision }) {
   const circle=new THREE.Mesh(new THREE.RingGeometry(4.8,4.94,48),white);circle.rotation.x=-Math.PI/2;circle.position.set(265,.18,72);target.add(circle);
   for(const x of [243,287]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===243?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
   label('CAMPO DE FUTEBOL TAF',265,5,56,18,1.3,'#174b37');
+  const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(265,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:265,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
   // Passeios, árvores e iluminação de enquadramento.
   for(const [x,z] of [[135,-45],[135,45],[135,95],[295,-45],[295,45],[295,95],[205,105],[245,105],[165,-45],[185,-45]]){tree(x,z,.82);lamp(x+2,z)}
   // Placa monumental na entrada, voltada para a avenida de ligação.
