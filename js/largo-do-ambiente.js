@@ -70,7 +70,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   building('TORRE RESIDENCIAL',235,25,18,16,12,'#c7d0d1',{sign:'#37566b',dest:'residential-tower'});
   building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c',dest:'residential-family'});
   // Empresa Chevron com recepção, escritórios e departamentos.
-  building('CHEVRON',235,-70,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
+  building('CHEVRON',235,-60,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
   // Esquadra de polícia.
   building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
   box(3,.1,2,mat('#183d6d'),265,.25,-12);label('POLÍCIA',265,3.1,-28,7,.8,'#123d76');
