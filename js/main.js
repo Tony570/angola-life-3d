@@ -1,4 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -513,7 +514,7 @@ gameAudioState.currentVenue=kind==='room'&&(roomName==='bar'||roomName==='party'
 if(gameAudioState.currentVenue){wakeGameAudio()}else stopVenueMusic();
 host.querySelectorAll('canvas').forEach(c=>c.remove());
 const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':kind==='avatar'?'#211b29':'#58a9ed');
-const hostSize=()=>({width:Math.max(1,Math.round(host.clientWidth||host.getBoundingClientRect().width||320)),height:Math.max(1,Math.round(host.clientHeight||host.getBoundingClientRect().height||(kind==='avatar'?420:320)))});const initialSize=hostSize();const camera=new THREE.PerspectiveCamera(42,initialSize.width/initialSize.height,.1,100);
+const hostSize=()=>({width:Math.max(1,Math.round(host.clientWidth||host.getBoundingClientRect().width||320)),height:Math.max(1,Math.round(host.clientHeight||host.getBoundingClientRect().height||(kind==='avatar'?420:320)))});const initialSize=hostSize();const camera=new THREE.PerspectiveCamera(42,initialSize.width/initialSize.height,.1,kind==='city'?360:100);
 camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5.4);
 const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power',alpha:false});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,kind==='avatar'?1.15:1.25));renderer.setSize(initialSize.width,initialSize.height);renderer.shadowMap.enabled=false;renderer.domElement.style.display='block';renderer.domElement.style.width='100%';renderer.domElement.style.height='100%';host.appendChild(renderer.domElement);
@@ -1721,6 +1722,7 @@ function buildVianaStreets(){
  cityPoliceVehicles.push(policePatrol);
  cityDrivableCars.push({group:patrolCar,label:'Viatura policial',driver,patrol:policePatrol});
  buildVianaOtherBuildings();
+ buildLargoDoAmbiente({ THREE, target, addCityCollision });
 }
 
 if(kind==='avatar'){
