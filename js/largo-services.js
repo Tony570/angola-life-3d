@@ -82,8 +82,10 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       html+='<h4>Oportunidades de emprego</h4><p class="life-muted">Candidatura e contratação simuladas no jogo. Depois de contratado, podes receber um salário a cada 24 horas.</p>';
       if(job&&!error&&job.status==='hired'){
         html+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · Salário: '+money(job.salary)+'</small></span><span class="badge">Contratado</span></div><button id="largo-claim-salary">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
+      }else if(job&&!error&&job.status==='pending'){
+        html+='<div class="life-row"><span><b>Candidatura recebida</b><br><small>'+esc(job.role)+' · Salário previsto: '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><p class="life-muted">A candidatura foi registada. Realiza a entrevista simulada para concluir a contratação.</p><button id="largo-interview-chevron">Realizar entrevista</button>';
       }else{
-        html+='<label for="largo-chevron-role">Função pretendida</label><select id="largo-chevron-role">'+roles.map(r=>'<option value="'+r[0]+'">'+r[1]+' · '+money(r[2])+'/dia</option>').join('')+'</select><button id="largo-apply-chevron">Enviar candidatura e realizar entrevista</button>';
+        html+='<label for="largo-chevron-role">Função pretendida</label><select id="largo-chevron-role">'+roles.map(r=>'<option value="'+r[0]+'">'+r[1]+' · '+money(r[2])+'/dia</option>').join('')+'</select><button id="largo-apply-chevron">Enviar candidatura</button>';
       }
     } else if(kind==='restaurant-polonia'){
       html+='<h4>Menu e preços</h4><div class="life-list">'+serviceButton('Prato do dia','polonia-meal',2500)+serviceButton('Refeição familiar','polonia-family-meal',5000)+'</div><p class="life-muted">O pedido é registado e o valor sai da tua carteira quando pagares.</p>';
@@ -92,8 +94,10 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     } else if(kind==='government'){
       html+='<h4>Atendimento público e taxas</h4><div class="life-list">'+serviceButton('Emissão de certidão','government-certificate',1500)+serviceButton('Autenticação de documento','government-authentication',2500)+'</div><p class="life-muted">Os restantes pedidos de informação são gratuitos.</p>';
     } else if(kind==='residential-10'||kind==='residential-tower'||kind==='residential-family'){
-      const listings=[['Apartamento T1 · Bloco de 10',12000000],['Apartamento T2 · Bloco de 10',18500000],['Apartamento T3 · Torre Residencial',28500000],['Apartamento T2 · Residencial Familiar',16000000]];
-      html+='<h4>Tabela de preços de habitação</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span>'+x[0]+'</span><b>'+money(x[1])+'</b></div>').join('')+'</div><p class="life-muted">Consulta os apartamentos e os respectivos preços. A compra e a atribuição de propriedade serão ligadas ao sistema imobiliário numa fase própria.</p>';
+      const listings=kind==='residential-10'?Array.from({length:10},(_,i)=>({code:'A'+String(i+1).padStart(2,'0'),label:'Apartamento '+(i<2?'T1':i<6?'T2':'T3')+' · Bloco de 10',price:i<2?12000000:i<6?18500000:22000000})):kind==='residential-tower'?Array.from({length:10},(_,i)=>({code:'T'+String(i+1).padStart(2,'0'),label:'Apartamento · Torre Residencial',price:28500000})):Array.from({length:6},(_,i)=>({code:'F'+String(i+1).padStart(2,'0'),label:'Apartamento T2 · Residencial Familiar',price:16000000}));
+      const {data:owned}=await sb.from('largo_apartment_ownership').select('apartment_code').eq('user_id',user.id);
+      const ownedCodes=new Set((owned||[]).map(x=>x.apartment_code));
+      html+='<h4>Apartamentos e preços</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span><b>'+x.code+' · '+x.label+'</b><br><small>'+money(x.price)+'</small></span><button class="secondary" data-largo-apartment="'+x.code+'" '+(ownedCodes.has(x.code)?'disabled':'')+'>'+(ownedCodes.has(x.code)?'Adquirido':'Comprar')+'</button></div>').join('')+'</div><p class="life-muted">A aquisição é registada na tua conta. Cada apartamento só pode ter um proprietário.</p>';
     } else if(kind==='largo-police'){
       html+='<h4>Serviços policiais</h4><div class="life-list"><div class="life-row"><span>Apresentar ocorrência ou denúncia</span><b>Gratuito</b></div><div class="life-row"><span>Pedir informações e apoio</span><b>Gratuito</b></div><div class="life-row"><span>Solicitar patrulhamento</span><b>Gratuito</b></div></div><p class="life-muted">Dirige-te ao balcão para atendimento.</p>';
     } else if(kind==='parish'){
@@ -110,9 +114,11 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       if(deposit)deposit.onclick=()=>run(deposit,()=>operation('deposit'),d=>'Depósito concluído. Saldo da conta: '+money(d.balance)+'.');
       if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+'.');
     }
-    const apply=document.getElementById('largo-apply-chevron');if(apply)apply.onclick=()=>run(apply,()=>sb.rpc('largo_apply_chevron_job',{p_role:document.getElementById('largo-chevron-role').value}),d=>'Contratação concluída. Salário diário: '+money(d.salary)+'.');
+    const apply=document.getElementById('largo-apply-chevron');if(apply)apply.onclick=()=>run(apply,()=>sb.rpc('largo_apply_chevron_job',{p_role:document.getElementById('largo-chevron-role').value}),d=>'Candidatura registada. A entrevista está disponível.');
+    const interview=document.getElementById('largo-interview-chevron');if(interview)interview.onclick=()=>run(interview,()=>sb.rpc('largo_complete_chevron_interview'),d=>'Entrevista concluída. Contrato activo e salário diário de '+money(d.salary)+'.');
     const salary=document.getElementById('largo-claim-salary');if(salary)salary.onclick=()=>run(salary,()=>sb.rpc('largo_claim_chevron_salary'),d=>'Salário recebido: '+money(d.salary)+'.');
     panel.querySelectorAll('[data-largo-buy]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_pay_service',{p_service_key:button.dataset.largoBuy}),d=>'Pagamento concluído: '+d.label+' · '+money(d.amount)+'.'));
+    panel.querySelectorAll('[data-largo-apartment]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_purchase_apartment',{p_apartment_code:button.dataset.largoApartment}),d=>'Apartamento adquirido: '+d.label+' · '+money(d.price)+'.'));
   };
   await render();
 }
