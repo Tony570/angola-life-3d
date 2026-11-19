@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v37-wallet-employment-20261119';
+const CACHE_NAME = 'angola-life-3d-v38-realistic-interiors-fleet-20261119';
 const APP_SHELL = [
   './',
   './index.html',
