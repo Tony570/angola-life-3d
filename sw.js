@@ -1,9 +1,10 @@
-const CACHE_NAME = 'angola-life-3d-v34-startup-recovery-20261117';
+const CACHE_NAME = 'angola-life-3d-v35-largo-ambiente-20261119';
 const APP_SHELL = [
   './',
   './index.html',
   './css/style.css',
-  './js/main.js'
+  './js/main.js',
+  './js/largo-do-ambiente.js'
 ];
 
 self.addEventListener('install', event => {
