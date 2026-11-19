@@ -71,6 +71,58 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c',dest:'residential-family'});
   // Empresa Chevron com recepção, escritórios e departamentos.
   building('CHEVRON',235,-60,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
+
+  // Parque oficial do Governo Provincial: circulação, lugares marcados e frota detalhada.
+  const parkX=239, parkZ=-40;
+  box(28,.16,15,asphalt,parkX,-.015,parkZ);
+  box(28,.12,.28,curb,parkX,.06,parkZ-7.35);box(28,.12,.28,curb,parkX,.06,parkZ+7.35);
+  const parkingLine=mat('#f3e8c7');
+  for(let i=0;i<4;i++){
+    const px=228.5+i*7;
+    box(.12,.035,10,parkingLine,px,.085,parkZ+.2);
+    box(.12,.035,1.4,parkingLine,px,.085,parkZ-6.1);
+  }
+  box(28,.045,.16,parkingLine,parkX,.09,parkZ-6.1);
+  const fleetMaterials={body:mat('#f1f0e9',.38),blue:mat('#173d64',.38),black:mat('#20272b',.42),rubber:mat('#17191b',.82),rim:mat('#aeb9bc',.32),window:new THREE.MeshStandardMaterial({color:'#5c8390',roughness:.2,metalness:.25}),lamp:mat('#f8e6ae',.3),red:mat('#a52e31',.36)};
+  const fleetCar=(x,z,type='sedan',paint=fleetMaterials.body)=>{
+    const g=new THREE.Group();g.position.set(x,0,z);
+    const length=type==='pickup'?4.8:4.35,width=type==='van'?1.95:1.88;
+    const part=(geo,m,px,py,pz)=>{const o=new THREE.Mesh(geo,m);o.position.set(px,py,pz);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
+    part(new THREE.BoxGeometry(width,.62,length),paint,0,.68,0);
+    part(new THREE.BoxGeometry(width*.91,.16,length*.82),fleetMaterials.black,0,.42,0);
+    const cabin=part(new THREE.BoxGeometry(width*.82,.72,type==='pickup'?2.35:2.55),fleetMaterials.window,0,1.22,-.12);
+    part(new THREE.BoxGeometry(width*.86,.13,type==='pickup'?2.45:2.7),paint,0,1.62,-.12);
+    if(type==='pickup')part(new THREE.BoxGeometry(width*.9,.45,1.25),paint,0,.93,1.58);
+    if(type==='van')part(new THREE.BoxGeometry(width*.92,.52,1.2),paint,0,1.18,1.52);
+    for(const side of [-1,1]){
+      for(const zz of [-1.35,1.35]){
+        const wheel=part(new THREE.CylinderGeometry(.39,.39,.22,16),fleetMaterials.rubber,side*(width/2+.015),.43,zz);
+        wheel.rotation.z=Math.PI/2;
+        const rim=part(new THREE.CylinderGeometry(.2,.2,.235,14),fleetMaterials.rim,side*(width/2+.025),.43,zz);rim.rotation.z=Math.PI/2;
+        part(new THREE.CylinderGeometry(.075,.075,.24,12),fleetMaterials.black,side*(width/2+.035),.43,zz).rotation.z=Math.PI/2;
+      }
+      part(new THREE.BoxGeometry(.055,.22,.58),fleetMaterials.black,side*(width/2+.025),.9,-.05);
+      part(new THREE.BoxGeometry(.08,.12,.24),fleetMaterials.lamp,side*.57,.73,-length/2-.025);
+      part(new THREE.BoxGeometry(.08,.12,.24),fleetMaterials.red,side*.57,.73,length/2+.025);
+      part(new THREE.BoxGeometry(.16,.13,.28),fleetMaterials.black,side*(width/2+.07),1.2,-.78);
+    }
+    part(new THREE.BoxGeometry(.56,.12,.07),fleetMaterials.black,0,.55,-length/2-.035);
+    part(new THREE.BoxGeometry(.56,.12,.07),fleetMaterials.black,0,.55,length/2+.035);
+    target.add(g);return g;
+  };
+  fleetCar(231.8,-40.3,'sedan',fleetMaterials.body);
+  fleetCar(239,-40.3,'pickup',fleetMaterials.blue);
+  fleetCar(246.2,-40.3,'van',fleetMaterials.body);
+  // Guarita, cancela e sinalização de entrada junto ao edifício público.
+  box(2.6,2.35,2.4,mat('#d9d4c7'),225.8,1.2,-39.8);
+  box(2.72,.16,2.52,roof,225.8,2.42,-39.8);
+  box(1.1,.72,.08,glass,225.8,1.55,-38.57);
+  const barrier=mat('#f1eee4');box(.18,.16,4.8,barrier,225.2,1.05,-35.6);
+  for(let i=0;i<5;i++)box(.2,.18,.56,fleetMaterials.red,225.2,1.06,-37.75+i*.95);
+  box(4.2,.08,.12,parkingLine,225.4,.08,-33.1);
+  label('PARQUE OFICIAL · GOVERNO PROVINCIAL',239,3.8,-47.5,19,1.05,'#7b2632');
+  for(const [lx,lz] of [[225,-46],[253,-46]])lamp(lx,lz);
+
   // Esquadra de polícia.
   building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
   box(3,.1,2,mat('#183d6d'),265,.25,-12);label('POLÍCIA',265,3.1,-28,7,.8,'#123d76');
