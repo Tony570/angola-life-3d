@@ -311,14 +311,14 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
   const available=DESTINATIONS.filter(d=>routeFor(bus).includes(d.stopNode)&&d.stopNode!==bus.data.current_node);
-  const rows=available.map(d=>'<button class="secondary" style="width:100%;display:flex;justify-content:space-between;margin:5px 0" data-transit-destination="'+d.id+'" data-transit-bus="'+busId+'"><span>'+esc(d.label)+'</span><b>'+MONEY(d.fare)+'</b></button>').join('');
-  openLifePanel('🚍 Embarcar · '+esc(bus.data.label),'<p class="life-muted">Escolhe um destino servido por esta linha. O bilhete será debitado da tua carteira virtual uma única vez.</p><div class="life-list">'+rows+'</div><p id="transit-booking-message" class="life-muted">Capacidade máxima: 24 passageiros.</p>');
+  const rows=available.map(d=>'<button class="secondary" style="width:100%;display:flex;justify-content:space-between;margin:5px 0" data-transit-destination="'+d.id+'" data-transit-bus="'+busId+'"><span>💳 Pagar e embarcar · '+esc(d.label)+'</span><b>'+MONEY(d.fare)+'</b></button>').join('');
+  openLifePanel('🚍 Embarcar · '+esc(bus.data.label),'<p class="life-muted">Escolhe o destino e paga o bilhete primeiro. Só depois da confirmação do pagamento o embarque é autorizado. O valor é debitado uma única vez da tua carteira virtual.</p><div class="life-list">'+rows+'</div><p id="transit-booking-message" class="life-muted">Capacidade máxima: 24 passageiros.</p>');
  }
  function showBusMenu(busId){
   const bus=buses.get(busId);if(!bus)return;
   const stopped=bus.data.status==='stopped'&&bus.data.doors_open;
   const actions=stopped?'<button id="transit-board" data-transit-board="'+busId+'">🚍 Embarcar e escolher destino</button>':'<button id="transit-stop" data-transit-stop="'+busId+'">🛑 Mandar parar perto de mim</button>';
-  openLifePanel('🚌 '+esc(bus.data.label||'Autocarro'),' <p class="life-muted">Autocarro autónomo · '+(stopped?'Parado com as portas abertas.':'Em circulação pela rede rodoviária.')+'</p>'+actions+'<button class="secondary" data-transit-fares="'+busId+'">📋 Ver destinos e preços</button><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button><button class="secondary" data-transit-cancel>Cancelar</button>');
+  openLifePanel('🚌 '+esc(bus.data.label||'Autocarro'),' <p class="life-muted">Autocarro autónomo · '+(stopped?'Parado com as portas abertas.':'Só pára para recolher passageiros quando pedires a paragem.')+'</p>'+actions+'<button class="secondary" data-transit-fares="'+busId+'">📋 Ver destinos e preços</button><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button><button class="secondary" data-transit-cancel>Cancelar</button>');
  }
  function nearestPlayerRoadNode(busId){
   const pos=getPlayerPosition?.(),bus=buses.get(busId);if(!pos||!bus)return null;
