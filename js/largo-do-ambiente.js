@@ -106,9 +106,100 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   building('TORRE RESIDENCIAL',235,25,18,16,12,'#c7d0d1',{sign:'#37566b',dest:'residential-tower'});
   building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c',dest:'residential-family'});
   yard(235,54,18,5.5,-1,'#6f9658');yard(235,9,17,5.5,-1,'#6c9256');yard(235,-34,18,5.5,-1,'#78985d');
-  // Empresa Chevron com recepção, escritórios e departamentos.
-  building('CHEVRON',235,-60,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
-  yard(235,-73,25,5.5,-1,'#648c52');
+  // COMPLEXO PETROLÍFERO CHEVRON — recinto industrial amplo com sede baixa ao centro.
+  // O terreno ocupa o quarteirão entre as vias existentes, sem invadir os edifícios vizinhos.
+  const chevronX=235,chevronZ=-63,chevronW=48,chevronD=28;
+  box(chevronW,.18,chevronD,mat('#a7a69c'),chevronX,-.08,chevronZ);
+  box(chevronW-3,.06,chevronD-3,mat('#777b70'),chevronX,-.005,chevronZ);
+  const chevronFence=mat('#c8c9c3'),chevronSteel=mat('#6b7478'),chevronYellow=mat('#e6b83f'),chevronRed=mat('#a52b2b');
+  // Vedação industrial, portão largo para camiões e guarita.
+  box(chevronW,.95,.22,chevronFence,chevronX,.48,chevronZ-chevronD/2);
+  box(.22,.95,chevronD,chevronFence,chevronX-chevronW/2,.48,chevronZ);
+  box(.22,.95,chevronD,chevronFence,chevronX+chevronW/2,.48,chevronZ);
+  box(15,.95,.22,chevronFence,chevronX-chevronW/2+7.5,.48,chevronZ+chevronD/2);
+  box(15,.95,.22,chevronFence,chevronX+chevronW/2-7.5,.48,chevronZ+chevronD/2);
+  for(const px of [chevronX-chevronW/2,chevronX-7.5,chevronX+7.5,chevronX+chevronW/2])box(.32,1.5,.32,chevronSteel,px,.72,chevronZ+chevronD/2);
+  box(14,.16,.28,chevronRed,chevronX,.9,chevronZ+chevronD/2);
+  box(2.8,2.4,2.5,mat('#d9d8cf'),chevronX-18,1.2,chevronZ+9.5);
+  box(2.9,.16,2.6,chevronSteel,chevronX-18,2.45,chevronZ+9.5);
+  box(1.2,.7,.08,glass,chevronX-18,1.55,chevronZ+8.22);
+  label('CHEVRON · COMPLEXO PETROLÍFERO',chevronX,5.2,chevronZ+14.1,27,1.5,'#9a2424');
+  // Sede administrativa baixa, com dois pisos, no centro e à frente do parque industrial.
+  building('SEDE CHEVRON',chevronX,chevronZ+7,25,9,2,'#d8d9d3',{sign:'#9a2424',roof:'#41494d',dest:'chevron'});
+  // Reservatórios verticais com anéis, cobertura e escadas de acesso.
+  const verticalTank=(x,z,r,h)=>{
+    const shellMat=mat('#aeb8b8',.38),topMat=mat('#7f8d90',.42);
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,24),shellMat);body.position.set(x,h/2+.08,z);body.castShadow=true;body.receiveShadow=true;target.add(body);
+    const roof=new THREE.Mesh(new THREE.CylinderGeometry(r*.98,r*.98,.22,24),topMat);roof.position.set(x,h+.19,z);target.add(roof);
+    for(const yy of [h*.28,h*.58,h*.88]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r+.025,.055,6,24),chevronSteel);ring.rotation.x=Math.PI/2;ring.position.set(x,yy,z);target.add(ring);}
+    box(.12,h*.72,.12,chevronYellow,x+r*.72,h*.48,z+r*.72);
+    for(let k=0;k<5;k++)box(.42,.07,.09,chevronYellow,x+r*.72+.18,h*.18+k*h*.13,z+r*.72);
+    addCityCollision(x,z,r*2.2,r*2.2,.25);
+  };
+  verticalTank(218,-65,2.6,6.8);
+  verticalTank(229,-65,2.6,6.8);
+  verticalTank(251,-65,2.6,6.8);
+  // Separadores horizontais de processo e vasos de pressão.
+  const horizontalVessel=(x,z,len,r)=>{
+    const vessel=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,20),mat('#9ca9aa',.34));
+    vessel.rotation.z=Math.PI/2;vessel.position.set(x,r+.55,z);vessel.castShadow=true;target.add(vessel);
+    for(const dx of [-len*.28,len*.28])box(.7,.7,.8,chevronSteel,x+dx,.45,z);
+    addCityCollision(x,z,len+1,r*2+1,.2);
+  };
+  horizontalVessel(244,-73,8,1.15);
+  horizontalVessel(229,-73,6,1.0);
+  // Pipe-rack elevado com suportes metálicos e tubagens de vários diâmetros.
+  for(let i=0;i<6;i++){
+    const px=214+i*5.2;
+    box(.22,2.5,.22,chevronSteel,px,1.25,-58);
+    box(.22,2.5,.22,chevronSteel,px,1.25,-70);
+    for(let j=0;j<3;j++){
+      const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.12+j*.025,.12+j*.025,5.2,12),mat(['#b7c0c0','#68777c','#d1a64b'][j],.35));
+      pipe.rotation.z=Math.PI/2;pipe.position.set(px+2.6,2.05+j*.28,-63);target.add(pipe);
+    }
+  }
+  // Bombas, motores, filtros e skids industriais.
+  for(const [x,z] of [[214,-62],[240,-62],[257,-61],[218,-72],[257,-72]]){
+    box(3.8,.32,2.2,chevronSteel,x,.22,z);
+    box(1.35,1.05,1.15,mat('#356c70'),x-.65,.9,z);
+    const motor=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,1.25,16),mat('#315e69'));motor.rotation.z=Math.PI/2;motor.position.set(x+.75,.95,z);target.add(motor);
+    box(.22,1.5,.22,chevronYellow,x-1.5,.95,z);
+    addCityCollision(x,z,4.1,2.5,.15);
+  }
+  // Tubos de perfuração armazenados em suportes paralelos.
+  for(let row=0;row<3;row++){
+    const z=-74+row*.9;
+    box(9,.28,.32,chevronSteel,238,.65,z);
+    for(let j=0;j<7;j++){
+      const tube=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,8.2,12),mat('#9aa4a6',.32));
+      tube.rotation.z=Math.PI/2;tube.position.set(238,1.05+j*.18,z);target.add(tube);
+    }
+  }
+  // Armazém técnico e oficina de manutenção.
+  building('OFICINA E ARMAZÉM',252,-55,9,7,1,'#c9d0ce',{sign:'#45575c',roof:'#697579'});
+  // Área de carga, acesso de viaturas e estacionamento técnico.
+  box(12,.12,5,asphalt,218,-.01,-54);
+  for(let i=0;i<4;i++)box(.1,.035,4,chevronYellow,213+i*3.2,.07,-54);
+  const oilTruck=(x,z)=>{
+    const g=new THREE.Group();g.position.set(x,0,z);
+    const body=mat('#d8d9d2'),darkMat=mat('#303a3e'),tankMat=mat('#aeb8b8',.34);
+    const part=(geo,m,px,py,pz)=>{const o=new THREE.Mesh(geo,m);o.position.set(px,py,pz);o.castShadow=true;g.add(o);return o;};
+    part(new THREE.BoxGeometry(1.8,.85,2.1),body,0,.85,-1.4);
+    part(new THREE.BoxGeometry(1.65,.95,1.2),mat('#5f7d89'),0,1.3,-1.55);
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,3.4,20),tankMat);tank.rotation.x=Math.PI/2;tank.position.set(0,1.05,1.2);g.add(tank);
+    for(const side of [-1,1])for(const zz of [-1.8,-.4,1.2,2.2]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.22,12),darkMat);wheel.rotation.z=Math.PI/2;wheel.position.set(side*.95,.4,zz);g.add(wheel);}
+    target.add(g);
+  };
+  oilTruck(221,-53);oilTruck(245,-53);
+  // Luzes de segurança, sinalização e áreas de circulação.
+  for(const [x,z] of [[212,-51],[258,-51],[212,-76],[258,-76]]){lamp(x,z);}
+  label('ZONA INDUSTRIAL · ACESSO RESTRITO',235,3.2,-78,22,1,'#9a2424');
+  // Colisões de vedação sem bloquear o portão de entrada.
+  addCityCollision(chevronX,chevronZ-chevronD/2,chevronW,.22,.2);
+  addCityCollision(chevronX-chevronW/2,chevronZ,.22,chevronD,.2);
+  addCityCollision(chevronX+chevronW/2,chevronZ,.22,chevronD,.2);
+  addCityCollision(chevronX-15,chevronZ+chevronD/2,18,.22,.2);
+  addCityCollision(chevronX+15,chevronZ+chevronD/2,18,.22,.2);
 
   // Parque oficial do Governo Provincial: circulação, lugares marcados e frota detalhada.
   const parkX=239, parkZ=-40;
