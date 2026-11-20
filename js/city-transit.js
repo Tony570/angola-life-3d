@@ -135,7 +135,7 @@ function makeBusModel(THREE,label){
  group.traverse(o=>{if(o.userData.transitDoor)group.userData.transitDoors.push(o);if(o.userData.transitWheel)group.userData.transitWheels.push(o)});
  group.userData.label=label;return group;
 }
-export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,getOtherVehicles=()=>[],openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
+export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,getOtherVehicles=()=>[],canUseTransit=()=>true,openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
  const graph=createGraph(),buses=new Map(),passengers=new Map(),destinations=new Map(DESTINATIONS.map(d=>[d.id,d]));
  let channel=null,alive=true,claimElapsed=0,localPassenger=null,mapButton=null,activeBusId=null;const handledArrivals=new Set();
  const panel=document.getElementById('life-panel');
@@ -314,6 +314,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   return best?{...best,distance}:null;
  }
  async function requestStop(busId){
+  if(!canUseTransit?.()){openLifePanel('Transporte público','<p class="life-muted">Sai do teu veículo antes de pedir a paragem do autocarro.</p>');return}
   const node=nearestPlayerRoadNode(busId);if(!node){openLifePanel('Paragem do autocarro','<p class="life-muted">Aproxima-te de uma estrada principal ou de uma paragem identificada para pedir que o autocarro se aproxime.</p>');return}
   const {data,error}=await sb.rpc('city_transit_request_stop',{p_bus_id:busId,p_node_id:node.id});
   if(error){openLifePanel('Não foi possível pedir a paragem','<p class="life-muted">'+esc(error.message)+'</p>');return}
@@ -321,6 +322,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   openLifePanel('🚌 Pedido enviado','<p class="life-muted">O autocarro vai seguir pelas estradas até à paragem segura mais próxima da tua posição. Aguarda junto à estrada.</p><button class="secondary" data-transit-map>🗺️ Acompanhar no mapa</button>');
  }
  async function board(busId,destinationId,button){
+  if(!canUseTransit?.()){openLifePanel('Transporte público','<p class="life-muted">Sai do teu veículo antes de embarcar no autocarro.</p>');return}
   if(button){button.disabled=true;button.textContent='A confirmar…'}
   const {data,error}=await sb.rpc('city_transit_board',{p_bus_id:busId,p_destination_id:destinationId});
   if(error){const msg=document.getElementById('transit-booking-message');if(msg)msg.textContent=error.message;if(button){button.disabled=false;button.textContent='Tentar novamente'}return}
