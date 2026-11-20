@@ -802,7 +802,7 @@ async function openBarServiceMenu(){
  const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').in('status',['pending','hired']).maybeSingle();
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
  const roles=[['gerente','Gerente',30000],['barman','Barman',30000],['empregado_mesa','Empregado de mesa',30000],['caixa','Caixa',30000],['seguranca','Segurança',30000],['limpeza','Limpeza',30000]];
- let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar contrata sem exigir formação. Todas as funções pagam 30.000 Kz por dia. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
+ let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar contrata sem exigir formação. Todas as funções pagam 30.000 Kz por dia. Os salários são pagos na carteira virtual a cada 24 horas. Cada turno consome 20% de energia e exige alimentação e água suficientes.</p>';
  if(job&&job.status==='hired'){
   jobsHtml+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+escapeLife(job.role)+' · '+new Intl.NumberFormat("pt-PT").format(job.salary)+' Kz/dia</small></span><span class="badge">Contratado</span></div><button id="bar-job-salary">Receber salário</button><button data-bar-resign>Terminar contrato</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
  }else if(job&&job.status==='pending'){
