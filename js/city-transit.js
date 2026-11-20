@@ -350,7 +350,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const wheelSpin=step/.48;for(const wheel of state.model.userData.transitWheels||[])wheel.rotation.x+=wheelSpin;
   placeBus(state,speed);persist(state);
  }
- function svgPoint(x,z){return {x:22+(x+80)/430*516,y:22+(110-z)/210*326}}
+ function svgPoint(x,z){return {x:22+(x+80)/430*516,y:22+(150-z)/280*326}}
  function destinationTable(maxHeight=390,route=null){
   const rows=DESTINATIONS.map(d=>{
    const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Cidade de Cabinda';
@@ -368,6 +368,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   for(const z of LARGO_Z){const a=svgPoint(130,z),b=svgPoint(280,z);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>')}
   const a=svgPoint(70,14),b=svgPoint(145,14);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke-dasharray="5 4"/>');
  const campusA=svgPoint(265,14),campusB=svgPoint(330,14);roads.push('<line x1="'+campusA.x+'" y1="'+campusA.y+'" x2="'+campusB.x+'" y2="'+campusB.y+'" stroke-dasharray="5 4"/>');
+  const govA=svgPoint(145,-78),govB=svgPoint(145,-130);roads.push('<line x1="'+govA.x+'" y1="'+govA.y+'" x2="'+govB.x+'" y2="'+govB.y+'" stroke-dasharray="5 4"/>');
   const markers=DESTINATIONS.map(d=>{const p=svgPoint(d.x,d.z);return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="4.2" fill="#e8bb5c" stroke="#fff" stroke-width="1.5"/><title>'+esc(d.label)+'</title></g>'}).join('');
   const stopNodes=new Map();Object.values(ROUTES).forEach(route=>route.forEach(id=>{const n=graph.nodes.get(id);if(n)stopNodes.set(n.id,n)}));
   const stopMarkers=[...stopNodes.values()].map(n=>{const p=svgPoint(n.x,n.z);return '<rect x="'+(p.x-3)+'" y="'+(p.y-3)+'" width="6" height="6" rx="1" fill="#2599a4" stroke="#fff" stroke-width="1"><title>Paragem de autocarro</title></rect>'}).join('');
