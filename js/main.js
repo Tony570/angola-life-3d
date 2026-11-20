@@ -769,8 +769,7 @@ function installBarSceneActions(){
  refreshBarCash();
 }
 async function openBarServiceMenu(){
- if(!barWaitressAgents.length)return;
- const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0];
+ const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0]||null;
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
  const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle();
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
@@ -788,6 +787,7 @@ async function openBarServiceMenu(){
  panel.querySelectorAll('[data-bar-buy]').forEach(button=>button.onclick=async()=>{
   const drink=drinks[Number(button.dataset.barBuy)];if(!drink)return;
   const status=$('bar-service-status');
+  if(!waiter){status.textContent='O atendimento de bebidas está indisponível, mas podes consultar as vagas de emprego abaixo.';return}
   if(playerWalletBalance<drink[1]){status.textContent='Não tens dinheiro suficiente para '+drink[0]+'.';return}
   if(waiter.state==='serving'){status.textContent='A garçonete já está a preparar outro pedido. Aguarda um momento.';return}
   button.disabled=true;
@@ -1785,7 +1785,7 @@ if(kind==='avatar'){
   for(const [x,y,z,rot] of [[0,1.65,-4,0],[0,1.65,4,0],[-4,1.65,0,Math.PI/2],[4,1.65,0,Math.PI/2]]){const wall=new THREE.Mesh(new THREE.PlaneGeometry(8,3.6),safeWall);wall.position.set(x,y,z);wall.rotation.y=rot;target.add(wall)}
  }
  const initialSpawn=entrySpawn||{x:0,z:1.65,face:0};houseAvatar=buildCharacter(target,avatar,{x:initialSpawn.x||0,y:-.03,z:initialSpawn.z??1.65},m=>mixer=m,true);houseAvatar.position.y=-.03;houseAvatar.rotation.y=initialSpawn.face||0;camera.position.set(0,2.5,10.5);camera.lookAt(0,.12,0);
-const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}if(roomName==='bar')installBarSceneActions();if(roomName==='party'&&nav){const music=document.createElement('button');music.id='party-dj-action';music.type='button';music.textContent='🎧 OUVIR MÚSICA DO DJ';music.onclick=()=>{wakeGameAudio();openBarMusicPanel('party')};nav.appendChild(music)}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
+const nav=$('room-door-nav'),current=$('room-current');if(current)current.textContent=roomNames[roomName]||'CASA';if(nav){nav.innerHTML='';roomDoorMeshes.filter(o=>o.isGroup&&o.userData.roomDoor).forEach(door=>{const b=document.createElement('button');b.type='button';b.textContent='⬇ '+door.userData.door.label;b.onclick=()=>{activeRoomDoor=door.userData.door;const label=$('room-enter-label');if(label)label.textContent='Entrar em '+activeRoomDoor.label;$('room-enter-prompt').classList.remove('hidden')};nav.appendChild(b)});if(roomName==='hotel'){for(let i=1;i<=10;i++){const b=document.createElement('button');b.type='button';b.textContent='SUÍTE '+String(i).padStart(2,'0')+' · DISPONÍVEL';b.onclick=()=>renderHome('hotel-suite-'+i,{x:0,z:2.6,face:Math.PI});nav.appendChild(b)}}}if(roomName==='bar'){installBarSceneActions();if(nav){const jobButton=document.createElement('button');jobButton.id='bar-employment-action';jobButton.type='button';jobButton.textContent='💼 CANDIDATAR-ME A EMPREGO · 30.000 KZ/DIA';jobButton.onclick=()=>openBarServiceMenu();nav.appendChild(jobButton)}}if(roomName==='party'&&nav){const music=document.createElement('button');music.id='party-dj-action';music.type='button';music.textContent='🎧 OUVIR MÚSICA DO DJ';music.onclick=()=>{wakeGameAudio();openBarMusicPanel('party')};nav.appendChild(music)}const prompt=$('room-enter-prompt');if(prompt)prompt.classList.add('hidden')
 }else if(kind==='city'){
   activeHouseGuestSync=null;
   try{buildVianaStreets()}catch(cityError){
