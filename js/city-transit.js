@@ -345,6 +345,15 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   placeBus(state,speed);persist(state);
  }
  function svgPoint(x,z){return {x:22+(x+80)/370*516,y:22+(110-z)/210*326}}
+ function destinationTable(maxHeight=390,route=null){
+  const rows=DESTINATIONS.map(d=>{
+   const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande';
+   const served=!route||route.includes(d.stopNode);
+   const service=served?'Directo nesta linha':'Via linha interurbana Viana 01';
+   return '<tr style="border-top:1px solid #ddd"><td style="padding:8px 5px;font-weight:650">'+esc(d.label)+'</td><td style="padding:8px 5px">'+esc(city)+'</td><td style="padding:8px 5px">'+esc(d.category)+'</td><td style="padding:8px 5px;text-align:right;white-space:nowrap;font-weight:700">'+MONEY(d.fare)+'</td></tr>';
+  }).join('');
+  return '<div style="max-height:'+Number(maxHeight)+'px;overflow:auto;border:1px solid #d9d2c5;border-radius:10px;background:#fff;color:#24302c"><table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left"><thead style="position:sticky;top:0;background:#e9e4d5"><tr><th style="padding:9px 5px">Destino</th><th style="padding:9px 5px">Cidade</th><th style="padding:9px 5px">Tipo</th><th style="padding:9px 5px;text-align:right">Preço</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ }
  function showMap(){
   const roads=[];
   for(const x of ROAD_X){const a=svgPoint(x,-72),b=svgPoint(x,72);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>')}
@@ -357,13 +366,12 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const stopMarkers=[...stopNodes.values()].map(n=>{const p=svgPoint(n.x,n.z);return '<rect x="'+(p.x-3)+'" y="'+(p.y-3)+'" width="6" height="6" rx="1" fill="#2599a4" stroke="#fff" stroke-width="1"><title>Paragem de autocarro</title></rect>'}).join('');
   const busMarkers=[...buses.values()].map((s,i)=>{const p=svgPoint(Number(s.data.x),Number(s.data.z));return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="#d94b42" stroke="#fff" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+3)+'" text-anchor="middle" font-size="8" fill="#fff">'+(i+1)+'</text><title>'+esc(s.data.label||s.data.bus_id)+'</title></g>'}).join('');
   const busList=[...buses.values()].map(s=>'<div class="life-row"><span><b>'+esc(s.data.label||s.data.bus_id)+'</b><br><small>'+((s.data.status==='stopped'&&s.data.doors_open)?'Parado · portas abertas':'Em circulação')+'</small></span><small>'+Number(s.data.x).toFixed(0)+', '+Number(s.data.z).toFixed(0)+'</small></div>').join('');
-  const list=DESTINATIONS.map(d=>{const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande';return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(city)+' · '+esc(d.category)+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
+  const list=destinationTable(260);
   openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Linha interurbana Viana 01: Povo Grande ↔ Largo do Ambiente, com destinos e preços reunidos numa única tabela. As linhas locais também continuam disponíveis.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Povo Grande e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
  }
  function showFares(busId){
   const bus=buses.get(busId),route=bus?routeFor(bus):FULL_ROUTE;
-  const rows=DESTINATIONS.map(d=>{const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande',served=route.includes(d.stopNode);return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(city)+' · '+esc(d.category)+' · '+(served?'Acesso directo nesta linha':'Via linha de ligação Viana 01')+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
-  openLifePanel('🚌 Tabela única de destinos e tarifas','<p class="life-muted">Povo Grande e Largo do Ambiente estão ligados pela linha interurbana Viana 01. Esta tabela reúne todos os destinos das duas cidades e mostra o preço de cada viagem. Para embarcar directamente, usa a Viana 01 quando o destino não pertencer à linha local.</p><div class="life-list" style="max-height:390px;overflow:auto">'+rows+'</div><button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button>');
+  openLifePanel('🚌 Tabela única de destinos e tarifas','<p class="life-muted">Povo Grande e Largo do Ambiente estão ligados pela linha interurbana Viana 01. Esta tabela reúne todos os destinos das duas cidades e mostra o preço de cada viagem. Para embarcar directamente, usa a Viana 01 quando o destino não pertencer à linha local.</p>'+destinationTable(390,route)+'<button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button>');
  }
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
