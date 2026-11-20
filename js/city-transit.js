@@ -302,7 +302,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
-  const available=DESTINATIONS.filter(d=>routeFor(bus).includes(d.stopNode));
+  const available=DESTINATIONS.filter(d=>routeFor(bus).includes(d.stopNode)&&d.stopNode!==bus.data.current_node);
   const rows=available.map(d=>'<button class="secondary" style="width:100%;display:flex;justify-content:space-between;margin:5px 0" data-transit-destination="'+d.id+'" data-transit-bus="'+busId+'"><span>'+esc(d.label)+'</span><b>'+MONEY(d.fare)+'</b></button>').join('');
   openLifePanel('🚍 Embarcar · '+esc(bus.data.label),'<p class="life-muted">Escolhe um destino servido por esta linha. O bilhete será debitado da tua carteira virtual uma única vez.</p><div class="life-list">'+rows+'</div><p id="transit-booking-message" class="life-muted">Capacidade máxima: 24 passageiros.</p>');
  }
