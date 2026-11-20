@@ -132,12 +132,11 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Governo Provincial transferido para um terreno independente.
 
   // BCI permanece sozinho no terreno original; BAI passa para um lote independente a sul.
-  bankBuilding('BANCO BCI',158,-28,17,13,'#e83e8c','#17171d','bank-bci');
-  yard(158,-39,19,5.5,-1,'#668653');
-  // Praça de acesso do BAI, fora das faixas de rodagem e afastada do Governo Provincial.
-  box(24,.12,7,curb,175,-.015,-82);
-  bankBuilding('BANCO BAI',175,-94,19,13,'#0878c9','#063b70','bank-bai');
-  for(const [lx,lz] of [[163,-85],[187,-85],[163,-103],[187,-103]])lamp(lx,lz);
+  bankBuilding('BANCO BCI',159,-28,16,13,'#e83e8c','#17171d','bank-bci');
+  yard(159,-39,19,5.5,-1,'#668653');
+  // Lote independente do BAI entre o limite do Governo e a avenida, sem invadir a via.
+  bankBuilding('BANCO BAI',175,-90,19,13,'#0878c9','#063b70','bank-bai');
+  for(const [lx,lz] of [[163,-84],[187,-84]])lamp(lx,lz);
   // Restaurante Polónia, com esplanada.
   building('RESTAURANTE POLÓNIA',160,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
   yard(160,59,16,6,-1,'#6d9657');
