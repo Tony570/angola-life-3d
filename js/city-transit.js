@@ -229,12 +229,18 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   }
   const route=routeFor(state);return route[(Number(d.route_index)||0)%route.length]||route[0];
  }
+ function routeIndexAfterNode(state,nodeId){
+  const route=routeFor(state),current=Number(state.data.route_index)||0;let best=-1,offset=Infinity;
+  for(let i=0;i<route.length;i++)if(route[i]===nodeId){const distance=(i-current+route.length)%route.length;if(distance<offset){offset=distance;best=i}}
+  return best>=0?(best+1)%route.length:(current+1)%route.length;
+ }
  function arriveAtNode(state,nodeId,requested=false){
   const d=state.data,node=graph.nodes.get(nodeId),wasDetour=Array.isArray(d.active_path)&&d.active_path.length>0;if(!node)return;
   d.current_node=nodeId;d.x=node.x;d.z=node.z;
   if(Array.isArray(d.active_path)&&d.active_path.length){
    const idx=Math.max(1,Number(d.path_index)||1);
    if(idx>=d.active_path.length-1){
+    d.route_index=routeIndexAfterNode(state,nodeId);
     d.active_path=null;d.path_index=0;d.requested_node=null;d.status='stopped';d.doors_open=true;
     d.stop_until=new Date(Date.now()+(requested||wasDetour?18000:8000)).toISOString();
     state.needsAlight=true;state.alightNode=nodeId;
@@ -299,13 +305,16 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const actions=stopped?'<button id="transit-board" data-transit-board="'+busId+'">🚍 Embarcar e escolher destino</button>':'<button id="transit-stop" data-transit-stop="'+busId+'">🛑 Mandar parar perto de mim</button>';
   openLifePanel('🚌 '+esc(bus.data.label||'Autocarro'),' <p class="life-muted">Autocarro autónomo · '+(stopped?'Parado com as portas abertas.':'Em circulação pela rede rodoviária.')+'</p>'+actions+'<button class="secondary" data-transit-fares="'+busId+'">📋 Ver destinos e preços</button><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button><button class="secondary" data-transit-cancel>Cancelar</button>');
  }
- function nearestPlayerRoadNode(){
-  const pos=getPlayerPosition?.();if(!pos)return null;
-  const node=nearestNode(graph,Number(pos.x),Number(pos.z));
-  return node&&node.distance<=18?node:null;
+ function nearestPlayerRoadNode(busId){
+  const pos=getPlayerPosition?.(),bus=buses.get(busId);if(!pos||!bus)return null;
+  const route=new Set(routeFor(bus)),candidates=new Map();
+  for(const destination of DESTINATIONS){if(!destination.stopNode||!route.has(destination.stopNode))continue;const node=graph.nodes.get(destination.stopNode);if(node)candidates.set(node.id,node)}
+  let best=null,distance=Infinity;
+  for(const node of candidates.values()){const d=Math.hypot(node.x-Number(pos.x),node.z-Number(pos.z));if(d<distance){best=node;distance=d}}
+  return best?{...best,distance}:null;
  }
  async function requestStop(busId){
-  const node=nearestPlayerRoadNode();if(!node){openLifePanel('Paragem do autocarro','<p class="life-muted">Aproxima-te de uma estrada principal ou de uma paragem identificada para pedir que o autocarro se aproxime.</p>');return}
+  const node=nearestPlayerRoadNode(busId);if(!node){openLifePanel('Paragem do autocarro','<p class="life-muted">Aproxima-te de uma estrada principal ou de uma paragem identificada para pedir que o autocarro se aproxime.</p>');return}
   const {data,error}=await sb.rpc('city_transit_request_stop',{p_bus_id:busId,p_node_id:node.id});
   if(error){openLifePanel('Não foi possível pedir a paragem','<p class="life-muted">'+esc(error.message)+'</p>');return}
   if(data)setBusRow(data);
