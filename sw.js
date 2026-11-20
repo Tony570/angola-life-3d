@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v60-employment-system-final-20261120';
+const CACHE_NAME = 'angola-life-3d-v61-employment-audit-fix-20261120';
 const APP_SHELL = [
   './',
   './index.html',
