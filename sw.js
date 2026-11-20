@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v51-isced-furnished-interior-20261120';
+const CACHE_NAME = 'angola-life-3d-v52-isced-academic-system-20261120';
 const APP_SHELL = [
   './',
   './index.html',
