@@ -224,10 +224,13 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     } else if(kind==='taf'){
       html+='<h4>Utilização do campo</h4><div class="life-list">'+serviceButton('Aluguer do campo · 1 hora','taf-hour',5000)+'</div><p class="life-muted">O campo está disponível para jogos e treinos.</p>';
     } else if(kind==='government'){
-      const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).eq('employer','government').maybeSingle();
+      const [{data:job},{data:training}]=await Promise.all([sb.from('largo_employment_applications').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).eq('employer','government').maybeSingle(),sb.from('isced_enrollments').select('id').eq('user_id',user.id).eq('status','completed').limit(1)]);
+      const hasPublicTraining=!!training?.length;
       const jobs=[['administrativo','Assistente administrativo',145000],['atendimento_publico','Atendimento público',115000],['tecnico_administrativo','Técnico administrativo',165000],['fiscal_provincial','Fiscal provincial',180000],['motorista','Motorista',105000]];
-      html+='<h4>Centro de emprego provincial</h4><p class="life-muted">Consulta as vagas, candidata-te e realiza a entrevista. Os salários são pagos directamente na tua carteira virtual a cada 24 horas.</p>';
-      if(job&&job.status==='hired'){
+      html+='<h4>Centro de emprego provincial</h4><p class="life-muted">Para trabalhar aqui, é obrigatório concluir uma formação de 15 dias na Universidade ISCED. Consulta as vagas, candidata-te e realiza a entrevista. Os salários são pagos directamente na tua carteira virtual a cada 24 horas.</p>';
+      if(job&&job.status==='hired'&&!hasPublicTraining){
+        html+='<p class="life-muted">O teu contrato está suspenso. Para trabalhar e receber salário no Governo Provincial, conclui primeiro uma formação de 15 dias na Universidade ISCED.</p>';
+      }else if(job&&job.status==='hired'){
         html+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Contratado</span></div><button id="largo-government-salary">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
       }else if(job&&job.status==='pending'){
         html+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><button id="largo-government-interview">Realizar entrevista</button>';
