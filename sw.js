@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v41-transit-fares-20261120';
+const CACHE_NAME = 'angola-life-3d-v42-pay-before-board-20261120';
 const APP_SHELL = [
   './',
   './index.html',
