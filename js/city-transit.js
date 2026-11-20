@@ -205,6 +205,11 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
    const {error:alightError}=await sb.rpc('city_transit_alight',{p_bus_id:d.bus_id,p_node_id:node});
    if(alightError){state.needsAlight=true;state.alightNode=node;console.warn('Desembarque:',alightError.message);}
   }
+  if(state.needsRequestedAlight&&state.alightNode){
+   const node=state.alightNode;state.needsRequestedAlight=false;
+   const {error:requestedError}=await sb.rpc('city_transit_alight_requested',{p_bus_id:d.bus_id,p_node_id:node});
+   if(requestedError){state.needsRequestedAlight=true;console.warn('Desembarque solicitado:',requestedError.message);}
+  }
  }
  async function claimControllers(){
   if(!alive||!user)return;
@@ -275,11 +280,31 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const nextId=nextWaypoint(state),next=graph.nodes.get(nextId);
   if(!next){d.route_index=((Number(d.route_index)||0)+1)%routeFor(state).length;state.currentSpeed=0;persist(state,true);return}
   const dx=next.x-Number(d.x),dz=next.z-Number(d.z),distance=Math.hypot(dx,dz);
-  if(distance<.12){arriveAtNode(state,nextId,!!d.active_path?.length);if(d.status==='stopped')state.currentSpeed=0;persist(state,true);return}
+  if(distance<.12){
+   arriveAtNode(state,nextId,!!d.active_path?.length);
+   const pendingExit=[...passengers.values()].some(p=>p.bus_id===d.bus_id&&p.status==='onboard'&&p.request_alight);
+   if(pendingExit){d.status='stopped';d.doors_open=true;d.stop_until=new Date(Date.now()+12000).toISOString();state.needsRequestedAlight=true;state.alightNode=nextId;}
+   const following=graph.nodes.get(nextWaypoint(state));
+   if(following&&d.status!=='stopped'){
+    const fx=following.x-Number(d.x),fz=following.z-Number(d.z),desired=Math.atan2(fx,fz);
+    let diff=desired-(Number(d.rotation)||0);while(diff>Math.PI)diff-=Math.PI*2;while(diff< -Math.PI)diff+=Math.PI*2;
+    if(Math.abs(diff)>.12)state.currentSpeed=0;
+   }else if(d.status==='stopped')state.currentSpeed=0;
+   persist(state,true);return;
+  }
   const dirX=dx/distance,dirZ=dz/distance;
+  const desiredYaw=Math.atan2(dx,dz);
+  let turn=desiredYaw-(Number(d.rotation)||0);while(turn>Math.PI)turn-=Math.PI*2;while(turn< -Math.PI)turn+=Math.PI*2;
+  if(Math.abs(turn)>.07){
+   const previous=Number.isFinite(state.currentSpeed)?state.currentSpeed:0;
+   state.currentSpeed=Math.max(0,previous-7.5*delta);
+   if(state.currentSpeed<.12){state.currentSpeed=0;d.rotation=(Number(d.rotation)||0)+Math.sign(turn)*Math.min(Math.abs(turn),3.4*delta);}
+   placeBus(state,state.currentSpeed);persist(state);return;
+  }
+  d.rotation=desiredYaw;
   let targetSpeed=8.2;
-  if(distance<5.5)targetSpeed=Math.min(targetSpeed,Math.max(3.4,3.4+(distance-1.2)*1.05));
-  if(distance<1.15)targetSpeed=Math.min(targetSpeed,2.2);
+  if(distance<5.5)targetSpeed=Math.min(targetSpeed,Math.max(2.8,2.8+(distance-1.2)*1.0));
+  if(distance<1.15)targetSpeed=Math.min(targetSpeed,1.8);
   for(const other of buses.values()){
    if(other===state||other.data.status!=='moving')continue;
    const rx=Number(other.data.x)-Number(d.x),rz=Number(other.data.z)-Number(d.z),gap=Math.hypot(rx,rz);
@@ -305,12 +330,10 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
    else if(along<7.5)targetSpeed=Math.min(targetSpeed,2.6);
   }
   const previousSpeed=Number.isFinite(state.currentSpeed)?state.currentSpeed:0;
-  const rate=targetSpeed<previousSpeed?8.5:3.2;
+  const rate=targetSpeed<previousSpeed?4.8:2.8;
   state.currentSpeed=previousSpeed+Math.sign(targetSpeed-previousSpeed)*Math.min(Math.abs(targetSpeed-previousSpeed),rate*delta);
   const speed=state.currentSpeed;
   const step=Math.min(distance,speed*delta),nx=Number(d.x)+dirX*step,nz=Number(d.z)+dirZ*step;
-  const desiredYaw=Math.atan2(dx,dz);let turn=desiredYaw-(Number(d.rotation)||0);while(turn>Math.PI)turn-=Math.PI*2;while(turn< -Math.PI)turn+=Math.PI*2;
-  d.rotation=(Number(d.rotation)||0)+turn*(1-Math.exp(-5.8*delta));
   d.x=nx;d.z=nz;
   const wheelSpin=step/.48;for(const wheel of state.model.userData.transitWheels||[])wheel.rotation.x+=wheelSpin;
   placeBus(state,speed);persist(state);
@@ -328,14 +351,13 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const stopMarkers=[...stopNodes.values()].map(n=>{const p=svgPoint(n.x,n.z);return '<rect x="'+(p.x-3)+'" y="'+(p.y-3)+'" width="6" height="6" rx="1" fill="#2599a4" stroke="#fff" stroke-width="1"><title>Paragem de autocarro</title></rect>'}).join('');
   const busMarkers=[...buses.values()].map((s,i)=>{const p=svgPoint(Number(s.data.x),Number(s.data.z));return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="#d94b42" stroke="#fff" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+3)+'" text-anchor="middle" font-size="8" fill="#fff">'+(i+1)+'</text><title>'+esc(s.data.label||s.data.bus_id)+'</title></g>'}).join('');
   const busList=[...buses.values()].map(s=>'<div class="life-row"><span><b>'+esc(s.data.label||s.data.bus_id)+'</b><br><small>'+((s.data.status==='stopped'&&s.data.doors_open)?'Parado · portas abertas':'Em circulação')+'</small></span><small>'+Number(s.data.x).toFixed(0)+', '+Number(s.data.z).toFixed(0)+'</small></div>').join('');
-  const list=DESTINATIONS.map(d=>'<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(d.category)+'</small></span><b>'+MONEY(d.fare)+'</b></div>').join('');
-  openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Mapa rodoviário de Povo Grande e do Largo do Ambiente. Os bairros são áreas distintas, ligadas pela avenida.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Povo Grande e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
+  const list=DESTINATIONS.map(d=>{const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande';return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(city)+' · '+esc(d.category)+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
+  openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Linha interurbana Viana 01: Povo Grande ↔ Largo do Ambiente, com destinos e preços reunidos numa única tabela. As linhas locais também continuam disponíveis.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Povo Grande e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
  }
  function showFares(busId){
   const bus=buses.get(busId),route=bus?routeFor(bus):FULL_ROUTE;
-  // A tabela apresenta sempre os destinos dos dois bairros; a etiqueta informa se esta linha faz o serviço.
-  const rows=DESTINATIONS.map(d=>{const served=route.includes(d.stopNode);return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(d.category)+' · '+(served?'Nesta linha':'Outra linha — Viana 01')+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
-  openLifePanel('🚌 Destinos e preços','<p class="life-muted">'+esc(bus?.data.label||'Autocarro')+' · Tabela completa de Povo Grande e Largo do Ambiente. Para embarcar, escolhe uma linha que serve o destino. O valor só é cobrado quando confirmares o embarque.</p><div class="life-list" style="max-height:360px;overflow:auto">'+rows+'</div><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button>');
+  const rows=DESTINATIONS.map(d=>{const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande',served=route.includes(d.stopNode);return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(city)+' · '+esc(d.category)+' · '+(served?'Acesso directo nesta linha':'Via linha de ligação Viana 01')+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
+  openLifePanel('🚌 Tabela única de destinos e tarifas','<p class="life-muted">Povo Grande e Largo do Ambiente estão ligados pela linha interurbana Viana 01. Esta tabela reúne todos os destinos das duas cidades e mostra o preço de cada viagem. Para embarcar directamente, usa a Viana 01 quando o destino não pertencer à linha local.</p><div class="life-list" style="max-height:390px;overflow:auto">'+rows+'</div><button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button>');
  }
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
@@ -345,9 +367,9 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  function showBusMenu(busId){
   const bus=buses.get(busId);if(!bus)return;
-  const stopped=bus.data.status==='stopped'&&bus.data.doors_open;
-  const actions=stopped?'<button id="transit-board" data-transit-board="'+busId+'">🚍 Embarcar e escolher destino</button>':'<button id="transit-stop" data-transit-stop="'+busId+'">🛑 Mandar parar perto de mim</button>';
-  openLifePanel('🚌 '+esc(bus.data.label||'Autocarro'),' <p class="life-muted">Autocarro autónomo · '+(stopped?'Parado com as portas abertas.':'Só pára para recolher passageiros quando pedires a paragem.')+'</p>'+actions+'<button class="secondary" data-transit-fares="'+busId+'">📋 Ver destinos e preços</button><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button><button class="secondary" data-transit-cancel>Cancelar</button>');
+  const stopped=bus.data.status==='stopped'&&bus.data.doors_open,aboard=localPassenger?.bus_id===busId;
+  const actions=aboard?'<button id="transit-request-alight" data-transit-alight="'+busId+'">🚪 PEDIR PARA SAIR NA PRÓXIMA PARAGEM</button>':(stopped?'<button id="transit-board" data-transit-board="'+busId+'">🚍 Embarcar e escolher destino</button>':'<button id="transit-stop" data-transit-stop="'+busId+'">🛑 Mandar parar perto de mim</button>');
+  openLifePanel('🚌 '+esc(bus.data.label||'Autocarro'),'<p class="life-muted">Autocarro autónomo · '+(aboard?'Estás a bordo. Podes pedir para sair na próxima paragem segura.':(stopped?'Parado com as portas abertas.':'Só pára para recolher passageiros quando pedires a paragem.'))+'</p>'+actions+'<button class="secondary" data-transit-fares="'+busId+'">📋 Tabela única de destinos das duas cidades</button><button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button><button class="secondary" data-transit-cancel>Cancelar</button>');
  }
  function nearestPlayerRoadNode(busId){
   const pos=getPlayerPosition?.(),bus=buses.get(busId);if(!pos||!bus)return null;
@@ -364,6 +386,15 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   if(data)setBusRow(data);
   openLifePanel('🚌 Pedido enviado','<p class="life-muted">O autocarro vai seguir pelas estradas até à paragem segura mais próxima da tua posição. Aguarda junto à estrada.</p><button class="secondary" data-transit-map>🗺️ Acompanhar no mapa</button>');
  }
+ async function requestAlight(busId,button){
+  if(localPassenger?.bus_id!==busId){openLifePanel('Desembarque','<p class="life-muted">Não estás a bordo deste autocarro.</p>');return}
+  if(localPassenger.request_alight){openLifePanel('🚪 Pedido registado','<p class="life-muted">O teu pedido já está registado. O autocarro vai parar na próxima paragem segura.</p>');return}
+  if(button){button.disabled=true;button.textContent='A registar pedido…'}
+  const {error}=await sb.rpc('city_transit_request_alight',{p_bus_id:busId});
+  if(error){if(button){button.disabled=false;button.textContent='🚪 PEDIR PARA SAIR NA PRÓXIMA PARAGEM'}openLifePanel('Não foi possível pedir desembarque','<p class="life-muted">'+esc(error.message)+'</p>');return}
+  localPassenger={...localPassenger,request_alight:true};passengers.set(localPassenger.id,localPassenger);
+  openLifePanel('🚪 Pedido registado','<p class="life-muted">O motorista automático recebeu o pedido. O autocarro vai abrandar, alinhar com a estrada e parar na próxima paragem segura para te deixar sair.</p>');
+ }
  async function board(busId,destinationId,button){
   if(!canUseTransit?.()){openLifePanel('Transporte público','<p class="life-muted">Sai do teu veículo antes de embarcar no autocarro.</p>');return}
   if(button){button.disabled=true;button.textContent='A confirmar…'}
@@ -374,9 +405,10 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   openLifePanel('✅ Bilhete confirmado','<p class="life-muted">Destino: <b>'+esc(data.destination)+'</b><br>Bilhete: <b>'+MONEY(data.fare)+'</b><br>Saldo restante: <b>'+MONEY(data.balance)+'</b></p><p>Boa viagem! O autocarro vai deixar-te na paragem do destino escolhido.</p>');
  }
  function onPanelClick(e){
-  const b=e.target.closest?.('[data-transit-stop],[data-transit-fares],[data-transit-map],[data-transit-refresh-map],[data-transit-board],[data-transit-destination],[data-transit-cancel]');
+  const b=e.target.closest?.('[data-transit-stop],[data-transit-fares],[data-transit-map],[data-transit-refresh-map],[data-transit-board],[data-transit-destination],[data-transit-alight],[data-transit-cancel]');
   if(!b)return;
   if(b.dataset.transitStop){requestStop(b.dataset.transitStop);return}
+  if(b.dataset.transitAlight){requestAlight(b.dataset.transitAlight,b);return}
   if(b.dataset.transitFares){showFares(b.dataset.transitFares);return}
   if(b.hasAttribute('data-transit-map')||b.hasAttribute('data-transit-refresh-map')){showMap();return}
   if(b.dataset.transitBoard){showBoarding(b.dataset.transitBoard);return}
