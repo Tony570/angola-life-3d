@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v66-bai-praca-estacionamento-v1-20261120';
+const CACHE_NAME = 'angola-life-3d-v67-transferencia-jogadores-v1-20261120';
 const APP_SHELL = [
   './',
   './index.html',
