@@ -23,13 +23,13 @@ const LARGO_ROUTE=[
 ];
 const ROUTES={full:FULL_ROUTE,povo:POVO_ROUTE,largo:LARGO_ROUTE};
 const DESTINATIONS=[
- {id:'povo-grande',label:'Povo Grande',category:'Bairro',fare:200,stopNode:'pg_14_14',x:0,z:0},
+ {id:'povo-grande',label:'Cidade de Cabinda',category:'Bairro',fare:200,stopNode:'pg_14_14',x:0,z:0},
  {id:'hospital',label:'Hospital',category:'Saúde',fare:200,stopNode:'pg_m42_m14',x:-28,z:-28},
  {id:'quarry',label:'Empresa da Pedreira',category:'Empresa',fare:200,stopNode:'pg_m14_m14',x:0,z:-28},
- {id:'market',label:'Mercado de Povo Grande',category:'Comércio',fare:150,stopNode:'pg_42_14',x:28,z:0},
+ {id:'market',label:'Mercado de Cidade de Cabinda',category:'Comércio',fare:150,stopNode:'pg_42_14',x:28,z:0},
  {id:'car-shop',label:'Loja de Carros',category:'Comércio',fare:200,stopNode:'pg_m42_14',x:-28,z:0},
  {id:'hotel',label:'Hotel',category:'Hotelaria',fare:200,stopNode:'pg_14_14',x:0,z:0},
- {id:'police-povo',label:'Esquadra de Povo Grande',category:'Segurança',fare:200,stopNode:'pg_42_m42',x:28,z:-28},
+ {id:'police-povo',label:'Esquadra de Cidade de Cabinda',category:'Segurança',fare:200,stopNode:'pg_42_m42',x:28,z:-28},
  {id:'bar',label:'Bar',category:'Lazer',fare:200,stopNode:'pg_m42_42',x:-28,z:28},
  {id:'party',label:'Salão de Festas',category:'Lazer',fare:250,stopNode:'pg_42_42',x:28,z:28},
  {id:'salon',label:'Salão de Beleza',category:'Comércio',fare:150,stopNode:'pg_m14_42',x:-3.9,z:28},
@@ -347,7 +347,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  function svgPoint(x,z){return {x:22+(x+80)/370*516,y:22+(110-z)/210*326}}
  function destinationTable(maxHeight=390,route=null){
   const rows=DESTINATIONS.map(d=>{
-   const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Povo Grande';
+   const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Cidade de Cabinda';
    const served=!route||route.includes(d.stopNode);
    const service=served?'Directo nesta linha':'Via linha interurbana Viana 01';
    return '<tr style="border-top:1px solid #ddd"><td style="padding:8px 5px;font-weight:650">'+esc(d.label)+'</td><td style="padding:8px 5px">'+esc(city)+'</td><td style="padding:8px 5px">'+esc(d.category)+'</td><td style="padding:8px 5px;text-align:right;white-space:nowrap;font-weight:700">'+MONEY(d.fare)+'</td></tr>';
@@ -367,11 +367,11 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const busMarkers=[...buses.values()].map((s,i)=>{const p=svgPoint(Number(s.data.x),Number(s.data.z));return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="#d94b42" stroke="#fff" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+3)+'" text-anchor="middle" font-size="8" fill="#fff">'+(i+1)+'</text><title>'+esc(s.data.label||s.data.bus_id)+'</title></g>'}).join('');
   const busList=[...buses.values()].map(s=>'<div class="life-row"><span><b>'+esc(s.data.label||s.data.bus_id)+'</b><br><small>'+((s.data.status==='stopped'&&s.data.doors_open)?'Parado · portas abertas':'Em circulação')+'</small></span><small>'+Number(s.data.x).toFixed(0)+', '+Number(s.data.z).toFixed(0)+'</small></div>').join('');
   const list=destinationTable(260);
-  openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Linha interurbana Viana 01: Povo Grande ↔ Largo do Ambiente, com destinos e preços reunidos numa única tabela. As linhas locais também continuam disponíveis.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Povo Grande e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
+  openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Linha interurbana Viana 01: Cidade de Cabinda ↔ Largo do Ambiente, com destinos e preços reunidos numa única tabela. As linhas locais também continuam disponíveis.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Cidade de Cabinda e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
  }
  function showFares(busId){
   const bus=buses.get(busId),route=bus?routeFor(bus):FULL_ROUTE;
-  openLifePanel('🚌 Tabela única de destinos e tarifas','<p class="life-muted">Povo Grande e Largo do Ambiente estão ligados pela linha interurbana Viana 01. Esta tabela reúne todos os destinos das duas cidades e mostra o preço de cada viagem. Para embarcar directamente, usa a Viana 01 quando o destino não pertencer à linha local.</p>'+destinationTable(390,route)+'<button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button>');
+  openLifePanel('🚌 Tabela única de destinos e tarifas','<p class="life-muted">Cidade de Cabinda e Largo do Ambiente estão ligados pela linha interurbana Viana 01. Esta tabela reúne todos os destinos das duas cidades e mostra o preço de cada viagem. Para embarcar directamente, usa a Viana 01 quando o destino não pertencer à linha local.</p>'+destinationTable(390,route)+'<button class="secondary" data-transit-map>🗺️ Ver mapa das duas cidades</button>');
  }
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
