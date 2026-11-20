@@ -144,19 +144,26 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  const panel=document.getElementById('life-panel');
  function setBusRow(row){
   if(!row?.bus_id)return;
-  let state=buses.get(row.bus_id);
+  let state=buses.get(row.bus_id),previous=null;
   if(!state){const model=makeBusModel(THREE,row.label||row.bus_id);target.add(model);state={model,data:row,lastPersist:0,pending:false,needsAlight:false,alightNode:null,lastAlightAttemptAt:0,stopClock:0};buses.set(row.bus_id,state)}
-  else state.data={...state.data,...row};
+  else{previous={x:state.model.position.x,z:state.model.position.z,rotation:state.model.rotation.y};state.data={...state.data,...row}}
   state.data=row;
   if(state.data.controller_id===user.id&&state.data.controller_until&&new Date(state.data.controller_until).getTime()>Date.now())state.isController=true;
   else if(state.isController&&state.data.controller_id!==user.id)state.isController=false;
+  if(previous&&!state.isController){state.remoteFrom=previous;state.remoteAt=Date.now()}
   placeBus(state,0);
  }
  function placeBus(state,speed=0){
   const d=state.data,node=graph.nodes.get(d.current_node);
   if(!Number.isFinite(Number(d.x))||!Number.isFinite(Number(d.z)))return;
-  state.model.position.set(Number(d.x),0,Number(d.z));
-  state.model.rotation.y=Number(d.rotation)||0;
+  let px=Number(d.x),pz=Number(d.z),yaw=Number(d.rotation)||0;
+  if(!state.isController&&state.remoteFrom){
+   const t=Math.min(1,(Date.now()-state.remoteAt)/1050),diff=((yaw-state.remoteFrom.rotation+Math.PI*3)%(Math.PI*2))-Math.PI;
+   px=state.remoteFrom.x+(px-state.remoteFrom.x)*t;pz=state.remoteFrom.z+(pz-state.remoteFrom.z)*t;yaw=state.remoteFrom.rotation+diff*t;
+   if(t>=1)state.remoteFrom=null;
+  }
+  state.model.position.set(px,0,pz);
+  state.model.rotation.y=yaw;
   state.model.userData.busId=d.bus_id;
   state.model.userData.busState=d.status;
   state.model.userData.transitSpeed=speed;
