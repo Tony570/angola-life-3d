@@ -96,13 +96,13 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Governo Provincial transferido para um terreno independente.
 
   // Bancos com fachadas institucionais.
-  building('BANCO BCI',155,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
+  building('BANCO BCI',158,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
   building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c',dest:'bank-bai'});
-  yard(155,-39,15,5.5,-1,'#668653');yard(180,-39,15,5.5,-1,'#6b8e55');
+  yard(158,-39,15,5.5,-1,'#668653');yard(180,-39,15,5.5,-1,'#6b8e55');
   // Restaurante Polónia, com esplanada.
-  building('RESTAURANTE POLÓNIA',155,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
-  yard(155,59,16,6,-1,'#6d9657');
-  for(let i=0;i<4;i++){box(1.5,.12,1.5,mat('#754d35'),148+i*4, .35,81);box(.12,1.05,.12,mat('#f0e3c6'),148+i*4,.9,81)}
+  building('RESTAURANTE POLÓNIA',160,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
+  yard(160,59,16,6,-1,'#6d9657');
+  for(let i=0;i<4;i++){box(1.5,.12,1.5,mat('#754d35'),153+i*4, .35,81);box(.12,1.05,.12,mat('#f0e3c6'),153+i*4,.9,81)}
   // Paróquia Católica com torre, cruz e nave.
   box(20,.22,14,concrete,180,.12,72);box(18,7,13,mat('#e6ddc8'),180,3.7,72);box(8,10,8,mat('#ded3bd'),180,5.1,62);
   const tower=box(4,17,4,mat('#d7cbb4'),180,8.7,62);box(.45,2.6,.45,mat('#f4e8ce'),180,18.6,62);box(1.8,.4,.45,mat('#f4e8ce'),180,19.1,62);
@@ -116,7 +116,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   yard(235,54,18,5.5,-1,'#6f9658');yard(235,9,17,5.5,-1,'#6c9256');yard(235,-34,18,5.5,-1,'#78985d');
   // COMPLEXO PETROLÍFERO CHEVRON — recinto industrial amplo com sede baixa ao centro.
   // O terreno ocupa o quarteirão entre as vias existentes, sem invadir os edifícios vizinhos.
-  const chevronX=235,chevronZ=-63,chevronW=64,chevronD=28;
+  const chevronX=236,chevronZ=-65,chevronW=48,chevronD=22;
   box(chevronW,.18,chevronD,mat('#a7a69c'),chevronX,-.08,chevronZ);
   box(chevronW-3,.06,chevronD-3,mat('#777b70'),chevronX,-.005,chevronZ);
   const chevronFence=mat('#c8c9c3'),chevronSteel=mat('#6b7478'),chevronYellow=mat('#e6b83f'),chevronRed=mat('#a52b2b');
@@ -184,8 +184,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Armazém técnico e oficina de manutenção.
   building('OFICINA E ARMAZÉM',253,-60,9,7,1,'#c9d0ce',{sign:'#45575c',roof:'#697579'});
   // Área de carga, acesso de viaturas e estacionamento técnico.
-  box(12,.12,5,asphalt,218,-.01,-54);
-  for(let i=0;i<4;i++)box(.1,.035,4,chevronYellow,213+i*3.2,.07,-54);
+  box(12,.12,5,asphalt,218,-.01,-57);
+  for(let i=0;i<4;i++)box(.1,.035,4,chevronYellow,213+i*3.2,.07,-57);
   const oilTruck=(x,z)=>{
     const g=new THREE.Group();g.position.set(x,0,z);
     const body=mat('#d8d9d2'),darkMat=mat('#303a3e'),tankMat=mat('#aeb8b8',.34);
@@ -196,10 +196,10 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     for(const side of [-1,1])for(const zz of [-1.8,-.4,1.2,2.2]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.22,12),darkMat);wheel.rotation.z=Math.PI/2;wheel.position.set(side*.95,.4,zz);g.add(wheel);}
     target.add(g);
   };
-  oilTruck(216,-53);oilTruck(253,-53);
+  oilTruck(216,-56);oilTruck(253,-56);
   // Luzes de segurança, sinalização e áreas de circulação.
-  for(const [x,z] of [[212,-51],[258,-51],[212,-76],[258,-76]]){lamp(x,z);}
-  label('ZONA INDUSTRIAL · ACESSO RESTRITO',235,3.2,-78,22,1,'#9a2424');
+  for(const [x,z] of [[212,-56],[258,-56],[212,-81],[258,-81]]){lamp(x,z);}
+  label('ZONA INDUSTRIAL · ACESSO RESTRITO',236,3.2,-80,22,1,'#9a2424');
   // Colisões de vedação sem bloquear o portão de entrada.
   addCityCollision(chevronX,chevronZ-chevronD/2,chevronW,.22,.2);
   addCityCollision(chevronX-chevronW/2,chevronZ,.22,chevronD,.2);
@@ -241,16 +241,16 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   label('PARQUE OFICIAL · GOVERNO PROVINCIAL',govX,3.4,govZ+govD/2-1,24,1.05,'#7b2632');
 
   // Esquadra de polícia.
-  building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
-  box(3,.1,2,mat('#183d6d'),265,.25,-12);label('POLÍCIA',265,3.1,-28,7,.8,'#123d76');
+  building('ESQUADRA DA POLÍCIA',295,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
+  box(3,.1,2,mat('#183d6d'),295,.25,-12);label('POLÍCIA',295,3.1,-28,7,.8,'#123d76');
   // Campo de futebol TAF, colocado fora das avenidas.
-  box(48,.18,30,mat('#477b45'),265,.02,72);
-  box(44,.04,26,mat('#4c9851'),265,.14,72);
-  const white=mat('#f4f0dc');box(.12,.04,26,white,243,.18,72);box(.12,.04,26,white,287,.18,72);box(44,.04,.12,white,265,.18,59);box(44,.04,.12,white,265,.18,85);
-  const circle=new THREE.Mesh(new THREE.RingGeometry(4.8,4.94,48),white);circle.rotation.x=-Math.PI/2;circle.position.set(265,.18,72);target.add(circle);
-  for(const x of [243,287]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===243?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
-  label('CAMPO DE FUTEBOL TAF',265,5,56,18,1.3,'#174b37');
-  const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(265,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:265,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
+  box(48,.18,30,mat('#477b45'),295,.02,72);
+  box(44,.04,26,mat('#4c9851'),295,.14,72);
+  const white=mat('#f4f0dc');box(.12,.04,26,white,273,.18,72);box(.12,.04,26,white,317,.18,72);box(44,.04,.12,white,295,.18,59);box(44,.04,.12,white,295,.18,85);
+  const circle=new THREE.Mesh(new THREE.RingGeometry(4.8,4.94,48),white);circle.rotation.x=-Math.PI/2;circle.position.set(295,.18,72);target.add(circle);
+  for(const x of [273,317]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===243?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
+  label('CAMPO DE FUTEBOL TAF',295,5,56,18,1.3,'#174b37');
+  const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(295,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:295,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
 
   // UNIVERSIDADE ISCED — campus térreo, murado, organizado e com vinte salas de aula.
   const campusX=397,campusZ=12,campusW=176,campusD=190;
