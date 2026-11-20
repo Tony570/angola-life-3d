@@ -401,7 +401,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   isPassenger:()=>!!localPassenger,
   getRidePosition(){
    if(!localPassenger)return null;
-   const state=buses.get(localPassenger.bus_id);return state?{x:Number(state.data.x)||0,z:Number(state.data.z)||0}:null;
+   const state=buses.get(localPassenger.bus_id);return state?{x:state.model.position.x,z:state.model.position.z}:null;
   },
   isPlayerOnboard(id){return [...passengers.values()].some(p=>p.user_id===id&&p.status==='onboard')},
   cleanup(){
