@@ -148,18 +148,16 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   };
   horizontalVessel(244,-73,8,1.15);
   horizontalVessel(229,-73,6,1.0);
-  // Pipe-rack elevado com suportes metálicos e tubagens de vários diâmetros.
-  for(let i=0;i<6;i++){
-    const px=214+i*5.2;
-    box(.22,2.5,.22,chevronSteel,px,1.25,-58);
-    box(.22,2.5,.22,chevronSteel,px,1.25,-70);
+  // Pipe-rack elevado nas laterais, sem atravessar a sede nem os reservatórios.
+  for(const px of [213.5,258]){
+    for(const pz of [-58,-62,-66,-70,-74])box(.22,2.5,.22,chevronSteel,px,1.25,pz);
     for(let j=0;j<3;j++){
-      const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.12+j*.025,.12+j*.025,5.2,12),mat(['#b7c0c0','#68777c','#d1a64b'][j],.35));
-      pipe.rotation.z=Math.PI/2;pipe.position.set(px+2.6,2.05+j*.28,-63);target.add(pipe);
+      const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.12+j*.025,.12+j*.025,16,12),mat(['#b7c0c0','#68777c','#d1a64b'][j],.35));
+      pipe.rotation.x=Math.PI/2;pipe.position.set(px,2.05+j*.28,-66);target.add(pipe);
     }
   }
   // Bombas, motores, filtros e skids industriais.
-  for(const [x,z] of [[214,-62],[240,-62],[257,-61],[218,-72],[257,-72]]){
+  for(const [x,z] of [[214,-62],[240,-62],[257,-68],[218,-72],[257,-72]]){
     box(3.8,.32,2.2,chevronSteel,x,.22,z);
     box(1.35,1.05,1.15,mat('#356c70'),x-.65,.9,z);
     const motor=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,1.25,16),mat('#315e69'));motor.rotation.z=Math.PI/2;motor.position.set(x+.75,.95,z);target.add(motor);
@@ -169,10 +167,10 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Tubos de perfuração armazenados em suportes paralelos.
   for(let row=0;row<3;row++){
     const z=-74+row*.9;
-    box(9,.28,.32,chevronSteel,238,.65,z);
+    box(9,.28,.32,chevronSteel,216,.65,z);
     for(let j=0;j<7;j++){
       const tube=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,8.2,12),mat('#9aa4a6',.32));
-      tube.rotation.z=Math.PI/2;tube.position.set(238,1.05+j*.18,z);target.add(tube);
+      tube.rotation.z=Math.PI/2;tube.position.set(216,1.05+j*.18,z);target.add(tube);
     }
   }
   // Armazém técnico e oficina de manutenção.
