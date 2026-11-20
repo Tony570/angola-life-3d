@@ -1797,12 +1797,7 @@ const nav=$('room-door-nav'),current=$('room-current');if(current)current.textCo
    for(const [x,z,w,d] of [[0,0,14,220],[0,0,220,14],[-42,0,9,180],[42,0,9,180],[0,-42,180,9],[0,42,180,9]]){
     const road=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);road.rotation.x=-Math.PI/2;road.position.set(x,-.105,z);target.add(road);
    }
-   const buildingMat=new THREE.MeshStandardMaterial({color:'#b9a58e',roughness:.95});
-   for(let i=0;i<12;i++){
-    const x=(i%4)*24-36,z=Math.floor(i/4)*27-27;
-    const building=new THREE.Mesh(new THREE.BoxGeometry(10,5+(i%3)*2,9),buildingMat);
-    building.position.set(x,2.5+(i%3),z);target.add(building);
-   }
+    // Sem cubos genéricos de fallback: manter apenas terreno e estradas se a cidade falhar.
   }
   const citySpawn=entrySpawn||{x:14,z:-14};
   try{houseAvatar=buildCharacter(target,avatar,{x:citySpawn.x,y:-.03,z:citySpawn.z},m=>mixer=m,true)}
