@@ -41,6 +41,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   };
   // Bancos com arquitectura própria, fachada aberta e interior equipado.
   const bankBuilding=(name,x,z,w,d,brand,darkBrand,dest)=>{
+    const geometryStart=target.children.length;
+    const face=dest==='bank-bai'?1:-1;
     const front=z-d/2,back=z+d/2;
     const floor=mat('#d9d8d1'),inside=mat('#e9e7df'),brandMat=mat(brand),darkMat=mat(darkBrand),frame=mat('#34383c'),atmScreen=mat('#69c5d8',.28);
     box(w,.3,d,floor,x,.16,z);
@@ -69,10 +71,13 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     label(name,x,5.35,front-.42,Math.min(w*.9,17),1.05,brand);
     label('ATENDIMENTO · CAIXAS · MULTICAIXA',x,2.95,front-.3,Math.min(w*.82,15),.55,darkBrand);
     // Colisão em três lados e ombreiras, com entrada central livre.
-    collision(x-w/2,z,.55,d);collision(x+w/2,z,.55,d);collision(x,back-.2,w,.55);
-    collision(x-(w-4.2)/4,front,(w-4.2)/2,.55);collision(x+(w-4.2)/4,front,(w-4.2)/2,.55);
+    const entryFront=z+face*(d/2);
+    collision(x-w/2,z,.55,d);collision(x+w/2,z,.55,d);collision(x,z-face*(d/2-.2),w,.55);
+    collision(x-(w-4.2)/4,entryFront,(w-4.2)/2,.55);collision(x+(w-4.2)/4,entryFront,(w-4.2)/2,.55);
     const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.8),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
-    entry.position.set(x,1.2,front-.35);entry.userData.worldEntry={dest,label:name,x,z,front:-1,d};target.add(entry);
+    entry.position.set(x,1.2,entryFront+face*.35);entry.userData.worldEntry={dest,label:name,x,z,front:face,d};target.add(entry);
+    // O BAI roda 180° para a fachada principal ficar virada para norte, na direcção do BCI.
+    if(face===1){for(let i=geometryStart;i<target.children.length;i++){const object=target.children[i];object.position.x=2*x-object.position.x;object.position.z=2*z-object.position.z;object.rotation.y+=Math.PI;}}
     if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);
   };
   // Quintais ajardinados com portões abertos e vedações baixas, sem bloquear acessos.
