@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v73-cabinda-residencias-energia-decor-v2-20261120';
+const CACHE_NAME = 'angola-life-3d-v74-cabinda-residencias-energia-decor-v3-20261120';
 const APP_SHELL = [
   './',
   './index.html',
