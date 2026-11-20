@@ -28,7 +28,15 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     }
     box(w*.42,2.25,.14,dark,x,1.25,z-d/2-.12);
     label(name,x,h+.9,z-d/2-.16,Math.min(w*1.2,18),.95,opts.sign||'#173d55');
-    collision(x,z,w,d);
+    if(opts.doorGap){
+      // Colisão com abertura central para o jogador entrar pela porta principal.
+      const gap=5.2,front=z-d/2-.05,side=(w-gap)/2;
+      collision(x-(gap/2+side/2),front,side,.8);
+      collision(x+(gap/2+side/2),front,side,.8);
+      collision(x,z+d/2-.1,w,.8);
+      collision(x-w/2+.25,z,.7,d);
+      collision(x+w/2-.25,z,.7,d);
+    }else collision(x,z,w,d);
     if(opts.dest){const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,z-d/2-.28);entry.userData.worldEntry={dest:opts.dest,label:name,x,z,front:-1,d};target.add(entry);if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);}
   };
   // Quintais ajardinados com portões abertos e vedações baixas, sem bloquear acessos.
@@ -259,10 +267,14 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(92,.13,9,asphalt,315,-.075,14);box(92,.08,1.1,curb,315,-.015,8.8);box(92,.08,1.1,curb,315,-.015,19.2);
   for(let i=0;i<9;i++)box(2.4,.025,.12,roadMark,277+i*9.2,.005,14);
   box(142,.12,7,campusWalk,campusX,-.015,14);
+  // Passeio contínuo do portão principal até à recepção, sem retirar a relva do restante campus.
+  box(8,.12,68,campusWalk,397,-.015,-20);
+  box(12,.12,9,campusWalk,397,-.015,-63);
+  // Pequenos acessos transversais deixam a relva livre e fácil de atravessar.
   box(122,.1,5,campusWalk,campusX,-.01,-48);box(122,.1,5,campusWalk,campusX,-.01,68);
   box(5,.1,118,campusWalk,329,-.01,14);box(5,.1,118,campusWalk,465,-.01,14);
   // Recepção e secretaria com entrada acessível.
-  building('RECEPÇÃO · MATRÍCULAS ISCED',397,-54,38,18,1,'#dce5d5',{sign:'#174b37',roof:'#17613d',dest:'isced-university'});
+  building('RECEPÇÃO · MATRÍCULAS ISCED',397,-54,38,18,1,'#dce5d5',{sign:'#174b37',roof:'#17613d',dest:'isced-university',doorGap:true});
   box(28,.12,8,campusWalk,397,-.01,-48);
   // Dois blocos térreos, cada um com dez divisões, portas, janelas e carteiras.
   const classroomWing=(name,x,z)=>{
