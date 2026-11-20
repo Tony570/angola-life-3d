@@ -39,6 +39,42 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     }else collision(x,z,w,d);
     if(opts.dest){const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,z-d/2-.28);entry.userData.worldEntry={dest:opts.dest,label:name,x,z,front:-1,d};target.add(entry);if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);}
   };
+  // Bancos com arquitectura própria, fachada aberta e interior equipado.
+  const bankBuilding=(name,x,z,w,d,brand,darkBrand,dest)=>{
+    const front=z-d/2,back=z+d/2;
+    const floor=mat('#d9d8d1'),inside=mat('#e9e7df'),brandMat=mat(brand),darkMat=mat(darkBrand),frame=mat('#34383c'),atmScreen=mat('#69c5d8',.28);
+    box(w,.3,d,floor,x,.16,z);
+    box(.32,3.55,d,inside,x-w/2+.16,1.95,z);box(.32,3.55,d,inside,x+w/2-.16,1.95,z);
+    box(w,3.55,.32,inside,x,1.95,back-.16);
+    box(w,.22,d,darkMat,x,3.82,z);
+    box(w,2.55,.34,brandMat,x,5.18,front+.17);
+    box(.34,2.55,d,brandMat,x-w/2+.17,5.18,z);box(.34,2.55,d,brandMat,x+w/2-.17,5.18,z);
+    box(w,2.55,.34,darkMat,x,5.18,back-.17);
+    box(w+.7,.28,d+.7,darkMat,x,6.62,z);box(w+.35,.18,d+.35,brandMat,x,3.98,z);
+    // Fachada frontal envidraçada e entrada principal.
+    box(1.1,3.5,.22,brandMat,x-w/2+.65,1.92,front);box(1.1,3.5,.22,brandMat,x+w/2-.65,1.92,front);
+    box(.22,3.5,.22,brandMat,x-2.35,1.92,front);box(.22,3.5,.22,brandMat,x+2.35,1.92,front);
+    box(1.95,3.1,.12,glass,x-3.65,1.95,front-.08);box(1.95,3.1,.12,glass,x+3.65,1.95,front-.08);
+    box(4.15,.18,.28,brandMat,x,3.62,front-.08);
+    box(1.85,2.65,.12,glass,x-.96,1.55,front-.15);box(1.85,2.65,.12,glass,x+.96,1.55,front-.15);
+    box(.07,.72,.08,darkMat,x-.12,1.55,front-.24);box(.07,.72,.08,darkMat,x+.12,1.55,front-.24);
+    // Interior de atendimento, balcões, terminais e área de espera.
+    box(7.6,.12,1.15,brandMat,x,1.12,z-1.3);box(7.2,.82,.72,darkMat,x,1.55,z-1.3);box(7.25,.08,.78,brandMat,x,1.99,z-1.3);
+    for(let i=0;i<3;i++){const px=x-2.35+i*2.35;box(.72,.08,.55,mat('#c6c4bc'),px,2.08,z-1.3);box(.55,.38,.08,atmScreen,px,2.31,z-1.62);box(.48,.08,.3,frame,px,2.08,z-1.62);}
+    box(3.2,.9,.72,brandMat,x,1.48,z+1.35);box(3.35,.1,.82,darkMat,x,1.98,z+1.35);
+    for(let row=0;row<2;row++)for(let col=0;col<3;col++){const px=x-3.7+col*1.45,pz=z+3.05+row*1.05;box(.95,.18,.72,darkMat,px,.68,pz);box(.95,.62,.16,brandMat,px,.99,pz+.28);}
+    for(const side of [-1,1]){const ax=x+side*(w/2-1.45);box(.9,1.75,.62,darkMat,ax,1.05,front+.95);box(.62,.48,.08,atmScreen,ax,1.38,front+.61);box(.42,.18,.08,frame,ax,1.02,front+.61);box(1.2,.12,1.05,brandMat,ax,.12,front+.95);}
+    for(const px of [x-w/2+.65,x+w/2-.65])box(.2,3.7,.28,darkMat,px,1.9,front-.2);
+    box(w*.78,.55,.24,darkMat,x,3.2,front-.23);
+    label(name,x,5.35,front-.42,Math.min(w*.9,17),1.05,brand);
+    label('ATENDIMENTO · CAIXAS · MULTICAIXA',x,2.95,front-.3,Math.min(w*.82,15),.55,darkBrand);
+    // Colisão em três lados e ombreiras, com entrada central livre.
+    collision(x-w/2,z,.55,d);collision(x+w/2,z,.55,d);collision(x,back-.2,w,.55);
+    collision(x-(w-4.2)/4,front,(w-4.2)/2,.55);collision(x+(w-4.2)/4,front,(w-4.2)/2,.55);
+    const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.8),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
+    entry.position.set(x,1.2,front-.35);entry.userData.worldEntry={dest,label:name,x,z,front:-1,d};target.add(entry);
+    if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);
+  };
   // Quintais ajardinados com portões abertos e vedações baixas, sem bloquear acessos.
   const yard=(x,z,w,d,front=-1,green='#668653')=>{
     const lawn=mat(green),fence=mat('#d9d6ca'),post=mat('#777b78'),gate=mat('#76543b'),edge=mat('#d6d0c1');
@@ -95,10 +131,13 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   label('LARGO DO AMBIENTE',175,7,0,23,2.6,'#174b37');
   // Governo Provincial transferido para um terreno independente.
 
-  // Bancos com fachadas institucionais.
-  building('BANCO BCI',158,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
-  building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c',dest:'bank-bai'});
-  yard(158,-39,15,5.5,-1,'#668653');yard(180,-39,15,5.5,-1,'#6b8e55');
+  // BCI permanece sozinho no terreno original; BAI passa para um lote independente a sul.
+  bankBuilding('BANCO BCI',158,-28,17,13,'#e83e8c','#17171d','bank-bci');
+  yard(158,-39,19,5.5,-1,'#668653');
+  // Praça de acesso do BAI, fora das faixas de rodagem e afastada do Governo Provincial.
+  box(24,.12,7,curb,175,-.015,-82);
+  bankBuilding('BANCO BAI',175,-94,19,13,'#0878c9','#063b70','bank-bai');
+  for(const [lx,lz] of [[163,-85],[187,-85],[163,-103],[187,-103]])lamp(lx,lz);
   // Restaurante Polónia, com esplanada.
   building('RESTAURANTE POLÓNIA',160,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
   yard(160,59,16,6,-1,'#6d9657');
