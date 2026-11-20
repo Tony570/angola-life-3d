@@ -100,6 +100,10 @@ function makeBusModel(THREE,label){
  // Frente e traseira envidraçadas.
  part(new THREE.BoxGeometry(2.05,.86,.08),glass,0,1.55,3.64);
  part(new THREE.BoxGeometry(2.05,.78,.08),glass,0,1.53,-3.64);
+ // Letreiro partilhado para a frente, traseira e laterais.
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#123c5c';ctx.fillRect(0,0,512,96);ctx.fillStyle='#fff4d6';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('TRANSPORTE VIANA',256,48);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
  // Janelas laterais segmentadas, com pilares verticais reais.
  for(const side of [-1,1]){
   for(const z of [-2.65,-1.58,-.51,.56,1.63,2.70]){
@@ -126,10 +130,7 @@ function makeBusModel(THREE,label){
  }
  part(new THREE.BoxGeometry(2.15,.15,.12),dark,0,.77,3.69);
  part(new THREE.BoxGeometry(2.15,.15,.12),dark,0,.77,-3.69);
- // Letreiro frontal com identificação da transportadora.
- const canvas=document.createElement('canvas');canvas.width=512;canvas.height=96;const ctx=canvas.getContext('2d');
- ctx.fillStyle='#123c5c';ctx.fillRect(0,0,512,96);ctx.fillStyle='#fff4d6';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('TRANSPORTE VIANA',256,48);
- const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ // Letreiro frontal e traseiro da transportadora.
  const sign=part(new THREE.PlaneGeometry(1.62,.3),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),0,2.13,3.705);
  sign.rotation.x=0;
  const rearSign=part(new THREE.PlaneGeometry(1.45,.25),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),0,2.12,-3.705);rearSign.rotation.y=Math.PI;
