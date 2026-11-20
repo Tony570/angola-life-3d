@@ -10,7 +10,8 @@ const serviceRooms = {
   'residential-10': {title:'Residencial · 10 apartamentos',color:'#345b70'},
   'residential-tower': {title:'Torre Residencial',color:'#37566b'},
   'residential-family': {title:'Residencial Familiar',color:'#79543c'},
-  'taf': {title:'Campo de Futebol TAF',color:'#174b37'}
+  'taf': {title:'Campo de Futebol TAF',color:'#174b37'},
+  'isced-university': {title:'ISCED · Instituto Superior de Ciências da Educação',color:'#174b37'}
 };
 
 export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avatar,addWorkAgent}) {
@@ -72,7 +73,14 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
   for(const x of [-4.8,0,4.8]){box(2.2,1.3,.07,glass,x,2.35,-6.86);box(2.3,.09,.12,metal,x,3.04,-6.8)}
   for(const x of [-4.5,4.5]){box(.09,.08,1.2,mat('#f4e7c5',.35),x,3.72,0)}
   // Cada estabelecimento recebe mobiliário de acordo com a sua actividade.
-  if(['bank-bci','bank-bai','government','largo-police'].includes(kind)){
+  if(kind==='isced-university'){
+    const green=mat('#174b37'),gold=mat('#c7a85b');
+    box(7.2,.95,1.05,wood,0,.48,-3.25);box(7.35,.12,1.12,gold,0,1.02,-3.25);
+    for(const x of [-5.2,-1.8,1.8,5.2]){desk(x,-.75);officeChair(x,.35,Math.PI)}
+    for(const x of [-5.6,5.6]){box(1.15,2.1,.8,wood,x,1.05,3.2);for(let y=0;y<4;y++)box(1.05,.045,.82,gold,x, .35+y*.48,3.2)}
+    waitingSeat(-4.6,4.7);waitingSeat(-2.4,4.7);plant(6.5,5.3);plant(-6.5,5.3);
+    box(3.5,1.6,.12,green,0,2.55,-6.78);wallScreen(0,-6.82,'ISCED · BEM-VINDO');
+  }else if(['bank-bci','bank-bai','government','largo-police'].includes(kind)){
     box(7.2,.95,.95,wood,0,.48,-3.45);box(7.35,.12,1.02,metal,0,1.02,-3.45);
     for(let i=0;i<3;i++){const x=-4.7+i*4.7;box(1.15,.82,.09,glass,x,2.15,-6.8);box(1.3,.08,.12,metal,x,2.62,-6.76);box(.85,.08,.55,wood,x,.57,1.2);box(.07,.65,.07,metal,x-.34,.32,1.2);box(.07,.65,.07,metal,x+.34,.32,1.2);desk(x, -1.9);officeChair(x,-.72,Math.PI)}
     for(const x of [-5.5,5.5])filingCabinet(x,2.6);
@@ -189,6 +197,9 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       const {data:owned}=await sb.from('largo_apartment_ownership').select('apartment_code').eq('user_id',user.id);
       const ownedCodes=new Set((owned||[]).map(x=>x.apartment_code));
       html+='<h4>Apartamentos e preços</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span><b>'+x.code+' · '+x.label+'</b><br><small>'+money(x.price)+'</small></span><button class="secondary" data-largo-apartment="'+x.code+'" '+(ownedCodes.has(x.code)?'disabled':'')+'>'+(ownedCodes.has(x.code)?'Adquirido':'Comprar')+'</button></div>').join('')+'</div><p class="life-muted">A aquisição é registada na tua conta. Cada apartamento só pode ter um proprietário.</p>';
+    } else if(kind==='isced-university'){
+      html+='<h4>Faculdades e cursos</h4><div class="life-list"><div class="life-row"><span><b>Educação</b><br><small>Ciências da Educação · Pedagogia</small></span><b>ISCED</b></div><div class="life-row"><span><b>Engenharia</b><br><small>Informática · Civil · Electrotécnica · Mecânica · Petróleo</small></span><b>ISCED</b></div><div class="life-row"><span><b>Saúde</b><br><small>Enfermagem · Medicina · Farmácia · Análises Clínicas</small></span><b>ISCED</b></div><div class="life-row"><span><b>Economia e Gestão</b><br><small>Gestão · Contabilidade · Economia · Administração Pública</small></span><b>ISCED</b></div><div class="life-row"><span><b>Direito</b><br><small>Direito · Ciências Jurídicas</small></span><b>ISCED</b></div><div class="life-row"><span><b>Ciências Agrárias</b><br><small>Agronomia · Medicina Veterinária · Gestão Agrícola</small></span><b>ISCED</b></div></div>';
+      html+='<h4>Instalações do campus</h4><p class="life-muted">Reitoria e secretaria, biblioteca central, laboratórios, auditório, cantina, centro de estudantes, campo desportivo, jardins e parque de estacionamento.</p><h4>Admissões</h4><p class="life-muted">A secretaria apresenta informações sobre inscrições, matrículas, horários, propinas e bolsas. A gestão académica interactiva será activada numa fase própria.</p>';
     } else if(kind==='largo-police'){
       html+='<h4>Serviços policiais</h4><div class="life-list"><div class="life-row"><span>Apresentar ocorrência ou denúncia</span><b>Gratuito</b></div><div class="life-row"><span>Pedir informações e apoio</span><b>Gratuito</b></div><div class="life-row"><span>Solicitar patrulhamento</span><b>Gratuito</b></div></div><p class="life-muted">Dirige-te ao balcão para atendimento.</p>';
     } else if(kind==='parish'){
