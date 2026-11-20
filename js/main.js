@@ -771,7 +771,7 @@ function installBarSceneActions(){
 async function openBarServiceMenu(){
  const waiter=barWaitressAgents.find(a=>a.state==='ready'||a.state==='approach')||barWaitressAgents[0]||null;
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
- const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle();
+ const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').in('status',['pending','hired']).maybeSingle();
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
  const roles=[['gerente','Gerente',30000],['barman','Barman',30000],['empregado_mesa','Empregado de mesa',30000],['caixa','Caixa',30000],['seguranca','Segurança',30000],['limpeza','Limpeza',30000]];
  let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar contrata sem exigir formação. Todas as funções pagam 30.000 Kz por dia. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
