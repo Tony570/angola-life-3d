@@ -13,12 +13,12 @@ const POVO_ROUTE=[
 const FULL_ROUTE=[
  ...POVO_ROUTE,la(111,14),la(145,14),la(145,0),la(145,-48),la(145,-78),la(205,-78),
  la(265,-78),la(265,-48),la(205,-48),la(145,-48),la(145,0),la(145,48),la(205,48),
- la(205,0),la(265,0),la(265,48),la(205,48),la(205,96),la(265,96),la(205,96),la(145,96),
+ la(205,0),la(265,0),la(265,14),la(315,14),la(330,14),la(315,14),la(265,14),la(265,48),la(205,48),la(205,96),la(265,96),la(205,96),la(145,96),
  la(145,48),la(145,0),la(145,14),la(111,14),pg(70,14)
 ];
 const LARGO_ROUTE=[
  la(145,0),la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(205,-48),la(145,-48),
- la(145,0),la(145,48),la(205,48),la(205,0),la(265,0),la(265,48),la(205,48),la(205,96),
+ la(145,0),la(145,48),la(205,48),la(205,0),la(265,0),la(265,14),la(315,14),la(330,14),la(315,14),la(265,14),la(265,48),la(205,48),la(205,96),
  la(265,96),la(205,96),la(145,96),la(145,48),la(145,0)
 ];
 const ROUTES={full:FULL_ROUTE,povo:POVO_ROUTE,largo:LARGO_ROUTE};
@@ -47,6 +47,7 @@ const DESTINATIONS=[
  {id:'residential-tower',label:'Torre Residencial',category:'Residencial',fare:200,stopNode:'la_205_48',x:235,z:25},
  {id:'residential-family',label:'Residencial Familiar',category:'Residencial',fare:200,stopNode:'la_205_m48',x:235,z:-22},
  {id:'police-largo',label:'Esquadra do Largo do Ambiente',category:'Segurança',fare:250,stopNode:'la_265_0',x:265,z:-22}
+, {id:'isced-university',label:'Universidade ISCED',category:'Educação',fare:350,stopNode:'la_330_14',x:330,z:14}
 ];
 const MONEY=n=>new Intl.NumberFormat('pt-PT').format(Number(n)||0)+' Kz';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -60,6 +61,8 @@ function createGraph(){
  for(const x of LARGO_X)for(const z of LARGO_Z)add(la(x,z),x,z);
  for(const x of LARGO_X)for(let i=0;i<LARGO_Z.length-1;i++)link(la(x,LARGO_Z[i]),la(x,LARGO_Z[i+1]));
  for(const z of LARGO_Z)for(let i=0;i<LARGO_X.length-1;i++)link(la(LARGO_X[i],z),la(LARGO_X[i+1],z));
+ add(la(265,14),265,14);add(la(315,14),315,14);add(la(330,14),330,14);
+ link(la(265,0),la(265,14));link(la(265,14),la(265,48));link(la(265,14),la(315,14));link(la(315,14),la(330,14));
  add(la(111,14),111,14);add(la(145,14),145,14);
  link(pg(70,14),la(111,14));link(la(111,14),la(145,14));link(la(145,14),la(145,0));
  // Cortes de segurança: o Governo, o parque e o campo TAF ocupam áreas que não são vias.
@@ -344,7 +347,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const wheelSpin=step/.48;for(const wheel of state.model.userData.transitWheels||[])wheel.rotation.x+=wheelSpin;
   placeBus(state,speed);persist(state);
  }
- function svgPoint(x,z){return {x:22+(x+80)/370*516,y:22+(110-z)/210*326}}
+ function svgPoint(x,z){return {x:22+(x+80)/430*516,y:22+(110-z)/210*326}}
  function destinationTable(maxHeight=390,route=null){
   const rows=DESTINATIONS.map(d=>{
    const city=d.stopNode.startsWith('la_')?'Largo do Ambiente':'Cidade de Cabinda';
@@ -361,6 +364,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   for(const x of LARGO_X){const a=svgPoint(x,-82),b=svgPoint(x,102);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>')}
   for(const z of LARGO_Z){const a=svgPoint(130,z),b=svgPoint(280,z);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>')}
   const a=svgPoint(70,14),b=svgPoint(145,14);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke-dasharray="5 4"/>');
+ const campusA=svgPoint(265,14),campusB=svgPoint(330,14);roads.push('<line x1="'+campusA.x+'" y1="'+campusA.y+'" x2="'+campusB.x+'" y2="'+campusB.y+'" stroke-dasharray="5 4"/>');
   const markers=DESTINATIONS.map(d=>{const p=svgPoint(d.x,d.z);return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="4.2" fill="#e8bb5c" stroke="#fff" stroke-width="1.5"/><title>'+esc(d.label)+'</title></g>'}).join('');
   const stopNodes=new Map();Object.values(ROUTES).forEach(route=>route.forEach(id=>{const n=graph.nodes.get(id);if(n)stopNodes.set(n.id,n)}));
   const stopMarkers=[...stopNodes.values()].map(n=>{const p=svgPoint(n.x,n.z);return '<rect x="'+(p.x-3)+'" y="'+(p.y-3)+'" width="6" height="6" rx="1" fill="#2599a4" stroke="#fff" stroke-width="1"><title>Paragem de autocarro</title></rect>'}).join('');
