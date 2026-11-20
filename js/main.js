@@ -16,7 +16,7 @@ function showGameError(message,error=null){
 }
 let currentNeighborhood='',neighborhoodWelcomeTimer=null,playerResidence=null,homeDecorByRoom={};
 const homeDecorDefaults={wallColor:'#eee5d8',floorColor:'#c8b99e',rugColor:'#8c5144',lightsOn:true,items:[]};
-const cabindaNeighborhoods=[{name:'Povo Grande',x:-56,z:-48},{name:'Tchizo',x:-28,z:-48},{name:'Chiweca',x:0,z:-48},{name:'1.º de Maio',x:56,z:-48},{name:'Lombo-Lombo',x:-56,z:-20},{name:'A Resistência',x:56,z:-8},{name:'Cabassango',x:-56,z:36},{name:'Simulambuco',x:-56,z:48},{name:'4 de Fevereiro',x:0,z:48},{name:'A Vitória é Certa',x:56,z:48}];
+const cabindaNeighborhoods=[{name:'Povo Grande',x:-56,z:-48},{name:'Tchizo',x:-28,z:-48},{name:'Chiweca',x:0,z:-48},{name:'1.º de Maio',x:56,z:-48},{name:'Lombo-Lombo',x:-56,z:-20},{name:'A Resistência',x:56,z:-8},{name:'Cabassango',x:-56,z:36},{name:'Simulambuco',x:-56,z:48},{name:'4 de Fevereiro',x:0,z:48},{name:'A Vitória é Certa',x:56,z:48},{name:'Amílcar Cabral',x:-84,z:-76},{name:'Comandante Gika',x:0,z:-76},{name:'A Luta Continua',x:84,z:-76},{name:'Marien Ngouabi',x:-84,z:8},{name:'Deolinda Rodrigues',x:84,z:-8},{name:'Luvassa',x:-84,z:76},{name:'Ponta do Farol',x:0,z:76},{name:'Baixa da Cidade',x:84,z:76},{name:'Mongo Balança',x:-28,z:76},{name:'Ambaca',x:28,z:76},{name:'Morro do Chizo',x:28,z:-76}];
 function showNeighborhoodWelcome(name){
  let toast=$('neighborhood-welcome');
  if(!toast){
