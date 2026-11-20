@@ -144,3 +144,23 @@
  .market-buy-controls input{width:45px;min-width:45px;padding:7px 3px;font-size:12px}
  #life-panel .market-buy-controls button{padding:7px 8px;font-size:11px}
 }
+
+/* Menus ilustrados e personalização da casa */
+.venue-menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:11px;margin:10px 0 18px}
+.venue-menu-card{min-width:0;overflow:hidden;border:1px solid #d9dedc;border-radius:14px;background:#fff;box-shadow:0 4px 14px #152b3512}
+.venue-menu-card img{display:block;width:100%;height:112px;object-fit:cover;background:#e7e3da}
+.venue-menu-copy{display:flex;flex-direction:column;gap:7px;padding:10px}
+.venue-menu-copy b{font-size:13px;line-height:1.3;color:#25343a}
+.venue-menu-copy small{font-weight:800;color:#315f50}
+.venue-menu-copy button{width:100%;margin-top:2px}
+.furniture-shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin:12px 0}
+.furniture-shop-card{display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid #d6dedb;border-radius:14px;background:#fff}
+.furniture-shop-art{display:grid;place-items:center;min-height:74px;border-radius:10px;background:linear-gradient(135deg,#e9e1d4,#d4e0dd);font-size:42px}
+.furniture-shop-card b{font-size:13px;line-height:1.3}
+.furniture-shop-card small{color:#45615a;font-size:11px}
+.decor-controls,.decor-position{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.decor-controls label,.decor-position label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}
+.decor-controls input[type=color]{width:100%;height:42px;padding:3px}
+.decor-light-toggle{grid-column:1/-1;flex-direction:row!important;align-items:center}
+.decor-light-toggle input{width:20px;height:20px}
+@media(max-width:420px){.venue-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.venue-menu-card img{height:94px}.furniture-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
