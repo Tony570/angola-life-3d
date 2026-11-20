@@ -285,7 +285,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   for(const z of LARGO_Z){const a=svgPoint(130,z),b=svgPoint(280,z);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/>')}
   const a=svgPoint(70,14),b=svgPoint(145,14);roads.push('<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke-dasharray="5 4"/>');
   const markers=DESTINATIONS.map(d=>{const p=svgPoint(d.x,d.z);return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="4.2" fill="#e8bb5c" stroke="#fff" stroke-width="1.5"/><title>'+esc(d.label)+'</title></g>'}).join('');
-  const stopNodes=new Map();DESTINATIONS.forEach(d=>{const n=graph.nodes.get(d.stopNode);if(n)stopNodes.set(n.id,n)});
+  const stopNodes=new Map();Object.values(ROUTES).forEach(route=>route.forEach(id=>{const n=graph.nodes.get(id);if(n)stopNodes.set(n.id,n)}));
   const stopMarkers=[...stopNodes.values()].map(n=>{const p=svgPoint(n.x,n.z);return '<rect x="'+(p.x-3)+'" y="'+(p.y-3)+'" width="6" height="6" rx="1" fill="#2599a4" stroke="#fff" stroke-width="1"><title>Paragem de autocarro</title></rect>'}).join('');
   const busMarkers=[...buses.values()].map((s,i)=>{const p=svgPoint(Number(s.data.x),Number(s.data.z));return '<g><circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="#d94b42" stroke="#fff" stroke-width="2"/><text x="'+p.x+'" y="'+(p.y+3)+'" text-anchor="middle" font-size="8" fill="#fff">'+(i+1)+'</text></g>'}).join('');
   const list=DESTINATIONS.map(d=>'<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(d.category)+'</small></span><b>'+MONEY(d.fare)+'</b></div>').join('');
@@ -310,8 +310,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  function nearestPlayerRoadNode(busId){
   const pos=getPlayerPosition?.(),bus=buses.get(busId);if(!pos||!bus)return null;
-  const route=new Set(routeFor(bus)),candidates=new Map();
-  for(const destination of DESTINATIONS){if(!destination.stopNode||!route.has(destination.stopNode))continue;const node=graph.nodes.get(destination.stopNode);if(node)candidates.set(node.id,node)}
+  const candidates=new Map();for(const id of routeFor(bus)){const node=graph.nodes.get(id);if(node)candidates.set(node.id,node)}
   let best=null,distance=Infinity;
   for(const node of candidates.values()){const d=Math.hypot(node.x-Number(pos.x),node.z-Number(pos.z));if(d<distance){best=node;distance=d}}
   return best?{...best,distance}:null;
