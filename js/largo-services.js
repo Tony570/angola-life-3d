@@ -74,12 +74,33 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
   for(const x of [-4.5,4.5]){box(.09,.08,1.2,mat('#f4e7c5',.35),x,3.72,0)}
   // Cada estabelecimento recebe mobiliário de acordo com a sua actividade.
   if(kind==='isced-university'){
-    const green=mat('#174b37'),gold=mat('#c7a85b');
-    box(7.2,.95,1.05,wood,0,.48,-3.25);box(7.35,.12,1.12,gold,0,1.02,-3.25);
-    for(const x of [-5.2,-1.8,1.8,5.2]){desk(x,-.75);officeChair(x,.35,Math.PI)}
-    for(const x of [-5.6,5.6]){box(1.15,2.1,.8,wood,x,1.05,3.2);for(let y=0;y<4;y++)box(1.05,.045,.82,gold,x, .35+y*.48,3.2)}
-    waitingSeat(-4.6,4.7);waitingSeat(-2.4,4.7);plant(6.5,5.3);plant(-6.5,5.3);
-    box(3.5,1.6,.12,green,0,2.55,-6.78);wallScreen(0,-6.82,'ISCED · BEM-VINDO');
+    const green=mat('#174b37'),greenLight=mat('#dce9dc'),gold=mat('#c7a85b'),white=mat('#f5f4ed'),screen=mat('#263b45'),bookColors=['#315f48','#9a653f','#344f75','#a68a42','#8d4545'];
+    // Recepção principal com balcão curvo, postos informáticos e cadeiras de atendimento.
+    box(8.8,.22,1.45,wood,0,.78,-3.45);box(9,.12,1.5,gold,0,.96,-3.45);box(8.5,.82,.12,green,0,.39,-2.75);
+    for(const x of [-2.7,0,2.7]){box(.9,.58,.08,screen,x,1.55,-3.2);box(1.02,.07,.55,metal,x,1.2,-2.95);box(.12,.2,.12,metal,x,1.34,-2.95);officeChair(x,-1.95,Math.PI)}
+    box(5.4,1.65,.16,green,0,2.45,-6.78);box(5.05,1.3,.035,white,0,2.45,-6.68);wallScreen(0,-6.82,'ISCED · SECRETARIA ACADÉMICA');
+    // Zona de espera para estudantes e encarregados.
+    for(const x of [-5.6,-3.8,3.8,5.6])waitingSeat(x,4.65,Math.PI);
+    for(const x of [-6.5,6.5])plant(x,5.65);
+    // Balcão de informações e painel de avisos académicos.
+    box(2.2,1.25,.22,woodLight,-5.7,1.15,-4.8);box(2.25,.1,.25,gold,-5.7,1.82,-4.8);
+    box(2.5,1.7,.12,green,5.6,2.1,-6.78);box(2.22,1.42,.035,white,5.6,2.1,-6.69);
+    for(let i=0;i<3;i++){box(.5,.06,.035,gold,5.05+i*.55,2.5,-6.64);box(.42,.06,.035,green,5.05+i*.55,2.1,-6.64);box(.36,.06,.035,metal,5.05+i*.55,1.7,-6.64)}
+    // Pequena área de consulta digital com computadores e cadeiras.
+    for(const x of [-5.4,-2.8,2.8,5.4]){desk(x,1.15);officeChair(x,2.55,Math.PI)}
+    // Estantes de livros com lombadas visíveis e mesa de leitura.
+    for(const x of [-6.8,6.8]){
+      box(1.35,2.55,.5,wood,x,.1, -.15);
+      for(let shelf=0;shelf<4;shelf++){
+        box(1.28,.08,.55,gold,x,.48+shelf*.57,-.15);
+        for(let b=0;b<6;b++){const bm=mat(bookColors[(b+shelf)%bookColors.length]);box(.13,.38,.32,bm,x-.53+b*.21,.7+shelf*.57,-.15)}
+      }
+    }
+    box(3.6,.12,1.3,woodLight,0,.78,4.1);for(const x of [-1.4,1.4])for(const z of [3.65,4.55])box(.08,.72,.08,metal,x,.36,z);
+    for(const x of [-.95,.95]){box(.72,.06,.45,white,x,.88,4.1);box(.55,.025,.34,greenLight,x,.93,4.1)}
+    // Iluminação de tecto, sinalética e acabamento institucional.
+    for(const x of [-4,0,4]){box(1.8,.07,.55,white,x,3.82,-1.8);box(1.8,.025,.55,gold,x,3.77,-1.8)}
+    box(4.8,.08,.08,gold,0,3.15,6.65);box(4.8,.08,.08,gold,0,3.15,-6.65);
   }else if(['bank-bci','bank-bai','government','largo-police'].includes(kind)){
     box(7.2,.95,.95,wood,0,.48,-3.45);box(7.35,.12,1.02,metal,0,1.02,-3.45);
     for(let i=0;i<3;i++){const x=-4.7+i*4.7;box(1.15,.82,.09,glass,x,2.15,-6.8);box(1.3,.08,.12,metal,x,2.62,-6.76);box(.85,.08,.55,wood,x,.57,1.2);box(.07,.65,.07,metal,x-.34,.32,1.2);box(.07,.65,.07,metal,x+.34,.32,1.2);desk(x, -1.9);officeChair(x,-.72,Math.PI)}
