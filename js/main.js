@@ -1877,13 +1877,32 @@ if(kind==='room'&&roomName==='esquadra'&&houseAvatar&&!receptionShown){
  const receptionDistance=Math.hypot(houseAvatar.position.x,houseAvatar.position.z+0.15);
  if(receptionDistance<3.2){
   receptionShown=true;
-  openLifePanel('Recepção da Esquadra','<p class="life-muted">Bom dia. Seja bem-vindo à esquadra. Em que podemos ajudar?</p><div class="life-list"><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button></div>');
-  const bindPoliceForm=(id,title,type,help)=>{const b=$('life-panel').querySelector('#'+id);if(!b)return;b.onclick=()=>{openLifePanel(title,'<p class="life-muted">'+help+'</p><label for="police-location">Local da ocorrência</label><input id="police-location" maxlength="180" placeholder="Rua, bairro ou referência"><label for="police-description">Descrição</label><textarea id="police-description" maxlength="1200" rows="4" placeholder="Explica o que aconteceu (mínimo 8 caracteres)"></textarea><button id="police-submit">Registar ocorrência</button><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');const submit=$('police-submit');submit.onclick=async()=>{const location=$('police-location').value.trim(),description=$('police-description').value.trim();if(location.length<3||description.length<8){alert('Preenche o local e uma descrição com pelo menos 8 caracteres.');return}submit.disabled=true;submit.textContent='A registar…';const {data,error}=await sb.rpc('submit_police_incident',{p_type:type,p_location:location,p_description:description});if(error){alert(error.message);submit.disabled=false;submit.textContent='Registar ocorrência';return}openLifePanel('Ocorrência registada','<p class="life-muted">'+escapeLife(data?.message||'Registo recebido pela esquadra.')+'</p><p><b>Número:</b> '+escapeLife(data?.id||'')+'</p><button class="secondary" id="police-reception-back">← Voltar à recepção</button>')}}};
-  bindPoliceForm('police-reception-complaint','Registo de queixa','queixa','Indica o local e descreve a queixa. O registo fica associado à tua conta.');
-  bindPoliceForm('police-reception-security','Pedido de segurança residencial','seguranca_residencial','Indica a morada e o motivo do pedido de segurança.');
-  bindPoliceForm('police-reception-emergency','Comunicação de emergência','emergencia','Comunica o perigo ou a emergência e indica o local exacto.');
-  bindReception('police-reception-info','Informações da Polícia','A esquadra presta informações sobre queixas, segurança residencial e comunicação de emergências.');
-  const panel=$('life-panel');panel.addEventListener('click',e=>{if(e.target?.id==='police-reception-back'){openLifePanel('Recepção da Esquadra','<p class="life-muted">Em que podemos ajudar?</p><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button>')}},{once:false});
+  const showPoliceReception=()=>{
+   openLifePanel('Recepção da Esquadra','<p class="life-muted">Bom dia. Seja bem-vindo à esquadra. Em que podemos ajudar?</p><div class="life-list"><button class="secondary" id="police-reception-complaint">📝 Apresentar uma queixa</button><button class="secondary" id="police-reception-info">ℹ️ Pedir informações</button><button class="secondary" id="police-reception-security">🏠 Solicitar segurança para a minha casa</button><button class="secondary" id="police-reception-emergency">🚨 Comunicar um roubo ou perigo</button></div>');
+   const bindPoliceForm=(id,title,type,help)=>{
+    const button=$('life-panel').querySelector('#'+id);if(!button)return;
+    button.onclick=()=>{
+     openLifePanel(title,'<p class="life-muted">'+help+'</p><label for="police-location">Local da ocorrência</label><input id="police-location" maxlength="180" placeholder="Rua, bairro ou referência"><label for="police-description">Descrição</label><textarea id="police-description" maxlength="1200" rows="4" placeholder="Explica o que aconteceu (mínimo 8 caracteres)"></textarea><button id="police-submit">Registar ocorrência</button><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');
+     const submit=$('police-submit');
+     submit.onclick=async()=>{
+      const location=$('police-location').value.trim(),description=$('police-description').value.trim();
+      if(location.length<3||description.length<8){alert('Preenche o local e uma descrição com pelo menos 8 caracteres.');return}
+      submit.disabled=true;submit.textContent='A registar…';
+      const {data,error}=await sb.rpc('submit_police_incident',{p_type:type,p_location:location,p_description:description});
+      if(error){alert(error.message);submit.disabled=false;submit.textContent='Registar ocorrência';return}
+      openLifePanel('Ocorrência registada','<p class="life-muted">'+escapeLife(data?.message||'Registo recebido pela esquadra.')+'</p><p><b>Número:</b> '+escapeLife(data?.id||'')+'</p><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');
+     };
+    };
+   };
+   bindPoliceForm('police-reception-complaint','Registo de queixa','queixa','Indica o local e descreve a queixa. O registo fica associado à tua conta.');
+   bindPoliceForm('police-reception-security','Pedido de segurança residencial','seguranca_residencial','Indica a morada e o motivo do pedido de segurança.');
+   bindPoliceForm('police-reception-emergency','Comunicação de emergência','emergencia','Comunica o perigo ou a emergência e indica o local exacto.');
+   const info=$('life-panel').querySelector('#police-reception-info');
+   if(info)info.onclick=()=>openLifePanel('Informações da Polícia','<p class="life-muted">A esquadra recebe queixas, pedidos de segurança residencial e comunicações de emergência. Cada registo fica associado à tua conta.</p><button class="secondary" id="police-reception-back">← Voltar à recepção</button>');
+  };
+  showPoliceReception();
+  const panel=$('life-panel');
+  panel.addEventListener('click',e=>{if(e.target?.id==='police-reception-back')showPoliceReception()});
  }
 }
 if(kind==='city')cityDrivableCars.forEach(v=>{if(v.group)v.group.visible=true});
