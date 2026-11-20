@@ -1,4 +1,20 @@
 const money = value => new Intl.NumberFormat('pt-PT').format(Number(value)||0) + ' Kz';
+
+const venueMenuItems=[
+{key:'muamba_funge',label:'Muamba de galinha com funge',price:3500,category:'Comidas angolanas',image:'https://tkpe6wrwxmgsladx.public.blob.vercel-storage.com/recipes/chiku-moamba.jpg',alt:'Muamba de galinha com funge'},
+{key:'calulu_funge',label:'Calulu de peixe com funge',price:3200,category:'Comidas angolanas',image:'https://upload.wikimedia.org/wikipedia/commons/5/59/Calulu.jpg',alt:'Calulu de peixe com funge'},
+{key:'kizaca_peixe',label:'Kizaca com peixe fumado',price:3000,category:'Comidas angolanas',image:'https://angola24horas.com/media/k2/items/cache/6b9661e4a84f6c5fd4df6674a13ab728_L.jpg',alt:'Kizaca com peixe fumado'},
+{key:'mufete',label:'Mufete completo',price:4500,category:'Comidas angolanas',image:'https://www.atravel.blog/content/images/traditional-cuisine/traditional-cuisine-of-angola.webp',alt:'Pratos tradicionais angolanos'},
+{key:'feijao_oleo',label:'Feijão de óleo de palma',price:2200,category:'Comidas angolanas',image:'https://hml-mupasbeachresort.jupiter.co.ao/sites/default/files/2024-02/a0c52a68dcb65a02a06345c49465ba38.jpg',alt:'Comida tradicional angolana'},
+{key:'sumo_maracuja',label:'Sumo natural de maracujá',price:700,category:'Bebidas',image:'https://files.ivebeen.cooking/images/carioca-tropical-breeze/tmpw1z07kd3.jpg',alt:'Sumo de maracujá'},
+{key:'sumo_mucua',label:'Sumo de múcua',price:800,category:'Bebidas',image:'https://www.edenfarmersorganics.com.au/cdn/shop/files/006h_1200x1200.jpg?v=1744835596',alt:'Sumo natural de fruta'},
+{key:'agua',label:'Água mineral',price:300,category:'Bebidas',image:'https://www.duralex.com/cdn/shop/products/DURALEX_FW_18_WEB.jpg?v=1773323493&width=1800',alt:'Água servida num copo'}
+];
+export function renderVenueMenuMarkup(){
+ const cards=list=>'<div class="venue-menu-grid">'+list.map(item=>'<article class="venue-menu-card"><img src="'+item.image+'" alt="'+item.alt+'" loading="lazy" decoding="async"><div class="venue-menu-copy"><b>'+item.label+'</b><small>'+new Intl.NumberFormat('pt-PT').format(item.price)+' Kz</small><button class="secondary" data-venue-menu-buy="'+item.key+'">PEDIR</button></div></article>').join('')+'</div>';
+ return '<h4>Comidas tradicionais de Angola</h4>'+cards(venueMenuItems.filter(x=>x.category==='Comidas angolanas'))+'<h4>Bebidas</h4>'+cards(venueMenuItems.filter(x=>x.category==='Bebidas'))+'<p class="life-muted">As imagens são ilustrativas. Cada pedido actualiza as tuas necessidades.</p>';
+}
+
 const serviceRooms = {
   'bank-bci': {title:'Banco BCI',color:'#176b48',bank:'BCI'},
   'bank-bai': {title:'Banco BAI',color:'#9a252c',bank:'BAI'},
@@ -178,7 +194,7 @@ function serviceButton(label,key,price) {
   return '<div class="life-row"><span><b>'+label+'</b><br><small>'+money(price)+'</small></span><button class="secondary" data-largo-buy="'+key+'">Pagar</button></div>';
 }
 
-export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshPlayerWallet,escapeLife}) {
+export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshPlayerWallet,refreshPlayerNeeds,escapeLife}) {
   const cfg=serviceRooms[kind];if(!cfg||!user)return;
   const esc=escapeLife||((v)=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
   await refreshPlayerWallet();
@@ -215,9 +231,10 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }
       }
     } else if(kind==='restaurant-polonia'){
-      html+='<h4>Menu e preços</h4><div class="life-list">'+serviceButton('Prato do dia','polonia-meal',2500)+serviceButton('Refeição familiar','polonia-family-meal',5000)+'</div><p class="life-muted">O pedido é registado e o valor sai da tua carteira quando pagares.</p>';
+      html+=renderVenueMenuMarkup();
       html+=await basicEmploymentHtml({sb,user,employer:'restaurant',title:'Restaurante Polónia',roles:[['cozinheiro','Cozinheiro'],['empregado_mesa','Empregado de mesa'],['caixa','Caixa'],['limpeza','Limpeza']],esc});
     } else if(kind==='party'){
+      html+=renderVenueMenuMarkup();
       html+=await basicEmploymentHtml({sb,user,employer:'party',title:'Salão de Festas',roles:[['organizador_eventos','Organizador de eventos'],['empregado_sala','Empregado de sala'],['barman','Barman'],['seguranca','Segurança'],['limpeza','Limpeza']],esc});
     } else if(kind==='quarry'){
       html+=await basicEmploymentHtml({sb,user,employer:'quarry',title:'Empresa da Pedreira',roles:[['operador_maquinas','Operador de máquinas'],['ajudante_pedreira','Ajudante de pedreira'],['motorista_maquinas','Motorista de máquinas'],['seguranca','Segurança']],esc});
@@ -290,7 +307,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     if(message)html+='<p id="largo-service-message" class="life-muted">'+esc(message)+'</p>';
     openLifePanel(cfg.title,html);
     const panel=document.getElementById('life-panel');if(!panel)return;
-    const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();await render(success(data));};
+    const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();if(refreshPlayerNeeds)await refreshPlayerNeeds();await render(success(data));};
     if(cfg.bank){
       const transfer=document.getElementById('largo-bank-transfer');
       if(transfer)transfer.onclick=()=>{
@@ -305,6 +322,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       if(deposit)deposit.onclick=()=>run(deposit,()=>operation('deposit'),d=>'Depósito concluído. Saldo da conta: '+money(d.balance)+'.');
       if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+'.');
     }
+    panel.querySelectorAll('[data-venue-menu-buy]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('buy_venue_menu_item',{p_item:button.dataset.venueMenuBuy}),d=>'Pedido concluído: '+d.item+'. Energia, fome e hidratação actualizadas.'));
     panel.querySelectorAll('[data-job-apply]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_apply_public_job',{p_employer:button.dataset.jobApply,p_role:document.getElementById('job-role-'+button.dataset.jobApply).value}),d=>'Candidatura registada. Não foi exigida formação. Realiza a entrevista para concluir a contratação.'));
     panel.querySelectorAll('[data-job-interview]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:button.dataset.jobInterview}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.'));
     panel.querySelectorAll('[data-job-salary]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_claim_public_job_salary',{p_employer:button.dataset.jobSalary}),d=>'Salário recebido na carteira: '+money(d.salary)+'.'));
