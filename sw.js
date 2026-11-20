@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v64-bancos-modernos-v1-20261120';
+const CACHE_NAME = 'angola-life-3d-v65-bai-frente-bci-v1-20261120';
 const APP_SHELL = [
   './',
   './index.html',
