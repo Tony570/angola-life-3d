@@ -157,7 +157,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     }
   }
   // Bombas, motores, filtros e skids industriais.
-  for(const [x,z] of [[214,-62],[240,-62],[257,-68],[218,-72],[257,-72]]){
+  for(const [x,z] of [[223,-69],[240,-62],[252,-72]]){
     box(3.8,.32,2.2,chevronSteel,x,.22,z);
     box(1.35,1.05,1.15,mat('#356c70'),x-.65,.9,z);
     const motor=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,1.25,16),mat('#315e69'));motor.rotation.z=Math.PI/2;motor.position.set(x+.75,.95,z);target.add(motor);
