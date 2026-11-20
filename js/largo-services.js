@@ -219,8 +219,42 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       const ownedCodes=new Set((owned||[]).map(x=>x.apartment_code));
       html+='<h4>Apartamentos e preços</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span><b>'+x.code+' · '+x.label+'</b><br><small>'+money(x.price)+'</small></span><button class="secondary" data-largo-apartment="'+x.code+'" '+(ownedCodes.has(x.code)?'disabled':'')+'>'+(ownedCodes.has(x.code)?'Adquirido':'Comprar')+'</button></div>').join('')+'</div><p class="life-muted">A aquisição é registada na tua conta. Cada apartamento só pode ter um proprietário.</p>';
     } else if(kind==='isced-university'){
-      html+='<h4>Faculdades e cursos</h4><div class="life-list"><div class="life-row"><span><b>Educação</b><br><small>Ciências da Educação · Pedagogia</small></span><b>ISCED</b></div><div class="life-row"><span><b>Engenharia</b><br><small>Informática · Civil · Electrotécnica · Mecânica · Petróleo</small></span><b>ISCED</b></div><div class="life-row"><span><b>Saúde</b><br><small>Enfermagem · Medicina · Farmácia · Análises Clínicas</small></span><b>ISCED</b></div><div class="life-row"><span><b>Economia e Gestão</b><br><small>Gestão · Contabilidade · Economia · Administração Pública</small></span><b>ISCED</b></div><div class="life-row"><span><b>Direito</b><br><small>Direito · Ciências Jurídicas</small></span><b>ISCED</b></div><div class="life-row"><span><b>Ciências Agrárias</b><br><small>Agronomia · Medicina Veterinária · Gestão Agrícola</small></span><b>ISCED</b></div></div>';
-      html+='<h4>Instalações do campus</h4><p class="life-muted">Reitoria e secretaria, biblioteca central, laboratórios, auditório, cantina, centro de estudantes, campo desportivo, jardins e parque de estacionamento.</p><h4>Admissões</h4><p class="life-muted">A secretaria apresenta informações sobre inscrições, matrículas, horários, propinas e bolsas. A gestão académica interactiva será activada numa fase própria.</p>';
+      const [{data:courses,error:courseError},{data:enrollments,error:enrollmentError}]=await Promise.all([
+        sb.from('isced_courses').select('id,faculty,name,description,price,duration_days,lesson_titles').eq('active',true).order('faculty').order('name'),
+        sb.from('isced_enrollments').select('id,course_id,amount_paid,start_date,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false})
+      ]);
+      const courseList=courses||[], enrollmentList=enrollments||[];
+      const attendanceIds=enrollmentList.map(x=>x.id);
+      let attendance=[];
+      if(attendanceIds.length){const ar=await sb.from('isced_attendance').select('enrollment_id,day_number,class_date,lesson_title,attended_at').in('enrollment_id',attendanceIds).order('day_number');attendance=ar.data||[];}
+      html+='<h4>Catálogo de cursos e preços</h4><p class="life-muted">Todas as formações têm 15 dias de aulas consecutivas. A inscrição é paga uma única vez pela carteira virtual.</p>';
+      if(courseError)html+='<p class="life-muted">Não foi possível carregar o catálogo de cursos.</p>';
+      else {
+        const faculties=[...new Set(courseList.map(c=>c.faculty))];
+        for(const faculty of faculties){
+          html+='<h5>'+esc(faculty)+'</h5><div class="life-list">'+courseList.filter(c=>c.faculty===faculty).map(c=>{
+            const active=enrollmentList.some(e=>e.course_id===c.id&&e.status==='active');
+            const completed=enrollmentList.some(e=>e.course_id===c.id&&e.status==='completed');
+            return '<div class="life-row"><span><b>'+esc(c.name)+'</b><br><small>'+esc(c.description)+' · '+c.duration_days+' dias · '+money(c.price)+'</small></span><button '+(active||completed?'disabled':'')+' data-isced-enroll="'+esc(c.id)+'">'+(active?'Em curso':completed?'Concluído':'Inscrever-se')+'</button></div>';
+          }).join('')+'</div>';
+        }
+      }
+      html+='<h4>As minhas formações</h4>';
+      if(enrollmentError)html+='<p class="life-muted">Não foi possível carregar as tuas inscrições.</p>';
+      else if(!enrollmentList.length)html+='<p class="life-muted">Ainda não estás inscrito em nenhuma formação.</p>';
+      else {
+        html+='<div class="life-list">'+enrollmentList.map(e=>{
+          const c=courseList.find(x=>x.id===e.course_id), records=attendance.filter(a=>a.enrollment_id===e.id), count=records.length;
+          const today=new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Luanda'}), start=String(e.start_date).slice(0,10);
+          const day=Math.floor((Date.parse(today+'T00:00:00Z')-Date.parse(start+'T00:00:00Z'))/86400000)+1;
+          const nextTitle=c?.lesson_titles?.[Math.max(0,Math.min(14,day-1))]||'Aula diária';
+          const status=e.status==='active'?'Em formação':e.status==='completed'?'Aprovado':'Reprovado';
+          const progress=Math.round(Math.min(count/15,1)*100);
+          return '<div class="life-row"><span><b>'+esc(c?.name||e.course_id)+'</b><br><small>'+status+' · '+count+'/15 presenças · '+progress+'% · Pago: '+money(e.amount_paid)+'</small><br><small>Início: '+esc(start)+' · '+(e.status==='active'?'Dia '+Math.max(1,Math.min(15,day))+' de 15: '+esc(nextTitle):'Formação encerrada')+'</small></span>'+(e.status==='active'?'<button data-isced-attend="'+e.id+'" '+(day<1||day>15?'disabled':'')+'>Participar na aula de hoje</button>':'')+'</div>';
+        }).join('')+'</div>';
+      }
+      html+='<h4>Regras de frequência e aprovação</h4><p class="life-muted">A aula muda diariamente segundo o calendário de início da formação. O estudante deve registar a participação no próprio dia. Uma falta numa aula obrigatória reprova a formação. A aprovação exige 15 presenças em 15 dias.</p>';
+      html+='<h4>Instalações do campus</h4><p class="life-muted">Reitoria e secretaria, biblioteca central, laboratórios, auditório, cantina, centro de estudantes, jardins e parque de estacionamento.</p>';
     } else if(kind==='largo-police'){
       html+='<h4>Serviços policiais</h4><div class="life-list"><div class="life-row"><span>Apresentar ocorrência ou denúncia</span><b>Gratuito</b></div><div class="life-row"><span>Pedir informações e apoio</span><b>Gratuito</b></div><div class="life-row"><span>Solicitar patrulhamento</span><b>Gratuito</b></div></div><p class="life-muted">Dirige-te ao balcão para atendimento.</p>';
     } else if(kind==='parish'){
@@ -247,6 +281,8 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     const salary=document.getElementById('largo-claim-salary');if(salary)salary.onclick=()=>run(salary,()=>sb.rpc('largo_claim_chevron_salary'),d=>'Salário recebido: '+money(d.salary)+'.');
     panel.querySelectorAll('[data-largo-buy]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_pay_service',{p_service_key:button.dataset.largoBuy}),d=>'Pagamento concluído: '+d.label+' · '+money(d.amount)+'.'));
     panel.querySelectorAll('[data-largo-apartment]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_purchase_apartment',{p_apartment_code:button.dataset.largoApartment}),d=>'Apartamento adquirido: '+d.label+' · '+money(d.price)+'.'));
+    panel.querySelectorAll('[data-isced-enroll]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('isced_enroll',{p_course_id:button.dataset.iscedEnroll}),d=>'Inscrição confirmada em '+d.course+'. Foram descontados '+money(d.amount)+' da carteira. A primeira aula já está disponível.'));
+    panel.querySelectorAll('[data-isced-attend]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('isced_attend_today',{p_enrollment_id:button.dataset.iscedAttend}),d=>d.status==='failed'?'Frequência insuficiente. A formação foi reprovada.':d.status==='completed'?'Parabéns! Concluíste os 15 dias e foste aprovado.':d.already_attended?'A tua presença de hoje já está registada.':'Presença registada: Dia '+d.day_number+'/15 · '+d.lesson_title+'.'));
   };
   await render();
 }
