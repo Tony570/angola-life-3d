@@ -16,8 +16,20 @@ jobs:
     steps:
       - name: Obter código
         uses: actions/checkout@v4
-      - name: Validar sintaxe do JavaScript
-        run: node --input-type=module --check < js/main.js
+      - name: Validar sintaxe de todos os módulos JavaScript
+        run: |
+          set -e
+          for file in js/main.js js/largo-services.js js/largo-do-ambiente.js js/city-transit.js; do
+            echo "A validar $file"
+            node --input-type=module --check < "$file"
+          done
+      - name: Validar regras dos empregos sem formação
+        run: |
+          grep -q "'party','quarry'" /dev/null && exit 1 || true
+          grep -q "roomName==='party'||roomName==='quarry'" js/main.js
+          grep -q "employer:'party'" js/largo-services.js
+          grep -q "employer:'quarry'" js/largo-services.js
+          grep -q "30.000 Kz por dia" js/largo-services.js
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
       - name: Preparar ficheiros do jogo
