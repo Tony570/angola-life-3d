@@ -140,7 +140,7 @@ function makeBusModel(THREE,label){
 }
 export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,getOtherVehicles=()=>[],canUseTransit=()=>true,openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
  const graph=createGraph(),buses=new Map(),passengers=new Map(),destinations=new Map(DESTINATIONS.map(d=>[d.id,d]));
- let channel=null,alive=true,claimElapsed=0,localPassenger=null,mapButton=null,activeBusId=null;const handledArrivals=new Set();
+ let channel=null,alive=true,claimElapsed=0,localPassenger=null,mapButton=null,alightButton=null,activeBusId=null;const handledArrivals=new Set();
  const panel=document.getElementById('life-panel');
  function setBusRow(row){
   if(!row?.bus_id)return;
@@ -177,6 +177,12 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   passengers.clear();for(const [id,row] of next)passengers.set(id,row);
   const own=[...passengers.values()].find(p=>p.user_id===user.id&&p.status==='onboard')||null;
   if(own&&localPassenger?.id!==own.id){localPassenger=own;onBoard?.(own)}
+  else if(own&&localPassenger){localPassenger={...localPassenger,...own}}
+  if(alightButton){
+   alightButton.style.display=own?'block':'none';
+   alightButton.disabled=!!own?.request_alight;
+   alightButton.textContent=own?.request_alight?'✓ PEDIDO DE SAÍDA ENVIADO':'🚪 SAIR NA PRÓXIMA PARAGEM';
+  }
   const ownArrived=[...passengers.values()].find(p=>p.user_id===user.id&&p.status==='arrived'&&!handledArrivals.has(p.id));
   if(ownArrived){handledArrivals.add(ownArrived.id);if(!localPassenger||localPassenger.id===ownArrived.id){localPassenger=null;onAlight?.({x:Number(ownArrived.drop_x),z:Number(ownArrived.drop_z),destination:destinations.get(ownArrived.destination_id)?.label||'Destino'});}}
   onPassengersChanged?.(passengers);
@@ -393,6 +399,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const {error}=await sb.rpc('city_transit_request_alight',{p_bus_id:busId});
   if(error){if(button){button.disabled=false;button.textContent='🚪 PEDIR PARA SAIR NA PRÓXIMA PARAGEM'}openLifePanel('Não foi possível pedir desembarque','<p class="life-muted">'+esc(error.message)+'</p>');return}
   localPassenger={...localPassenger,request_alight:true};passengers.set(localPassenger.id,localPassenger);
+  if(alightButton){alightButton.disabled=true;alightButton.textContent='✓ PEDIDO DE SAÍDA ENVIADO'}
   openLifePanel('🚪 Pedido registado','<p class="life-muted">O motorista automático recebeu o pedido. O autocarro vai abrandar, alinhar com a estrada e parar na próxima paragem segura para te deixar sair.</p>');
  }
  async function board(busId,destinationId,button){
@@ -429,6 +436,10 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   mapButton=document.createElement('button');mapButton.type='button';mapButton.textContent='🗺️ MAPA / AUTOCARROS';
   mapButton.style.cssText='position:absolute;z-index:35;top:48px;right:10px;padding:9px 11px;border:1px solid #d8c28e;border-radius:11px;background:#123d32ed;color:#fff7df;font:700 11px system-ui;box-shadow:0 3px 12px #0005';
   mapButton.addEventListener('click',showMap);host.appendChild(mapButton);
+  alightButton=document.createElement('button');alightButton.type='button';alightButton.textContent='🚪 SAIR NA PRÓXIMA PARAGEM';
+  alightButton.style.cssText='position:absolute;z-index:36;top:94px;right:10px;display:none;padding:11px 13px;border:1px solid #e8c27a;border-radius:11px;background:#8b321f;color:#fff7df;font:800 11px system-ui;box-shadow:0 3px 12px #0005';
+  alightButton.addEventListener('click',()=>{if(localPassenger)requestAlight(localPassenger.bus_id,alightButton)});
+  host.appendChild(alightButton);
  }
  async function init(){
   const {data,error}=await sb.from('city_transit_buses').select('*');
@@ -470,6 +481,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
    alive=false;panel?.removeEventListener('click',onPanelClick);
    if(channel)sb.removeChannel(channel);
    if(mapButton){mapButton.removeEventListener('click',showMap);mapButton.remove()}
+   if(alightButton){alightButton.onclick=null;alightButton.remove()}
    for(const state of buses.values())target.remove(state.model);
    buses.clear();passengers.clear();
   }
