@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.m
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
-const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf','isced-university']);
+const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf','isced-university','party','quarry']);
 const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -150,7 +150,7 @@ async function openEconomyPanel(){
  const foods=[['water','💧 Água',100,'+2 energia · +20 hidratação'],['juice','🧃 Sumo',250,'+5 energia · +15 hidratação'],['fruit','🍎 Fruta',200,'+5 energia · +15 fome'],['sandwich','🥪 Sandes',500,'+10 energia · +25 fome'],['meal','🍛 Refeição completa',1000,'+20 energia · +40 fome']];
  const foodHtml=activeRoomName==='market'?foods.map(x=>'<div class="life-row"><span><b>'+x[1]+'</b><br><small>'+x[3]+' · '+new Intl.NumberFormat('pt-PT').format(x[2])+' Kz</small></span><button class="secondary" data-consumable="'+x[0]+'">Comprar</button></div>').join(''):'<p class="life-muted">Entra no Mercado da cidade para comprar comida e bebidas.</p>';
  const sleepHtml=activeRoomName==='quarto'&&!activeHouseVisit?'<button class="secondary" id="needs-sleep">🛏️ Dormir e recuperar 100% de energia</button>':'<p class="life-muted">Para dormir, entra no quarto da tua própria casa.</p>';
- const jobHtml=activeRoomName==='quarry'?'<h4>Trabalho</h4><p class="life-muted">Cada turno na pedreira consome 20% de energia e paga 25.000 Kz. Com 100% podes completar cinco turnos.</p><button id="needs-work">⛏️ Fazer um turno na pedreira · 25.000 Kz</button>':'';
+ const jobHtml='';
  const [{data:transfers},{data:purchases}]=await Promise.all([
   sb.from('player_money_transfers').select('sender_id,recipient_id,amount,created_at').or('sender_id.eq.'+user.id+',recipient_id.eq.'+user.id).order('created_at',{ascending:false}).limit(5),
   sb.from('player_purchase_history').select('item_label,amount,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5)
@@ -164,8 +164,7 @@ async function openEconomyPanel(){
  if(transfer)transfer.onclick=async()=>{const recipient=$('transfer-player').value.trim(),amount=Number($('transfer-amount').value),msg=$('economy-message');if(!recipient||!Number.isSafeInteger(amount)||amount<=0){msg.textContent='Indica o destinatário e um valor válido.';return}transfer.disabled=true;transfer.textContent='A enviar…';const {error}=await sb.rpc('transfer_player_money',{p_recipient:recipient,p_amount:amount});if(error){msg.textContent=error.message;transfer.disabled=false;transfer.textContent='Enviar dinheiro';return}await refreshPlayerWallet();openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Transferência enviada com sucesso.'};
  const sleep=$('needs-sleep');
  if(sleep)sleep.onclick=async()=>{sleep.disabled=true;const {error}=await sb.rpc('sleep_player');if(error){$('economy-message').textContent=error.message;sleep.disabled=false;return}await refreshPlayerNeeds();openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Descansaste. Energia recuperada para 100%.'};
- const work=$('needs-work');
- if(work)work.onclick=async()=>{work.disabled=true;work.textContent='A trabalhar…';const {data,error}=await sb.rpc('complete_player_job',{p_job:'pedreira'});if(error){$('economy-message').textContent=error.message;work.disabled=false;work.textContent='⛏️ Fazer um turno na pedreira · 25.000 Kz';return}await Promise.all([refreshPlayerWallet(),refreshPlayerNeeds()]);openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Turno concluído. Recebeste 25.000 Kz e gastaste 20% de energia.'};
+
 }
 
 async function loadPlayerVehicles(){
@@ -775,8 +774,8 @@ async function openBarServiceMenu(){
  const drinks=[['Cuca',300,'🍺'],['Dopel',350,'🍺'],['Wys',3000,'🥃'],['Nocal',400,'🍺'],['Amarula',2000,'🥃'],['Caipirinha',150,'🍹']];
  const {data:job}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer','bar').maybeSingle();
  const rows=drinks.map((d,i)=>'<div class="life-row"><span>'+d[2]+' '+d[0]+'<br><small class="life-muted">'+new Intl.NumberFormat('pt-PT').format(d[1])+' Kz</small></span><button class="secondary" data-bar-buy="'+i+'">PEDIR</button></div>').join('');
- const roles=[['gerente','Gerente',130000],['barman','Barman',85000],['empregado_mesa','Empregado de mesa',70000],['caixa','Caixa',75000],['seguranca','Segurança',80000],['limpeza','Limpeza',55000]];
- let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar também funciona como centro de recrutamento. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
+ const roles=[['gerente','Gerente',30000],['barman','Barman',30000],['empregado_mesa','Empregado de mesa',30000],['caixa','Caixa',30000],['seguranca','Segurança',30000],['limpeza','Limpeza',30000]];
+ let jobsHtml='<h4>Emprego neste bar</h4><p class="life-muted">O bar contrata sem exigir formação. Todas as funções pagam 30.000 Kz por dia. Os salários são pagos na carteira virtual a cada 24 horas.</p>';
  if(job&&job.status==='hired'){
   jobsHtml+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+escapeLife(job.role)+' · '+new Intl.NumberFormat("pt-PT").format(job.salary)+' Kz/dia</small></span><span class="badge">Contratado</span></div><button id="bar-job-salary">Receber salário</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
  }else if(job&&job.status==='pending'){
