@@ -17,8 +17,8 @@ const FULL_ROUTE=[
  la(145,48),la(145,0),la(145,14),la(111,14),pg(70,14)
 ];
 const LARGO_ROUTE=[
- la(145,0),la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(205,-48),la(145,-48),
- la(145,0),la(145,48),la(205,48),la(205,0),la(265,0),la(265,14),la(315,14),la(330,14),la(315,14),la(265,14),la(265,48),la(205,48),la(205,96),
+ la(145,0),la(145,-48),la(145,-78),la(145,-110),la(145,-130),la(145,-110),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(205,-48),la(145,-48),
+ la(145,0),la(145,48),la(205,48),la(205,0),la(175,0),la(145,0),la(145,48),la(205,48),la(205,0),la(265,0),la(265,14),la(315,14),la(330,14),la(315,14),la(265,14),la(265,48),la(205,48),la(205,96),
  la(265,96),la(205,96),la(145,96),la(145,48),la(145,0)
 ];
 const ROUTES={full:FULL_ROUTE,povo:POVO_ROUTE,largo:LARGO_ROUTE};
@@ -63,6 +63,9 @@ function createGraph(){
  for(const z of LARGO_Z)for(let i=0;i<LARGO_X.length-1;i++)link(la(LARGO_X[i],z),la(LARGO_X[i+1],z));
  add(la(265,14),265,14);add(la(315,14),315,14);add(la(330,14),330,14);
  link(la(265,0),la(265,14));link(la(265,14),la(265,48));link(la(265,14),la(315,14));link(la(315,14),la(330,14));
+ add(la(175,0),175,0);add(la(145,-110),145,-110);add(la(145,-130),145,-130);
+ link(la(205,0),la(175,0));link(la(175,0),la(145,0));
+ link(la(145,-78),la(145,-110));link(la(145,-110),la(145,-130));
  add(la(111,14),111,14);add(la(145,14),145,14);
  link(pg(70,14),la(111,14));link(la(111,14),la(145,14));link(la(145,14),la(145,0));
  // Cortes de segurança: o Governo, o parque e o campo TAF ocupam áreas que não são vias.
