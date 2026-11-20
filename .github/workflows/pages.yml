@@ -25,7 +25,7 @@ jobs:
           done
       - name: Validar regras dos empregos sem formação
         run: |
-          grep -q "'party','quarry'" /dev/null && exit 1 || true
+          if grep -q "const LARGO_SERVICE_ROOMS=.*'party'.*'quarry'" js/main.js; then echo "Erro: interiores próprios de festa/pedreira foram substituídos"; exit 1; fi
           grep -q "roomName==='party'||roomName==='quarry'" js/main.js
           grep -q "employer:'party'" js/largo-services.js
           grep -q "employer:'quarry'" js/largo-services.js
