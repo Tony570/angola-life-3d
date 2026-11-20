@@ -130,7 +130,7 @@ function makeBusModel(THREE,label){
 }
 export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
  const graph=createGraph(),buses=new Map(),passengers=new Map(),destinations=new Map(DESTINATIONS.map(d=>[d.id,d]));
- let channel=null,alive=true,claimElapsed=0,loadDone=false,localPassenger=null,mapButton=null,activeBusId=null;
+ let channel=null,alive=true,claimElapsed=0,localPassenger=null,mapButton=null,activeBusId=null;const handledArrivals=new Set();
  const panel=document.getElementById('life-panel');
  function setBusRow(row){
   if(!row?.bus_id)return;
@@ -151,7 +151,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,o
   state.model.userData.busState=d.status;
   state.model.userData.transitSpeed=speed;
   const doors=state.model.userData.transitDoors||[];
-  doors.forEach(door=>{const side=Math.sign(door.position.x)||1;door.position.z=d.doors_open?.72:.08;door.position.x=side*1.255});
+  doors.forEach(door=>{const side=Math.sign(door.position.x)||1;door.position.z=d.doors_open ? 0.72 : 0.08;door.position.x=side*1.255});
   if(node&&d.status==='stopped')state.model.position.y=.015;
  }
  function updatePassengers(rows){
@@ -159,10 +159,9 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,o
   (rows||[]).forEach(row=>{if(row?.id)next.set(row.id,row)});
   passengers.clear();for(const [id,row] of next)passengers.set(id,row);
   const own=[...passengers.values()].find(p=>p.user_id===user.id&&p.status==='onboard')||null;
-  if(own&&!localPassenger){localPassenger=own;onBoard?.(own)}
-  if(!own&&localPassenger){localPassenger=null}
-  const ownArrived=[...passengers.values()].find(p=>p.user_id===user.id&&p.status==='arrived'&&(!localPassenger||p.id===localPassenger.id));
-  if(ownArrived){localPassenger=null;onAlight?.({x:Number(ownArrived.drop_x),z:Number(ownArrived.drop_z),destination:destinations.get(ownArrived.destination_id)?.label||'Destino'});}
+  if(own&&localPassenger?.id!==own.id){localPassenger=own;onBoard?.(own)}
+  const ownArrived=[...passengers.values()].find(p=>p.user_id===user.id&&p.status==='arrived'&&!handledArrivals.has(p.id));
+  if(ownArrived){handledArrivals.add(ownArrived.id);if(!localPassenger||localPassenger.id===ownArrived.id){localPassenger=null;onAlight?.({x:Number(ownArrived.drop_x),z:Number(ownArrived.drop_z),destination:destinations.get(ownArrived.destination_id)?.label||'Destino'});}}
   onPassengersChanged?.(passengers);
  }
  async function loadPassengers(){
