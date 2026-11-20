@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v71-musica-mr-jordan-v1-20261120';
+const CACHE_NAME = 'angola-life-3d-v72-cabinda-residencias-energia-decor-v1-20261120';
 const APP_SHELL = [
   './',
   './index.html',
