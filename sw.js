@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v44-smooth-transit-20261120';
+const CACHE_NAME = 'angola-life-3d-v45-car-controls-20261120';
 const APP_SHELL = [
   './',
   './index.html',
