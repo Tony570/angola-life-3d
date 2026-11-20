@@ -31,10 +31,43 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     collision(x,z,w,d);
     if(opts.dest){const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,z-d/2-.28);entry.userData.worldEntry={dest:opts.dest,label:name,x,z,front:-1,d};target.add(entry);if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);}
   };
+  // Quintais ajardinados com portões abertos e vedações baixas, sem bloquear acessos.
+  const yard=(x,z,w,d,front=-1,green='#668653')=>{
+    const lawn=mat(green),fence=mat('#d9d6ca'),post=mat('#777b78'),gate=mat('#76543b'),edge=mat('#d6d0c1');
+    box(w,.10,d,lawn,x,-.025,z);
+    box(Math.min(w*.72,10),.08,1.05,edge,x,z-front*(d*.28),-.0);
+    const thick=.16,gap=3.2,y=.68,side=(w-gap)/2;
+    box(w,.78,thick,fence,x,y,z+front*d/2);
+    box(thick,.78,d,fence,x-w/2,y,z);box(thick,.78,d,fence,x+w/2,y,z);
+    box(side,.78,thick,fence,x-(gap/2+side/2),y,z-front*d/2);
+    box(side,.78,thick,fence,x+(gap/2+side/2),y,z-front*d/2);
+    for(const px of [x-w/2,x-gap/2,x+gap/2,x+w/2])box(.22,1.02,.22,post,px,.55,z-front*d/2);
+    box(gap-.18,.12,.18,gate,x,.5,z-front*d/2);
+    for(const sign of [-1,1]){
+      const sx=x+sign*(w/2-1.25),sz=z+front*(d/2-1.15);
+      box(1.45,.12,1.1,edge,sx,.06,sz);
+      const bush=new THREE.Mesh(new THREE.SphereGeometry(.48,10,8),mat('#397747'));bush.position.set(sx,.42,sz);target.add(bush);
+    }
+    addCityCollision(x,z+front*d/2,w,.2,.25);
+    addCityCollision(x-w/2,z,.2,d,.25);addCityCollision(x+w/2,z,.2,d,.25);
+    addCityCollision(x-(gap/2+side/2),z-front*d/2,side,.2,.25);
+    addCityCollision(x+(gap/2+side/2),z-front*d/2,side,.2,.25);
+  };
   // Terreno próprio a leste: não remove nem desloca construções já existentes.
   box(250,.22,220,mat('#b59a76'),205,-.22,12);
   // Avenida de ligação contínua ao bairro antigo, sem interrupção entre as malhas viárias.
   box(82,.12,8.2,asphalt,111,-.075,14);
+  // Passeios, bermas verdes e marcação central na ligação ao Povo Grande.
+  box(82,.10,1.25,curb,111,-.015,9.1);box(82,.10,1.25,curb,111,-.015,18.9);
+  const roadMark=mat('#f1e5c6',.72);
+  for(let dash=0;dash<9;dash++)box(2.5,.025,.13,roadMark,76+dash*8.2,.005,14);
+  for(const side of [-1,1]){
+    box(82,.06,.8,grass,111,-.025,14+side*6.1);
+    for(let i=0;i<8;i++){
+      const shrub=new THREE.Mesh(new THREE.SphereGeometry(.32,8,7),mat('#397747'));
+      shrub.position.set(76+i*9.5,.24,14+side*6.1);target.add(shrub);
+    }
+  }
   box(150,.12,10,asphalt,175,-.08,0);box(10,.12,180,asphalt,145,-.08,12);
   box(10,.12,180,asphalt,205,-.08,12);box(10,.12,180,asphalt,265,-.08,12);
   for(const z of [-78,-48,0,48,96])box(150,.12,8,asphalt,205,-.075,z);
@@ -57,20 +90,25 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Bancos com fachadas institucionais.
   building('BANCO BCI',155,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
   building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c',dest:'bank-bai'});
+  yard(155,-39,15,5.5,-1,'#668653');yard(180,-39,15,5.5,-1,'#6b8e55');
   // Restaurante Polónia, com esplanada.
   building('RESTAURANTE POLÓNIA',155,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
+  yard(155,59,16,6,-1,'#6d9657');
   for(let i=0;i<4;i++){box(1.5,.12,1.5,mat('#754d35'),148+i*4, .35,81);box(.12,1.05,.12,mat('#f0e3c6'),148+i*4,.9,81)}
   // Paróquia Católica com torre, cruz e nave.
   box(20,.22,14,concrete,180,.12,72);box(18,7,13,mat('#e6ddc8'),180,3.7,72);box(8,10,8,mat('#ded3bd'),180,5.1,62);
   const tower=box(4,17,4,mat('#d7cbb4'),180,8.7,62);box(.45,2.6,.45,mat('#f4e8ce'),180,18.6,62);box(1.8,.4,.45,mat('#f4e8ce'),180,19.1,62);
   box(2.2,3.5,.18,mat('#563c2d'),180,1.9,65.35);label('PARÓQUIA CATÓLICA',180,8.2,64.8,12,1.1,'#704d37');collision(180,72,20,14);
   const parishEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.1,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));parishEntry.position.set(180,1.2,64.65);parishEntry.userData.worldEntry={dest:'parish',label:'PARÓQUIA CATÓLICA',x:180,z:72,front:-1,d:14};target.add(parishEntry);if(cityWorldEntrances)cityWorldEntrances.push(parishEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(parishEntry);
+  yard(180,59,16,5.5,-1,'#71965c');
   // Três edifícios residenciais, incluindo um bloco com dez apartamentos.
   building('RESIDENCIAL · 10 APARTAMENTOS',235,70,20,15,5,'#d8c7a8',{sign:'#345b70',dest:'residential-10'});
   building('TORRE RESIDENCIAL',235,25,18,16,12,'#c7d0d1',{sign:'#37566b',dest:'residential-tower'});
   building('RESIDENCIAL FAMILIAR',235,-22,20,15,6,'#d8cbb8',{sign:'#79543c',dest:'residential-family'});
+  yard(235,54,18,5.5,-1,'#6f9658');yard(235,9,17,5.5,-1,'#6c9256');yard(235,-34,18,5.5,-1,'#78985d');
   // Empresa Chevron com recepção, escritórios e departamentos.
   building('CHEVRON',235,-60,28,18,6,'#c8c9c4',{sign:'#9a2424',roof:'#454d54',dest:'chevron'});
+  yard(235,-73,25,5.5,-1,'#648c52');
 
   // Parque oficial do Governo Provincial: circulação, lugares marcados e frota detalhada.
   const parkX=239, parkZ=-40;
