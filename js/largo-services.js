@@ -165,7 +165,7 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
 }
 
 async function basicEmploymentHtml({sb,user,employer,title,roles,esc}) {
-  const {data:job,error}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer',employer).maybeSingle();
+  const {data:job,error}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer',employer).in('status',['pending','hired']).maybeSingle();
   if(error)return '<h4>Emprego · '+title+'</h4><p class="life-muted">Não foi possível consultar a candidatura: '+esc(error.message)+'</p>';
   let body='<h4>Emprego · '+title+'</h4><p class="life-muted">Não precisas de formação para trabalhar aqui. Todas as funções pagam <b>30.000 Kz por dia</b>. Depois da candidatura, realiza a entrevista. O salário fica disponível a cada 24 horas.</p>';
   if(job?.status==='hired') body+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Contratado</span></div><button data-job-salary="'+employer+'">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
@@ -224,7 +224,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     } else if(kind==='taf'){
       html+='<h4>Utilização do campo</h4><div class="life-list">'+serviceButton('Aluguer do campo · 1 hora','taf-hour',5000)+'</div><p class="life-muted">O campo está disponível para jogos e treinos.</p>';
     } else if(kind==='government'){
-      const [{data:job},{data:training}]=await Promise.all([sb.from('largo_employment_applications').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).eq('employer','government').maybeSingle(),sb.from('isced_enrollments').select('id').eq('user_id',user.id).eq('status','completed').limit(1)]);
+      const [{data:job},{data:training}]=await Promise.all([sb.from('largo_employment_applications').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).eq('employer','government').in('status',['pending','hired']).maybeSingle(),sb.from('isced_enrollments').select('id').eq('user_id',user.id).eq('status','completed').limit(1)]);
       const hasPublicTraining=!!training?.length;
       const jobs=[['administrativo','Assistente administrativo',145000],['atendimento_publico','Atendimento público',115000],['tecnico_administrativo','Técnico administrativo',165000],['fiscal_provincial','Fiscal provincial',180000],['motorista','Motorista',105000]];
       html+='<h4>Centro de emprego provincial</h4><p class="life-muted">Para trabalhar aqui, é obrigatório concluir uma formação de 15 dias na Universidade ISCED. Consulta as vagas, candidata-te e realiza a entrevista. Os salários são pagos directamente na tua carteira virtual a cada 24 horas.</p>';
