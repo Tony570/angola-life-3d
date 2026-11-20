@@ -80,6 +80,61 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     if(face===1){for(let i=geometryStart;i<target.children.length;i++){const object=target.children[i];object.position.x=2*x-object.position.x;object.position.z=2*z-object.position.z;object.rotation.y+=Math.PI;}}
     if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);
   };
+  // Enquadramento exterior do BAI: praça pavimentada, jardins, passeio acessível e parque marcado.
+  const baiSurroundings=(x,z)=>{
+    const paving=mat('#c9c9c2'),walk=mat('#e1ded4'),line=mat('#f5f1e4'),greenBed=mat('#638653'),curbStone=mat('#a9a79e');
+    // Lote organizado entre as duas avenidas, sem avançar para a estrada nem para o Governo.
+    box(34,.12,22,paving,x,-.055,z-4.5);
+    box(34,.16,.28,curbStone,x,.015,z-15.35);
+    box(.28,.16,22,curbStone,x-17,.015,z-4.5);box(.28,.16,22,curbStone,x+17,.015,z-4.5);
+    // Passeio frontal e rampa de acesso alinhada com a porta principal.
+    box(24,.10,1.25,walk,x,.055,z+6.95);
+    box(4.4,.08,1.15,walk,x,.055,z+7.95);
+    // Passeio lateral que liga a entrada ao estacionamento traseiro.
+    box(2.2,.10,18.2,walk,x-13.1,.055,z-3.6);
+    // Canteiros laterais com arbustos baixos, simétricos e sem tapar a fachada.
+    for(const side of [-1,1]){
+      const bx=x+side*15.2;
+      box(2.1,.12,12,greenBed,bx,.035,z-3.5);
+      for(const dz of [-8,-5,-2,1]){
+        const shrub=new THREE.Mesh(new THREE.SphereGeometry(.48,12,9),mat('#397747'));
+        shrub.position.set(bx,.48,z+dz);shrub.castShadow=true;target.add(shrub);
+      }
+      for(const dz of [-8,1])lamp(bx,z+dz);
+    }
+    // Parque com cinco lugares iguais, linhas claras e batentes de roda.
+    const parkZ=z-11.55,slotDepth=5.35;
+    box(27.5,.10,6.2,asphalt,x,.015,parkZ);
+    for(let i=0;i<=5;i++){
+      const sx=x-12.5+i*5;
+      box(.11,.035,5.45,line,sx,.085,parkZ);
+    }
+    box(25.1,.035,.12,line,x,.085,parkZ-slotDepth/2);
+    const paints=['#a83e36','#426d87','#d0b65b','#e5e5df','#47745b'];
+    for(let i=0;i<5;i++){
+      const cx=x-10+i*5;
+      const body=mat(paints[i],.42),rubber=mat('#17191b',.9),windows=mat('#526b75',.28),chrome=mat('#c5c8c5',.35);
+      const car=new THREE.Group();car.position.set(cx,.02,parkZ);
+      const part=(geo,m,px,py,pz)=>{const o=new THREE.Mesh(geo,m);o.position.set(px,py,pz);o.castShadow=true;o.receiveShadow=true;car.add(o);return o;};
+      // Carros orientados para a saída norte, dentro de cada lugar.
+      part(new THREE.BoxGeometry(1.82,.58,3.65),body,0,.66,0);
+      part(new THREE.BoxGeometry(1.48,.78,1.95),windows,0,1.28,-.02);
+      part(new THREE.BoxGeometry(1.68,.12,2.15),body,0,1.69,-.02);
+      part(new THREE.BoxGeometry(1.55,.08,1.35),mat('#26343b',.25),0,1.68,.12);
+      for(const side of [-1,1])for(const dz of [-1.18,1.18]){
+        const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.31,.31,.18,16),rubber);
+        wheel.rotation.z=Math.PI/2;wheel.position.set(side*.94,.39,dz);car.add(wheel);
+      }
+      for(const side of [-1,1]){
+        part(new THREE.BoxGeometry(.34,.18,.08),mat('#fff1c5',.25),side*.57,.72,1.86);
+        part(new THREE.BoxGeometry(.34,.18,.08),mat('#9f2828',.35),side*.57,.72,-1.86);
+        part(new THREE.BoxGeometry(.06,.12,.18),chrome,side*.92,1.02,.35);
+      }
+      target.add(car);addCityCollision(cx,parkZ,2.05,3.9,.22);
+      box(1.5,.12,.18,curbStone,cx,.13,parkZ-2.35);
+    }
+    label('ESTACIONAMENTO BAI',x,2.45,z-8.25,12,.72,'#063b70');
+  };
   // Quintais ajardinados com portões abertos e vedações baixas, sem bloquear acessos.
   const yard=(x,z,w,d,front=-1,green='#668653')=>{
     const lawn=mat(green),fence=mat('#d9d6ca'),post=mat('#777b78'),gate=mat('#76543b'),edge=mat('#d6d0c1');
@@ -141,6 +196,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   yard(159,-39,19,5.5,-1,'#668653');
   // Lote independente do BAI entre o limite do Governo e a avenida, sem invadir a via.
   bankBuilding('BANCO BAI',175,-90,19,13,'#0878c9','#063b70','bank-bai');
+  baiSurroundings(175,-90);
   for(const [lx,lz] of [[163,-84],[187,-84]])lamp(lx,lz);
   // Restaurante Polónia, com esplanada.
   building('RESTAURANTE POLÓNIA',160,72,18,12,1,'#e5c9a2',{sign:'#8b432c',roof:'#71452f',dest:'restaurant-polonia'});
