@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v47-remove-fallback-blocks-20261120';
+const CACHE_NAME = 'angola-life-3d-v48-cidade-de-cabinda-20261120';
 const APP_SHELL = [
   './',
   './index.html',
