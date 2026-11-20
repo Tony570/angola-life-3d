@@ -250,7 +250,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
           const nextTitle=c?.lesson_titles?.[Math.max(0,Math.min(14,day-1))]||'Aula diária';
           const status=e.status==='active'?'Em formação':e.status==='completed'?'Aprovado':'Reprovado';
           const progress=Math.round(Math.min(count/15,1)*100);
-          return '<div class="life-row"><span><b>'+esc(c?.name||e.course_id)+'</b><br><small>'+status+' · '+count+'/15 presenças · '+progress+'% · Pago: '+money(e.amount_paid)+'</small><br><small>Início: '+esc(start)+' · '+(e.status==='active'?'Dia '+Math.max(1,Math.min(15,day))+' de 15: '+esc(nextTitle):'Formação encerrada')+'</small></span>'+(e.status==='active'?'<button data-isced-attend="'+e.id+'" '+(day<1||day>15?'disabled':'')+'>Participar na aula de hoje</button>':'')+'</div>';
+          return '<div class="life-row"><span><b>'+esc(c?.name||e.course_id)+'</b><br><small>'+status+' · '+count+'/15 presenças · '+progress+'% · Pago: '+money(e.amount_paid)+'</small><br><small>Início: '+esc(start)+' · '+(e.status==='active'?'Dia '+Math.max(1,Math.min(15,day))+' de 15: '+esc(nextTitle):'Formação encerrada')+'</small></span>'+(e.status==='active'?'<button data-isced-attend="'+e.id+'" '+(day<1?'disabled':'')+'>'+(day>15?'Verificar resultado':'Participar na aula de hoje')+'</button>':'')+'</div>';
         }).join('')+'</div>';
       }
       html+='<h4>Regras de frequência e aprovação</h4><p class="life-muted">A aula muda diariamente segundo o calendário de início da formação. O estudante deve registar a participação no próprio dia. Uma falta numa aula obrigatória reprova a formação. A aprovação exige 15 presenças em 15 dias.</p>';
