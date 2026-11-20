@@ -3,6 +3,8 @@ const serviceRooms = {
   'bank-bci': {title:'Banco BCI',color:'#176b48',bank:'BCI'},
   'bank-bai': {title:'Banco BAI',color:'#9a252c',bank:'BAI'},
   'chevron': {title:'Chevron',color:'#c4a34d'},
+  'party': {title:'Salão de Festas',color:'#7b3d70'},
+  'quarry': {title:'Empresa da Pedreira',color:'#756b55'},
   'restaurant-polonia': {title:'Restaurante Polónia',color:'#8b432c'},
   'parish': {title:'Paróquia Católica',color:'#704d37'},
   'government': {title:'Governo Provincial',color:'#7b2632'},
@@ -162,6 +164,16 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
   } else if(buildCharacter&&avatar) buildCharacter(target,avatar,{x:0,y:0,z:2},()=>{},false);
 }
 
+async function basicEmploymentHtml({sb,user,employer,title,roles,esc}) {
+  const {data:job,error}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer',employer).maybeSingle();
+  if(error)return '<h4>Emprego · '+title+'</h4><p class="life-muted">Não foi possível consultar a candidatura: '+esc(error.message)+'</p>';
+  let body='<h4>Emprego · '+title+'</h4><p class="life-muted">Não precisas de formação para trabalhar aqui. Todas as funções pagam <b>30.000 Kz por dia</b>. Depois da candidatura, realiza a entrevista. O salário fica disponível a cada 24 horas.</p>';
+  if(job?.status==='hired') body+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Contratado</span></div><button data-job-salary="'+employer+'">Receber salário · '+money(job.salary)+'</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
+  else if(job?.status==='pending') body+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><button data-job-interview="'+employer+'">Realizar entrevista</button>';
+  else body+='<label for="job-role-'+employer+'">Vaga pretendida</label><select id="job-role-'+employer+'">'+roles.map(r=>'<option value="'+r[0]+'">'+esc(r[1])+' · 30.000 Kz/dia</option>').join('')+'</select><button data-job-apply="'+employer+'">Enviar candidatura</button>';
+  return body;
+}
+
 function serviceButton(label,key,price) {
   return '<div class="life-row"><span><b>'+label+'</b><br><small>'+money(price)+'</small></span><button class="secondary" data-largo-buy="'+key+'">Pagar</button></div>';
 }
@@ -204,6 +216,11 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }
     } else if(kind==='restaurant-polonia'){
       html+='<h4>Menu e preços</h4><div class="life-list">'+serviceButton('Prato do dia','polonia-meal',2500)+serviceButton('Refeição familiar','polonia-family-meal',5000)+'</div><p class="life-muted">O pedido é registado e o valor sai da tua carteira quando pagares.</p>';
+      html+=await basicEmploymentHtml({sb,user,employer:'restaurant',title:'Restaurante Polónia',roles:[['cozinheiro','Cozinheiro'],['empregado_mesa','Empregado de mesa'],['caixa','Caixa'],['limpeza','Limpeza']],esc});
+    } else if(kind==='party'){
+      html+=await basicEmploymentHtml({sb,user,employer:'party',title:'Salão de Festas',roles:[['organizador_eventos','Organizador de eventos'],['empregado_sala','Empregado de sala'],['barman','Barman'],['seguranca','Segurança'],['limpeza','Limpeza']],esc});
+    } else if(kind==='quarry'){
+      html+=await basicEmploymentHtml({sb,user,employer:'quarry',title:'Empresa da Pedreira',roles:[['operador_maquinas','Operador de máquinas'],['ajudante_pedreira','Ajudante de pedreira'],['motorista_maquinas','Motorista de máquinas'],['seguranca','Segurança']],esc});
     } else if(kind==='taf'){
       html+='<h4>Utilização do campo</h4><div class="life-list">'+serviceButton('Aluguer do campo · 1 hora','taf-hour',5000)+'</div><p class="life-muted">O campo está disponível para jogos e treinos.</p>';
     } else if(kind==='government'){
@@ -280,6 +297,9 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       if(deposit)deposit.onclick=()=>run(deposit,()=>operation('deposit'),d=>'Depósito concluído. Saldo da conta: '+money(d.balance)+'.');
       if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+'.');
     }
+    panel.querySelectorAll('[data-job-apply]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_apply_public_job',{p_employer:button.dataset.jobApply,p_role:document.getElementById('job-role-'+button.dataset.jobApply).value}),d=>'Candidatura registada. Não foi exigida formação. Realiza a entrevista para concluir a contratação.'));
+    panel.querySelectorAll('[data-job-interview]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:button.dataset.jobInterview}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.'));
+    panel.querySelectorAll('[data-job-salary]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_claim_public_job_salary',{p_employer:button.dataset.jobSalary}),d=>'Salário recebido na carteira: '+money(d.salary)+'.'));
     const apply=document.getElementById('largo-apply-chevron');if(apply)apply.onclick=()=>run(apply,()=>sb.rpc('largo_apply_chevron_job',{p_role:document.getElementById('largo-chevron-role').value}),d=>'Candidatura registada. A entrevista está disponível.');
     const govApply=document.getElementById('largo-government-apply');if(govApply)govApply.onclick=()=>run(govApply,()=>sb.rpc('largo_apply_public_job',{p_employer:'government',p_role:document.getElementById('largo-government-role').value}),d=>'Candidatura ao Governo Provincial registada. Realiza a entrevista.');
     const govInterview=document.getElementById('largo-government-interview');if(govInterview)govInterview.onclick=()=>run(govInterview,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:'government'}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.');
