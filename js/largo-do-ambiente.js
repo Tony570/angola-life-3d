@@ -176,7 +176,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // CAMPUS ISCED — terreno contínuo, campus único e escala universitária.
   // A expansão ocupa o novo quarteirão a leste, sem deslocar os edifícios existentes.
   const campusX=397,campusZ=12;
-  box(176,.24,142,mat('#668b4c'),campusX,-.18,campusZ);
+  box(176,.24,190,mat('#668b4c'),campusX,-.18,campusZ);
   const campusWalk=mat('#d9d5c7'),campusGreen=mat('#397747'),campusDark=mat('#174b37');
   const campusPath=(w,d,x,z)=>box(w,.10,d,campusWalk,x,-.015,z);
   // Avenida de acesso e portão monumental.
