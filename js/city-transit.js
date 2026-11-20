@@ -230,13 +230,13 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const route=routeFor(state);return route[(Number(d.route_index)||0)%route.length]||route[0];
  }
  function arriveAtNode(state,nodeId,requested=false){
-  const d=state.data,node=graph.nodes.get(nodeId);if(!node)return;
+  const d=state.data,node=graph.nodes.get(nodeId),wasDetour=Array.isArray(d.active_path)&&d.active_path.length>0;if(!node)return;
   d.current_node=nodeId;d.x=node.x;d.z=node.z;
   if(Array.isArray(d.active_path)&&d.active_path.length){
    const idx=Math.max(1,Number(d.path_index)||1);
    if(idx>=d.active_path.length-1){
     d.active_path=null;d.path_index=0;d.requested_node=null;d.status='stopped';d.doors_open=true;
-    d.stop_until=new Date(Date.now()+(requested?18000:8000)).toISOString();
+    d.stop_until=new Date(Date.now()+(requested||wasDetour?18000:8000)).toISOString();
     state.needsAlight=true;state.alightNode=nodeId;
    }else d.path_index=idx+1;
   }else{
@@ -258,9 +258,9 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const nextId=nextWaypoint(state),next=graph.nodes.get(nextId);
   if(!next){d.route_index=((Number(d.route_index)||0)+1)%routeFor(state).length;persist(state,true);return}
   const dx=next.x-Number(d.x),dz=next.z-Number(d.z),distance=Math.hypot(dx,dz);
-  if(distance<.12){arriveAtNode(state,nextId,!!state.alightNode);persist(state,true);return}
+  if(distance<.12){arriveAtNode(state,nextId,!!d.active_path?.length);persist(state,true);return}
   const speed=6.2,step=Math.min(distance,speed*delta),nx=Number(d.x)+dx/distance*step,nz=Number(d.z)+dz/distance*step;
-  const traffic=[...buses.values()].some(other=>other!==state&&other.data.bus_id<d.bus_id&&Math.hypot(Number(other.data.x)-nx,Number(other.data.z)-nz)<8.4);
+  const traffic=[...buses.values()].some(other=>{if(other===state)return false;const ox=Number(other.data.x)-Number(d.x),oz=Number(other.data.z)-Number(d.z),gap=Math.hypot(ox,oz);if(gap>=8.4)return false;const otherNext=nextWaypoint(other),otherPoint=graph.nodes.get(otherNext);const odx=otherPoint?otherPoint.x-Number(other.data.x):0,odz=otherPoint?otherPoint.z-Number(other.data.z):0;const dot=(dx*odx+dz*odz)/Math.max(.001,distance*Math.hypot(odx,odz));if(dot<-.3)return d.bus_id>other.data.bus_id;if(Math.abs(dot)<=.3)return d.bus_id>other.data.bus_id;return ox*dx+oz*dz>0;});
   const vehicles=(getOtherVehicles?.()||[]).some(v=>v?.group&&v.group.visible!==false&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<6.2);
   if(traffic||vehicles){placeBus(state,0);persist(state);return}
   const desiredYaw=Math.atan2(dx,dz);let turn=desiredYaw-(Number(d.rotation)||0);while(turn>Math.PI)turn-=Math.PI*2;while(turn< -Math.PI)turn+=Math.PI*2;
@@ -315,6 +315,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   if(button){button.disabled=true;button.textContent='A confirmar…'}
   const {data,error}=await sb.rpc('city_transit_board',{p_bus_id:busId,p_destination_id:destinationId});
   if(error){const msg=document.getElementById('transit-booking-message');if(msg)msg.textContent=error.message;if(button){button.disabled=false;button.textContent='Tentar novamente'}return}
+  const passenger={id:data.passenger_id,bus_id:busId,user_id:user.id,destination_id:destinationId,fare:Number(data.fare),status:'onboard'};passengers.set(passenger.id,passenger);updatePassengers([...passengers.values()]);
   await refreshPlayerWallet?.();await loadPassengers();
   openLifePanel('✅ Bilhete confirmado','<p class="life-muted">Destino: <b>'+esc(data.destination)+'</b><br>Bilhete: <b>'+MONEY(data.fare)+'</b><br>Saldo restante: <b>'+MONEY(data.balance)+'</b></p><p>Boa viagem! O autocarro vai deixar-te na paragem do destino escolhido.</p>');
  }
@@ -358,7 +359,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
     if(payload.eventType==='DELETE'&&payload.old?.id)passengers.delete(payload.old.id);
     const rows=[...passengers.values()];updatePassengers(rows);
    }).subscribe();
-  await claimControllers();loadDone=true;
+  await claimControllers();
  }
  panel?.addEventListener('click',onPanelClick);
  createMapButton();init().catch(error=>console.warn('Transporte público:',error));
