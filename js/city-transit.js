@@ -398,7 +398,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  async function requestStop(busId){
   if(!canUseTransit?.()){openLifePanel('Transporte público','<p class="life-muted">Sai do teu veículo antes de pedir a paragem do autocarro.</p>');return}
-  const node=nearestPlayerRoadNode(busId);if(!node){openLifePanel('Paragem do autocarro','<p class="life-muted">Aproxima-te de uma estrada principal ou de uma paragem identificada para pedir que o autocarro se aproxime.</p>');return}
+  const node=nearestPlayerRoadNode(busId);if(!node||node.distance>32){openLifePanel('Paragem do autocarro','<p class="life-muted">Aproxima-te da avenida pavimentada ou de uma paragem identificada. O ponto seguro mais próximo fica a mais de 32 metros.</p>');return}
   const {data,error}=await sb.rpc('city_transit_request_stop',{p_bus_id:busId,p_node_id:node.id});
   if(error){openLifePanel('Não foi possível pedir a paragem','<p class="life-muted">'+esc(error.message)+'</p>');return}
   if(data)setBusRow(data);
