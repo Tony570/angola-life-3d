@@ -2,7 +2,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.m
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
-const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf']);
+const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf','isced-university']);
 const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
