@@ -8,17 +8,18 @@ const FULL_ROUTE=[
  pg(70,14),pg(70,-14),pg(70,-42),pg(42,-42),pg(14,-42),pg(-14,-42),pg(-42,-42),pg(-70,-42),
  pg(-70,-14),pg(-70,14),pg(-70,42),pg(-42,42),pg(-14,42),pg(14,42),pg(42,42),pg(70,42),pg(70,14),
  la(111,14),la(145,14),la(145,0),la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),
- la(265,0),la(265,48),la(265,96),la(205,96),la(145,96),la(145,48),la(145,0),la(205,0),
- la(205,-48),la(205,-78),la(145,-78),la(145,-48),la(145,0),la(145,14),la(111,14),pg(70,14)
+ la(265,0),la(265,48),la(205,48),la(205,96),la(265,96),la(145,96),la(145,48),la(145,0),
+ la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(205,-48),la(145,-48),la(145,0),
+ la(145,14),la(111,14),pg(70,14)
 ];
 const POVO_ROUTE=[
  pg(70,14),pg(70,-14),pg(70,-42),pg(42,-42),pg(14,-42),pg(-14,-42),pg(-42,-42),pg(-70,-42),
  pg(-70,-14),pg(-70,14),pg(-70,42),pg(-42,42),pg(-14,42),pg(14,42),pg(42,42),pg(70,42),pg(70,14)
 ];
 const LARGO_ROUTE=[
- la(145,0),la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(265,0),la(265,48),
- la(265,96),la(205,96),la(145,96),la(145,48),la(145,0),la(205,0),la(205,-48),la(205,-78),
- la(145,-78),la(145,-48),la(145,0)
+ la(145,0),la(145,-48),la(145,-78),la(205,-78),la(265,-78),la(265,-48),la(205,-48),la(145,-48),
+ la(145,0),la(145,48),la(205,48),la(205,0),la(265,0),la(265,48),la(205,48),la(205,96),
+ la(265,96),la(145,96),la(145,48),la(145,0)
 ];
 const ROUTES={full:FULL_ROUTE,povo:POVO_ROUTE,largo:LARGO_ROUTE};
 const DESTINATIONS=[
@@ -61,6 +62,12 @@ function createGraph(){
  for(const z of LARGO_Z)for(let i=0;i<LARGO_X.length-1;i++)link(la(LARGO_X[i],z),la(LARGO_X[i+1],z));
  add(la(111,14),111,14);add(la(145,14),145,14);
  link(pg(70,14),la(111,14));link(la(111,14),la(145,14));link(la(145,14),la(145,0));
+ // Cortes de segurança: o Governo, o parque e o campo TAF ocupam áreas que não são vias.
+ const cut=(a,b)=>{edges.get(a)?.delete(b);edges.get(b)?.delete(a)};
+ cut(la(145,0),la(205,0));       // parque central do Largo do Ambiente
+ cut(la(205,0),la(205,-48));     // edifício do Governo Provincial
+ cut(la(265,0),la(265,-48));     // esquadra do Largo do Ambiente
+ cut(la(265,48),la(265,96));     // campo de futebol TAF
  return {nodes,edges};
 }
 function shortestPath(graph,start,end){
@@ -128,7 +135,7 @@ function makeBusModel(THREE,label){
  group.traverse(o=>{if(o.userData.transitDoor)group.userData.transitDoors.push(o);if(o.userData.transitWheel)group.userData.transitWheels.push(o)});
  group.userData.label=label;return group;
 }
-export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
+export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,getOtherVehicles=()=>[],openLifePanel,refreshPlayerWallet,onBoard,onAlight,onPassengersChanged}){
  const graph=createGraph(),buses=new Map(),passengers=new Map(),destinations=new Map(DESTINATIONS.map(d=>[d.id,d]));
  let channel=null,alive=true,claimElapsed=0,localPassenger=null,mapButton=null,activeBusId=null;const handledArrivals=new Set();
  const panel=document.getElementById('life-panel');
@@ -253,6 +260,9 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,o
   const dx=next.x-Number(d.x),dz=next.z-Number(d.z),distance=Math.hypot(dx,dz);
   if(distance<.12){arriveAtNode(state,nextId,!!state.alightNode);persist(state,true);return}
   const speed=6.2,step=Math.min(distance,speed*delta),nx=Number(d.x)+dx/distance*step,nz=Number(d.z)+dz/distance*step;
+  const traffic=[...buses.values()].some(other=>other!==state&&Math.hypot(Number(other.data.x)-nx,Number(other.data.z)-nz)<8.4);
+  const vehicles=(getOtherVehicles?.()||[]).some(v=>v?.group&&v.group.visible!==false&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<6.2);
+  if(traffic||vehicles){placeBus(state,0);persist(state);return}
   const desiredYaw=Math.atan2(dx,dz);let turn=desiredYaw-(Number(d.rotation)||0);while(turn>Math.PI)turn-=Math.PI*2;while(turn< -Math.PI)turn+=Math.PI*2;
   d.rotation=(Number(d.rotation)||0)+turn*Math.min(1,delta*4.5);
   d.x=nx;d.z=nz;
