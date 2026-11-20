@@ -176,7 +176,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     }
   }
   // Armazém técnico e oficina de manutenção.
-  building('OFICINA E ARMAZÉM',252,-55,9,7,1,'#c9d0ce',{sign:'#45575c',roof:'#697579'});
+  building('OFICINA E ARMAZÉM',253,-60,9,7,1,'#c9d0ce',{sign:'#45575c',roof:'#697579'});
   // Área de carga, acesso de viaturas e estacionamento técnico.
   box(12,.12,5,asphalt,218,-.01,-54);
   for(let i=0;i<4;i++)box(.1,.035,4,chevronYellow,213+i*3.2,.07,-54);
@@ -190,7 +190,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
     for(const side of [-1,1])for(const zz of [-1.8,-.4,1.2,2.2]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.22,12),darkMat);wheel.rotation.z=Math.PI/2;wheel.position.set(side*.95,.4,zz);g.add(wheel);}
     target.add(g);
   };
-  oilTruck(221,-53);oilTruck(245,-53);
+  oilTruck(216,-53);oilTruck(253,-53);
   // Luzes de segurança, sinalização e áreas de circulação.
   for(const [x,z] of [[212,-51],[258,-51],[212,-76],[258,-76]]){lamp(x,z);}
   label('ZONA INDUSTRIAL · ACESSO RESTRITO',235,3.2,-78,22,1,'#9a2424');
