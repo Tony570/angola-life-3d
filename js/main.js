@@ -1215,9 +1215,7 @@ function buildHospitalExterior(x,z,front,o){
  const beacon=hsph(.28,.1,.12,red,x+8.2,1.55,face+front*2.15);
  // Colisões nas quatro faces, deixando a entrada central livre.
  const opening=2.2,segment=(w-opening)/2,offset=(w+opening)/4;
- addCityCollision(x-w/2,z,.32,d,.18);addCityCollision(x+w/2,z,.32,d,.18);addCityCollision(x,z-front*d/2,w,.32,.18);
- addCityCollision(x-offset,face,segment,.32,.14);addCityCollision(x+offset,face,segment,.32,.14);
- addCityCollision(x+8.2,face+front*2.15,2.4,4.4,.2);
+ // Sem barreiras invisíveis em volta do hospital; o acesso é controlado pelo gatilho de entrada abaixo.
  const trigger=new THREE.Mesh(new THREE.PlaneGeometry(2.6,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.01,side:THREE.DoubleSide,depthWrite:false}));
  trigger.position.set(x,1.25,face+front*.24);trigger.userData.hospitalEntry=true;target.add(trigger);policeEntryMeshes.push(trigger);
 }
@@ -1320,15 +1318,11 @@ function buildVianaBuilding(name,x,z,front,opts={}){
   const w=opts.w||9,d=opts.d||7,h=opts.h||3.35,frontFace=z+front*(d/2+.075);
  if(opts.kind==='hotel'||opts.kind==='bar'||opts.kind==='party'){
   const opening=1.9,segment=(w-opening)/2,offset=(w+opening)/4,frontWallZ=z+front*d/2;
-  addCityCollision(x-w/2,z,.35,d,.08);addCityCollision(x+w/2,z,.35,d,.08);addCityCollision(x,z-front*d/2,w,.35,.22);addCityCollision(x-offset,frontWallZ,segment,.35,.18);addCityCollision(x+offset,frontWallZ,segment,.35,.18);
+  // Removidas as caixas físicas invisíveis do estabelecimento; mantém-se o gatilho de entrada.
   const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));entry.position.set(x,1.2,frontFace+front*.28);entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};target.add(entry);policeEntryMeshes.push(entry);cityWorldEntrances.push(entry.userData.worldEntry);
  }else{
-  // Colisão apenas nas paredes: a abertura frontal permanece livre para entrar.
-  const opening=1.9,segment=(w-opening)/2,offset=(w+opening)/4,frontWallZ=z+front*d/2;
-  addCityCollision(x-w/2,z,.3,d,.18);addCityCollision(x+w/2,z,.3,d,.18);
-  addCityCollision(x,z-front*d/2,w,.3,.18);
-  addCityCollision(x-offset,frontWallZ,segment,.3,.18);
-  addCityCollision(x+offset,frontWallZ,segment,.3,.18);
+  // Sem caixas físicas invisíveis nos estabelecimentos de Povo Grande.
+  // O gatilho invisível de entrada abaixo continua activo para abrir o atendimento.
   const entry=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.5),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
   entry.position.set(x,1.2,frontFace+front*.28);
   entry.userData.worldEntry={dest:opts.kind,label:name,x,z,front,d};
