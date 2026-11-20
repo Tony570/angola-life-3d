@@ -85,8 +85,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   }
   for(const [x,z] of [[153,5],[197,5],[153,39],[197,39],[165,2],[185,42]]){tree(x,z,.9);lamp(x+2,z+1)}
   label('LARGO DO AMBIENTE',175,7,0,23,2.6,'#174b37');
-  // Governo Provincial com vinte pisos.
-  building('GOVERNO PROVINCIAL',210,-22,24,18,20,'#d7d6cf',{sign:'#7b2632',roof:'#555b61',dest:'government'});
+  // Governo Provincial transferido para um terreno independente.
+
   // Bancos com fachadas institucionais.
   building('BANCO BCI',155,-28,13,10,2,'#e8e5d9',{sign:'#176b48',dest:'bank-bci'});
   building('BANCO BAI',180,-28,13,10,2,'#e8e5d9',{sign:'#9a252c',dest:'bank-bai'});
@@ -108,7 +108,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   yard(235,54,18,5.5,-1,'#6f9658');yard(235,9,17,5.5,-1,'#6c9256');yard(235,-34,18,5.5,-1,'#78985d');
   // COMPLEXO PETROLÍFERO CHEVRON — recinto industrial amplo com sede baixa ao centro.
   // O terreno ocupa o quarteirão entre as vias existentes, sem invadir os edifícios vizinhos.
-  const chevronX=235,chevronZ=-63,chevronW=48,chevronD=28;
+  const chevronX=235,chevronZ=-63,chevronW=64,chevronD=28;
   box(chevronW,.18,chevronD,mat('#a7a69c'),chevronX,-.08,chevronZ);
   box(chevronW-3,.06,chevronD-3,mat('#777b70'),chevronX,-.005,chevronZ);
   const chevronFence=mat('#c8c9c3'),chevronSteel=mat('#6b7478'),chevronYellow=mat('#e6b83f'),chevronRed=mat('#a52b2b');
@@ -199,56 +199,37 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   addCityCollision(chevronX-15,chevronZ+chevronD/2,18,.22,.2);
   addCityCollision(chevronX+15,chevronZ+chevronD/2,18,.22,.2);
 
-  // Parque oficial do Governo Provincial: circulação, lugares marcados e frota detalhada.
-  const parkX=239, parkZ=-40;
-  box(28,.16,15,asphalt,parkX,-.015,parkZ);
-  box(28,.12,.28,curb,parkX,.06,parkZ-7.35);box(28,.12,.28,curb,parkX,.06,parkZ+7.35);
-  const parkingLine=mat('#f3e8c7');
-  for(let i=0;i<4;i++){
-    const px=228.5+i*7;
-    box(.12,.035,10,parkingLine,px,.085,parkZ+.2);
-    box(.12,.035,1.4,parkingLine,px,.085,parkZ-6.1);
+  // GOVERNO PROVINCIAL — complexo térreo, independente e totalmente pavimentado.
+  const govX=145,govZ=-135,govW=78,govD=58;
+  box(90,.24,76,mat('#b59a76'),govX,-.22,govZ);
+  box(govW,.18,govD,mat('#bfc1bd'),govX,-.08,govZ);
+  box(govW-3,.07,govD-3,asphalt,govX,-.005,govZ);
+  const govFence=mat('#d8d7cf'),govMetal=mat('#59656a'),govGold=mat('#c8a75a');
+  box(govW,.9,.2,govFence,govX,.45,govZ-govD/2);
+  box(.2,.9,govD,govFence,govX-govW/2,.45,govZ);box(.2,.9,govD,govFence,govX+govW/2,.45,govZ);
+  box(25,.9,.2,govFence,govX-govW/2+12.5,.45,govZ+govD/2);box(25,.9,.2,govFence,govX+govW/2-12.5,.45,govZ+govD/2);
+  for(const px of [govX-govW/2,govX-12.5,govX+12.5,govX+govW/2])box(.32,1.4,.32,govMetal,px,.7,govZ+govD/2);
+  box(24,.16,.28,govGold,govX,.88,govZ+govD/2);
+  building('GOVERNO PROVINCIAL',govX,govZ-4,34,18,2,'#dedfd8',{sign:'#7b2632',roof:'#555b61',dest:'government'});
+  label('GOVERNO PROVINCIAL · SERVIÇOS PÚBLICOS',govX,5.1,govZ+govD/2+1.2,29,1.3,'#7b2632');
+  // Parque pavimentado, oito viaturas oficiais, circulação interna e guarita.
+  const govLine=mat('#f4e8c8'),govPaints=['#f1f0e9','#173d64','#d8d9d2','#a52e31','#e4e0d6','#315c73','#f1f0e9','#777b7c'];
+  box(62,.12,12,asphalt,govX,0,govZ+20);
+  for(let i=0;i<8;i++){
+    const px=govX-31+i*8.85;box(.12,.035,9,govLine,px,.08,govZ+20);
+    const paint=mat(govPaints[i],.48),rubber=mat('#17191b',.9),glassCar=mat('#536d78',.28),cx=px+(i<4?-1.4:1.4);
+    box(1.9,.62,4.1,paint,cx,.68,govZ+20);box(1.55,.72,2.35,glassCar,cx,1.25,govZ+19.88);box(1.82,.12,2.5,paint,cx,1.65,govZ+19.88);
+    for(const side of [-1,1])for(const dz of [-1.35,1.35]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.36,.36,.2,14),rubber);wheel.rotation.z=Math.PI/2;wheel.position.set(cx+side*1,.4,govZ+20+dz);target.add(wheel);}
   }
-  box(28,.045,.16,parkingLine,parkX,.09,parkZ-6.1);
-  const fleetMaterials={body:mat('#f1f0e9',.38),blue:mat('#173d64',.38),black:mat('#20272b',.42),rubber:mat('#17191b',.82),rim:mat('#aeb9bc',.32),window:new THREE.MeshStandardMaterial({color:'#5c8390',roughness:.2,metalness:.25}),lamp:mat('#f8e6ae',.3),red:mat('#a52e31',.36)};
-  const fleetCar=(x,z,type='sedan',paint=fleetMaterials.body)=>{
-    const g=new THREE.Group();g.position.set(x,0,z);
-    const length=type==='pickup'?4.8:4.35,width=type==='van'?1.95:1.88;
-    const part=(geo,m,px,py,pz)=>{const o=new THREE.Mesh(geo,m);o.position.set(px,py,pz);o.castShadow=true;o.receiveShadow=true;g.add(o);return o};
-    part(new THREE.BoxGeometry(width,.62,length),paint,0,.68,0);
-    part(new THREE.BoxGeometry(width*.91,.16,length*.82),fleetMaterials.black,0,.42,0);
-    const cabin=part(new THREE.BoxGeometry(width*.82,.72,type==='pickup'?2.35:2.55),fleetMaterials.window,0,1.22,-.12);
-    part(new THREE.BoxGeometry(width*.86,.13,type==='pickup'?2.45:2.7),paint,0,1.62,-.12);
-    if(type==='pickup')part(new THREE.BoxGeometry(width*.9,.45,1.25),paint,0,.93,1.58);
-    if(type==='van')part(new THREE.BoxGeometry(width*.92,.52,1.2),paint,0,1.18,1.52);
-    for(const side of [-1,1]){
-      for(const zz of [-1.35,1.35]){
-        const wheel=part(new THREE.CylinderGeometry(.39,.39,.22,16),fleetMaterials.rubber,side*(width/2+.015),.43,zz);
-        wheel.rotation.z=Math.PI/2;
-        const rim=part(new THREE.CylinderGeometry(.2,.2,.235,14),fleetMaterials.rim,side*(width/2+.025),.43,zz);rim.rotation.z=Math.PI/2;
-        part(new THREE.CylinderGeometry(.075,.075,.24,12),fleetMaterials.black,side*(width/2+.035),.43,zz).rotation.z=Math.PI/2;
-      }
-      part(new THREE.BoxGeometry(.055,.22,.58),fleetMaterials.black,side*(width/2+.025),.9,-.05);
-      part(new THREE.BoxGeometry(.08,.12,.24),fleetMaterials.lamp,side*.57,.73,-length/2-.025);
-      part(new THREE.BoxGeometry(.08,.12,.24),fleetMaterials.red,side*.57,.73,length/2+.025);
-      part(new THREE.BoxGeometry(.16,.13,.28),fleetMaterials.black,side*(width/2+.07),1.2,-.78);
-    }
-    part(new THREE.BoxGeometry(.56,.12,.07),fleetMaterials.black,0,.55,-length/2-.035);
-    part(new THREE.BoxGeometry(.56,.12,.07),fleetMaterials.black,0,.55,length/2+.035);
-    target.add(g);return g;
-  };
-  fleetCar(231.8,-40.3,'sedan',fleetMaterials.body);
-  fleetCar(239,-40.3,'pickup',fleetMaterials.blue);
-  fleetCar(246.2,-40.3,'van',fleetMaterials.body);
-  // Guarita, cancela e sinalização de entrada junto ao edifício público.
-  box(2.6,2.35,2.4,mat('#d9d4c7'),225.8,1.2,-39.8);
-  box(2.72,.16,2.52,roof,225.8,2.42,-39.8);
-  box(1.1,.72,.08,glass,225.8,1.55,-38.57);
-  const barrier=mat('#f1eee4');box(.18,.16,4.8,barrier,225.2,1.05,-35.6);
-  for(let i=0;i<5;i++)box(.2,.18,.56,fleetMaterials.red,225.2,1.06,-37.75+i*.95);
-  box(4.2,.08,.12,parkingLine,225.4,.08,-33.1);
-  label('PARQUE OFICIAL · GOVERNO PROVINCIAL',239,3.8,-47.5,19,1.05,'#7b2632');
-  for(const [lx,lz] of [[225,-46],[253,-46]])lamp(lx,lz);
+  box(5,.08,5,asphalt,govX-34,0,govZ+22);box(2.6,2.25,2.4,mat('#dedbd1'),govX-34,1.12,govZ+22);
+  box(2.72,.16,2.52,govMetal,govX-34,2.32,govZ+22);box(1.1,.72,.08,glass,govX-34,1.5,govZ+20.78);
+  // Ligação pavimentada da estrada ao portão e à recepção.
+  box(8,.12,74,asphalt,govX,-.075,-114);
+  box(1.1,.08,74,curb,govX-4.5,-.015,-114);box(1.1,.08,74,curb,govX+4.5,-.015,-114);
+  box(6,.12,38,asphalt,govX,-.075,-125);
+  for(let k=0;k<6;k++)box(2.1,.025,.13,govGold,govX,.005,-84-k*8.5);
+  for(const [x,z] of [[govX-36,govZ-25],[govX+36,govZ-25],[govX-36,govZ+25],[govX+36,govZ+25]])lamp(x,z);
+  label('PARQUE OFICIAL · GOVERNO PROVINCIAL',govX,3.4,govZ+govD/2-1,24,1.05,'#7b2632');
 
   // Esquadra de polícia.
   building('ESQUADRA DA POLÍCIA',265,-22,18,13,2,'#dce3e8',{sign:'#123d76',dest:'largo-police'});
@@ -262,71 +243,57 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   label('CAMPO DE FUTEBOL TAF',265,5,56,18,1.3,'#174b37');
   const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(265,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:265,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
 
-  // CAMPUS ISCED — terreno contínuo, campus único e escala universitária.
-  // A expansão ocupa o novo quarteirão a leste, sem deslocar os edifícios existentes.
-  const campusX=397,campusZ=12;
-  box(176,.24,190,mat('#668b4c'),campusX,-.18,campusZ);
-  const campusWalk=mat('#d9d5c7'),campusGreen=mat('#397747'),campusDark=mat('#174b37');
-  const campusPath=(w,d,x,z)=>box(w,.10,d,campusWalk,x,-.015,z);
-  // Avenida de acesso e portão monumental.
-  box(92,.13,9,asphalt,315,-.075,14);
-  box(92,.08,1.1,curb,315,-.015,8.8);box(92,.08,1.1,curb,315,-.015,19.2);
+  // UNIVERSIDADE ISCED — campus térreo, murado, organizado e com vinte salas de aula.
+  const campusX=397,campusZ=12,campusW=176,campusD=190;
+  box(campusW,.24,campusD,mat('#668b4c'),campusX,-.18,campusZ);
+  const campusWalk=mat('#d9d5c7'),campusGreen=mat('#397747'),campusDark=mat('#174b37'),campusFence=mat('#e0ded4');
+  // Vedação do campus com portão principal a oeste.
+  box(campusW,.92,.2,campusFence,campusX,.46,campusZ-campusD/2);box(campusW,.92,.2,campusFence,campusX,.46,campusZ+campusD/2);
+  box(.2,.92,campusD,campusFence,campusX+campusW/2,.46,campusZ);
+  box(.2,.92,78,campusFence,campusX-campusW/2,.46,campusZ-56);box(.2,.92,78,campusFence,campusX-campusW/2,.46,campusZ+56);
+  for(const z of [campusZ-56,campusZ+56,campusZ])box(.28,1.5,.28,mat('#59645c'),campusX-campusW/2,.75,z);
+  box(1.2,5.2,1.2,mat('#e8e2d3'),309,2.6,7.5);box(1.2,5.2,1.2,mat('#e8e2d3'),309,2.6,20.5);
+  box(1.2,.5,13,campusDark,309,5.1,14);label('ISCED · ENTRADA PRINCIPAL',309,7.1,14,18,1.6,'#174b37');
+  // Avenida e passeios internos pavimentados.
+  box(92,.13,9,asphalt,315,-.075,14);box(92,.08,1.1,curb,315,-.015,8.8);box(92,.08,1.1,curb,315,-.015,19.2);
   for(let i=0;i<9;i++)box(2.4,.025,.12,roadMark,277+i*9.2,.005,14);
-  box(1.1,5.2,1.1,mat('#e8e2d3'),330,2.6,8.5);box(1.1,5.2,1.1,mat('#e8e2d3'),330,2.6,19.5);
-  box(1.3,.5,12,mat('#174b37'),330,5.1,14);
-  label('ISCED · CAMPUS UNIVERSITÁRIO',330,7.1,14,18,1.7,'#174b37');
-  // Passeio principal, alameda central e praça verde.
-  campusPath(12,88,397,-2);campusPath(104,10,397,12);campusPath(12,82,397,43);
-  box(48,.16,38,campusGreen,397,.05,10);
-  box(38,.10,28,campusWalk,397,.16,10);
-  box(31,.08,21,mat('#6f9b55'),397,.23,10);
-  for(const [x,z] of [[379,-3],[415,-3],[379,23],[415,23],[390,-7],[404,27]]){tree(x,z,1.25);lamp(x+2,z+1)}
-  for(const [x,z] of [[384,5],[410,5],[384,15],[410,15]]){box(3.2,.18,.72,mat('#76583f'),x,.48,z);box(3.2,.1,.2,mat('#c29a6a'),x,.62,z-.22)}
-  // Bloco principal monumental: administração, reitoria e secretaria.
-  const campusBuilding=(name,x,z,w,d,floors,color,dest=null)=>{
-    const h=floors*3.35,wallMat=mat(color),trim=mat('#e9e5d8'),roofMat=mat('#17613d');
-    box(w+2,.24,d+2,mat('#c5c3b7'),x,.03,z);
-    box(w,h,d,wallMat,x,h/2+.15,z);
-    box(w+.65,.32,d+.65,roofMat,x,h+.34,z);
-    box(w+.25,.13,d+.25,trim,x,h-.05,z);
-    for(let f=0;f<floors;f++){
-      const y=1.15+f*3.35;
-      for(let c=0;c<Math.floor(w/3);c++){
-        const wx=x-w/2+1.8+c*(w-3.6)/Math.max(1,Math.floor(w/3)-1);
-        box(1.65,1.55,.11,glass,wx,y,z-d/2-.07);
-        box(1.78,.1,.15,trim,wx,y+.83,z-d/2-.08);
+  box(142,.12,7,campusWalk,campusX,-.015,14);box(7,.12,142,campusWalk,campusX,-.015,14);
+  box(122,.1,5,campusWalk,campusX,-.01,-48);box(122,.1,5,campusWalk,campusX,-.01,76);
+  box(5,.1,118,campusWalk,338,-.01,14);box(5,.1,118,campusWalk,456,-.01,14);
+  // Recepção e secretaria com entrada acessível.
+  building('RECEPÇÃO · MATRÍCULAS ISCED',397,-61,38,18,1,'#dce5d5',{sign:'#174b37',roof:'#17613d',dest:'isced-university'});
+  box(28,.12,8,campusWalk,397,-.01,-48);
+  // Dois blocos térreos, cada um com dez divisões, portas, janelas e carteiras.
+  const classroomWing=(name,x,z)=>{
+    const w=100,d=13,h=3.7,wallMat=mat('#dbe4d7'),trim=mat('#f0eee3'),roofMat=mat('#356d49'),doorMat=mat('#76533b'),deskMat=mat('#b58a5d'),chairMat=mat('#526d7b');
+    box(w,.18,d,mat('#c7c5ba'),x,.05,z);box(w,h,d,wallMat,x,h/2+.15,z);box(w+.5,.22,d+.5,roofMat,x,h+.28,z);box(w+.1,.12,d+.1,trim,x,h-.05,z);
+    for(let i=0;i<9;i++)box(.18,h-.2,d-.2,trim,x-w/2+(i+1)*w/10,h/2+.15,z);
+    for(let i=0;i<10;i++){
+      const cx=x-w/2+(i+.5)*w/10,front=z+d/2+.08;
+      box(2.7,1.45,.09,glass,cx,2.15,front);box(1.05,2.15,.14,doorMat,cx-3.25,1.22,front);box(1.15,.1,.18,trim,cx-3.25,2.34,front);
+      for(let row=0;row<2;row++)for(let col=0;col<2;col++){
+        const px=cx-1.9+col*1.5,pz=z-3.4+row*2.5;
+        box(.85,.1,.55,deskMat,px,.95,pz);box(.12,.7,.12,doorMat,px-.32,.45,pz);box(.12,.7,.12,doorMat,px+.32,.45,pz);box(.42,.08,.42,chairMat,px,.48,pz+.65);
       }
-      box(w+.12,.13,d+.12,trim,x,.52+f*3.35,z);
     }
-    box(w*.16,2.55,.18,dark,x,1.35,z-d/2-.14);
-    label(name,x,h+.9,z-d/2-.18,Math.min(w*1.2,25),1.25,'#174b37');
-    collision(x,z,w,d);
-    if(dest){
-      const e=new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.8),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
-      e.position.set(x,1.25,z-d/2-.3);e.userData.worldEntry={dest,label:name,x,z,front:-1,d};target.add(e);
-      if(cityWorldEntrances)cityWorldEntrances.push(e.userData.worldEntry);if(entryMeshes)entryMeshes.push(e);
-    }
+    label(name,x,h+1.1,z-d/2-.2,25,1.15,'#174b37');collision(x,z,w,d);
   };
-  campusBuilding('ISCED · REITORIA E SECRETARIA',397,-31,42,20,4,'#dce5d5','isced-university');
-  campusBuilding('FACULDADE DE EDUCAÇÃO',359,-3,28,18,3,'#d7e2d0');
-  campusBuilding('FACULDADE DE CIÊNCIAS',435,-3,28,18,3,'#d7e2d0');
-  campusBuilding('BIBLIOTECA CENTRAL',359,42,30,20,2,'#e0e8d9');
-  campusBuilding('LABORATÓRIOS',435,42,30,20,2,'#d4e1d4');
-  campusBuilding('AUDITÓRIO UNIVERSITÁRIO',397,76,42,20,2,'#dce5d5');
-  // Cantina, instalações desportivas e apoio ao estudante dentro do mesmo recinto.
-  campusBuilding('CANTINA UNIVERSITÁRIA',350,82,20,14,1,'#e6e2d2');
-  campusBuilding('CENTRO DE ESTUDANTES',444,82,20,14,1,'#e6e2d2');
-  box(32,.18,22,mat('#397747'),397,-8,70);
-  box(28,.05,18,mat('#4c9851'),397,.12,70);
-  const campusLine=mat('#f5f0df');box(.12,.04,18,campusLine,383,.16,70);box(.12,.04,18,campusLine,411,.16,70);box(28,.04,.12,campusLine,397,.16,61);box(28,.04,.12,campusLine,397,.16,79);
-  // Parque para estudantes, professores e visitantes.
-  box(46,.16,18,asphalt,397,-.02,-58);
-  for(let i=0;i<7;i++){const px=376+i*7;box(.12,.035,12,campusLine,px,.075,-58)}
-  for(const [x,z] of [[340,-48],[454,-48],[340,55],[454,55],[340,92],[454,92],[367,-60],[427,-60],[367,95],[427,95]]){tree(x,z,1.05);lamp(x+2,z)}
-  // Jardim periférico e caminhos de ligação entre todos os edifícios.
-  for(const [x,z] of [[365,-20],[429,-20],[365,28],[429,28],[365,62],[429,62],[385,95],[409,95]])tree(x,z,.95);
-  campusPath(78,5,397,-49);campusPath(5,118,344,18);campusPath(5,118,450,18);
-  label('ISCED · INSTITUTO SUPERIOR DE CIÊNCIAS DA EDUCAÇÃO',397,13,2,36,2.2,'#174b37');
+  classroomWing('BLOCO ACADÉMICO A · 10 SALAS',397,-15);
+  classroomWing('BLOCO ACADÉMICO B · 10 SALAS',397,32);
+  // Biblioteca, laboratórios, auditório e serviços — edifícios de um piso.
+  building('BIBLIOTECA CENTRAL',350,53,28,16,1,'#e0e8d9',{sign:'#174b37'});
+  building('LABORATÓRIOS',444,53,28,16,1,'#d4e1d4',{sign:'#356d49'});
+  building('AUDITÓRIO UNIVERSITÁRIO',397,82,38,14,1,'#dce5d5',{sign:'#174b37'});
+  building('CANTINA UNIVERSITÁRIA',350,82,20,12,1,'#e6e2d2',{sign:'#8b6a3e'});
+  building('CENTRO DE ESTUDANTES',444,82,20,12,1,'#e6e2d2',{sign:'#356d49'});
+  // Jardim, bancos, árvores e parque de estacionamento pavimentado.
+  box(38,.16,25,campusGreen,397,0,48);box(30,.08,18,campusWalk,397,.12,48);
+  for(const [x,z] of [[378,42],[416,42],[378,55],[416,55]]){tree(x,z,.95);lamp(x+2,z+1)}
+  for(const [x,z] of [[384,48],[410,48]])box(3.2,.18,.72,mat('#76583f'),x,.48,z);
+  box(52,.16,18,asphalt,397,-.02,-77);
+  const campusLine=mat('#f5f0df');for(let i=0;i<8;i++)box(.12,.035,13,campusLine,372+i*7.2,.075,-77);
+  for(const [x,z] of [[340,-70],[454,-70],[340,96],[454,96],[367,96],[427,96]]){tree(x,z,1.05);lamp(x+2,z)}
+  label('UNIVERSIDADE ISCED · CAMPUS ACADÉMICO',397,12,1,36,2,'#174b37');
 
   // Passeios, árvores e iluminação de enquadramento.
   for(const [x,z] of [[135,-45],[135,45],[135,95],[295,-45],[295,45],[295,95],[205,105],[245,105],[165,-45],[185,-45]]){tree(x,z,.82);lamp(x+2,z)}
