@@ -303,9 +303,10 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   openLifePanel('🗺️ Mapa da cidade e transportes','<p class="life-muted">Mapa rodoviário de Povo Grande e do Largo do Ambiente. Os bairros são áreas distintas, ligadas pela avenida.</p><div style="background:#e9e4d5;border-radius:12px;padding:7px;overflow:hidden"><svg viewBox="0 0 560 370" role="img" aria-label="Mapa de Povo Grande e Largo do Ambiente" style="width:100%;height:auto"><g stroke="#a69a85" stroke-width="5" fill="none" stroke-linecap="round">'+roads.join('')+'</g><g fill="#24553e" font-size="12" font-weight="bold"><text x="70" y="28">POVO GRANDE</text><text x="350" y="28">LARGO DO AMBIENTE</text></g>'+markers+stopMarkers+busMarkers+'</svg></div><p class="life-muted">🟡 Locais importantes · 🔷 Paragens · 🔴 Autocarros em circulação</p><h3>Autocarros</h3><div class="life-list">'+busList+'</div><h3>Destinos e preços</h3><div class="life-list" style="max-height:260px;overflow:auto">'+list+'</div><button class="secondary" data-transit-refresh-map>↻ Actualizar mapa</button>');
  }
  function showFares(busId){
-  const bus=buses.get(busId),available=bus?DESTINATIONS.filter(d=>routeFor(bus).includes(d.stopNode)):DESTINATIONS;
-  const rows=available.map(d=>'<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(d.category)+'</small></span><b>'+MONEY(d.fare)+'</b></div>').join('');
-  openLifePanel('🚌 Destinos e preços','<p class="life-muted">'+esc(bus?.data.label||'Autocarro')+' · Destinos servidos por esta linha. O valor é cobrado apenas quando confirmares o embarque.</p><div class="life-list" style="max-height:360px;overflow:auto">'+rows+'</div><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button>');
+  const bus=buses.get(busId),route=bus?routeFor(bus):FULL_ROUTE;
+  // A tabela apresenta sempre os destinos dos dois bairros; a etiqueta informa se esta linha faz o serviço.
+  const rows=DESTINATIONS.map(d=>{const served=route.includes(d.stopNode);return '<div class="life-row"><span><b>'+esc(d.label)+'</b><br><small>'+esc(d.category)+' · '+(served?'Nesta linha':'Outra linha — Viana 01')+'</small></span><b>'+MONEY(d.fare)+'</b></div>'}).join('');
+  openLifePanel('🚌 Destinos e preços','<p class="life-muted">'+esc(bus?.data.label||'Autocarro')+' · Tabela completa de Povo Grande e Largo do Ambiente. Para embarcar, escolhe uma linha que serve o destino. O valor só é cobrado quando confirmares o embarque.</p><div class="life-list" style="max-height:360px;overflow:auto">'+rows+'</div><button class="secondary" data-transit-map>🗺️ Ver mapa da cidade</button>');
  }
  function showBoarding(busId){
   const bus=buses.get(busId);if(!bus)return;
