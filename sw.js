@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v57-campus-government-busfix-20261120';
+const CACHE_NAME = 'angola-life-3d-v58-isced-walkway-reception-20261120';
 const APP_SHELL = [
   './',
   './index.html',
