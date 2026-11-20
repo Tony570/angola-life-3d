@@ -193,7 +193,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   if(state.needsAlight&&state.alightNode){
    const node=state.alightNode;state.needsAlight=false;state.alightNode=null;
    const {error:alightError}=await sb.rpc('city_transit_alight',{p_bus_id:d.bus_id,p_node_id:node});
-   if(alightError)console.warn('Desembarque:',alightError.message);
+   if(alightError){state.needsAlight=true;state.alightNode=node;console.warn('Desembarque:',alightError.message);}
   }
  }
  async function claimControllers(){
@@ -255,6 +255,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  function updateController(state,delta,now){
   const d=state.data;if(!state.isController)return;
+  if(d.status==='stopped'&&destinationAtNode(d.current_node)&&!state.needsAlight){state.needsAlight=true;state.alightNode=d.current_node;persist(state,true)}
   if(d.status==='stopped'){
    if(d.stop_until&&Date.now()<new Date(d.stop_until).getTime()){placeBus(state,0);persist(state);return}
    d.status='moving';d.doors_open=false;d.stop_until=null;d.active_path=null;d.path_index=0;
