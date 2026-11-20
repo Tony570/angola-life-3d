@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v69-policia-casal-interacoes-v2-20261120';
+const CACHE_NAME = 'angola-life-3d-v70-musica-cara-bacana-v1-20261120';
 const APP_SHELL = [
   './',
   './index.html',
