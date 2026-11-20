@@ -142,7 +142,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  function setBusRow(row){
   if(!row?.bus_id)return;
   let state=buses.get(row.bus_id);
-  if(!state){const model=makeBusModel(THREE,row.label||row.bus_id);target.add(model);state={model,data:row,lastPersist:0,pending:false,needsAlight:false,alightNode:null,stopClock:0};buses.set(row.bus_id,state)}
+  if(!state){const model=makeBusModel(THREE,row.label||row.bus_id);target.add(model);state={model,data:row,lastPersist:0,pending:false,needsAlight:false,alightNode:null,lastAlightAttemptAt:0,stopClock:0};buses.set(row.bus_id,state)}
   else state.data={...state.data,...row};
   state.data=row;
   if(state.data.controller_id===user.id&&state.data.controller_until&&new Date(state.data.controller_until).getTime()>Date.now())state.isController=true;
@@ -191,7 +191,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   if(error){console.warn('Sincronização do autocarro '+d.bus_id+':',error.message);state.isController=false;return}
   state.data={...state.data,...data};
   if(state.needsAlight&&state.alightNode){
-   const node=state.alightNode;state.needsAlight=false;state.alightNode=null;
+   const node=state.alightNode;state.needsAlight=false;state.alightNode=null;state.lastAlightAttemptAt=Date.now();
    const {error:alightError}=await sb.rpc('city_transit_alight',{p_bus_id:d.bus_id,p_node_id:node});
    if(alightError){state.needsAlight=true;state.alightNode=node;console.warn('Desembarque:',alightError.message);}
   }
@@ -255,7 +255,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  function updateController(state,delta,now){
   const d=state.data;if(!state.isController)return;
-  if(d.status==='stopped'&&destinationAtNode(d.current_node)&&!state.needsAlight){state.needsAlight=true;state.alightNode=d.current_node;persist(state,true)}
+  if(d.status==='stopped'&&destinationAtNode(d.current_node)&&!state.needsAlight&&Date.now()-state.lastAlightAttemptAt>5000){state.needsAlight=true;state.alightNode=d.current_node;persist(state,true)}
   if(d.status==='stopped'){
    if(d.stop_until&&Date.now()<new Date(d.stop_until).getTime()){placeBus(state,0);persist(state);return}
    d.status='moving';d.doors_open=false;d.stop_until=null;d.active_path=null;d.path_index=0;
