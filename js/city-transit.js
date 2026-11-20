@@ -145,7 +145,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  function setBusRow(row){
   if(!row?.bus_id)return;
   let state=buses.get(row.bus_id),previous=null;
-  if(!state){const model=makeBusModel(THREE,row.label||row.bus_id);target.add(model);state={model,data:row,lastPersist:0,pending:false,needsAlight:false,alightNode:null,lastAlightAttemptAt:0,stopClock:0};buses.set(row.bus_id,state)}
+  if(!state){const model=makeBusModel(THREE,row.label||row.bus_id);target.add(model);state={model,data:row,lastPersist:0,pending:false,needsAlight:false,alightNode:null,lastAlightAttemptAt:0,stopClock:0,currentSpeed:0};buses.set(row.bus_id,state)}
   else{previous={x:state.model.position.x,z:state.model.position.z,rotation:state.model.rotation.y};state.data={...state.data,...row}}
   state.data=row;
   if(state.data.controller_id===user.id&&state.data.controller_until&&new Date(state.data.controller_until).getTime()>Date.now())state.isController=true;
@@ -220,7 +220,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const d=state.data;if(!d.requested_node||d.active_path?.length)return;
   const path=shortestPath(graph,d.current_node,d.requested_node);
   if(!path){d.requested_node=null;return}
-  if(path.length<=1){d.status='stopped';d.doors_open=true;d.stop_until=new Date(Date.now()+18000).toISOString();d.requested_node=null;state.needsAlight=true;state.alightNode=d.current_node;return}
+  if(path.length<=1){d.status='stopped';d.doors_open=true;d.stop_until=new Date(Date.now()+30000).toISOString();d.requested_node=null;state.needsAlight=true;state.alightNode=d.current_node;return}
   d.active_path=path;d.path_index=1;
  }
  function destinationAtNode(nodeId){
@@ -258,7 +258,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   }else{
    const route=routeFor(state);d.route_index=((Number(d.route_index)||0)+1)%route.length;
    if(destinationAtNode(nodeId)){
-    d.status='stopped';d.doors_open=true;d.stop_until=new Date(Date.now()+8000).toISOString();
+    d.status='stopped';d.doors_open=true;d.stop_until=new Date(Date.now()+12000).toISOString();
     state.needsAlight=true;state.alightNode=nodeId;
    }
   }
@@ -267,21 +267,50 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   const d=state.data;if(!state.isController)return;
   if(d.status==='stopped'&&destinationAtNode(d.current_node)&&!state.needsAlight&&Date.now()-state.lastAlightAttemptAt>5000){state.needsAlight=true;state.alightNode=d.current_node;persist(state,true)}
   if(d.status==='stopped'){
-   if(d.stop_until&&Date.now()<new Date(d.stop_until).getTime()){placeBus(state,0);persist(state);return}
+   if(d.stop_until&&Date.now()<new Date(d.stop_until).getTime()){state.currentSpeed=0;placeBus(state,0);persist(state);return}
    d.status='moving';d.doors_open=false;d.stop_until=null;d.active_path=null;d.path_index=0;
   }
   if(d.requested_node&&!d.active_path)startDetour(state);
-  if(d.status==='stopped'){placeBus(state,0);persist(state,true);return}
+  if(d.status==='stopped'){state.currentSpeed=0;placeBus(state,0);persist(state,true);return}
   const nextId=nextWaypoint(state),next=graph.nodes.get(nextId);
-  if(!next){d.route_index=((Number(d.route_index)||0)+1)%routeFor(state).length;persist(state,true);return}
+  if(!next){d.route_index=((Number(d.route_index)||0)+1)%routeFor(state).length;state.currentSpeed=0;persist(state,true);return}
   const dx=next.x-Number(d.x),dz=next.z-Number(d.z),distance=Math.hypot(dx,dz);
-  if(distance<.12){arriveAtNode(state,nextId,!!d.active_path?.length);persist(state,true);return}
-  const speed=6.2,step=Math.min(distance,speed*delta),nx=Number(d.x)+dx/distance*step,nz=Number(d.z)+dz/distance*step;
-  const traffic=[...buses.values()].some(other=>{if(other===state)return false;const ox=Number(other.data.x)-Number(d.x),oz=Number(other.data.z)-Number(d.z),gap=Math.hypot(ox,oz);if(gap>=8.4)return false;const otherNext=nextWaypoint(other),otherPoint=graph.nodes.get(otherNext);const odx=otherPoint?otherPoint.x-Number(other.data.x):0,odz=otherPoint?otherPoint.z-Number(other.data.z):0;const dot=(dx*odx+dz*odz)/Math.max(.001,distance*Math.hypot(odx,odz));if(dot<-.3)return d.bus_id>other.data.bus_id;if(Math.abs(dot)<=.3)return d.bus_id>other.data.bus_id;return ox*dx+oz*dz>0;});
-  const vehicles=(getOtherVehicles?.()||[]).some(v=>v?.group&&v.group.visible!==false&&Math.hypot(v.group.position.x-nx,v.group.position.z-nz)<6.2);
-  if(traffic||vehicles){placeBus(state,0);persist(state);return}
+  if(distance<.12){arriveAtNode(state,nextId,!!d.active_path?.length);if(d.status==='stopped')state.currentSpeed=0;persist(state,true);return}
+  const dirX=dx/distance,dirZ=dz/distance;
+  let targetSpeed=8.2;
+  if(distance<5.5)targetSpeed=Math.min(targetSpeed,Math.max(3.4,3.4+(distance-1.2)*1.05));
+  if(distance<1.15)targetSpeed=Math.min(targetSpeed,2.2);
+  for(const other of buses.values()){
+   if(other===state||other.data.status!=='moving')continue;
+   const rx=Number(other.data.x)-Number(d.x),rz=Number(other.data.z)-Number(d.z),gap=Math.hypot(rx,rz);
+   if(gap>10||gap<.01)continue;
+   const along=rx*dirX+rz*dirZ,lateral=Math.abs(rx*dirZ-rz*dirX);
+   const otherNext=nextWaypoint(other),otherPoint=graph.nodes.get(otherNext);
+   const odx=otherPoint?otherPoint.x-Number(other.data.x):0,odz=otherPoint?otherPoint.z-Number(other.data.z):0;
+   const otherLen=Math.hypot(odx,odz),alignment=(dirX*odx+dirZ*odz)/Math.max(.001,otherLen);
+   if(lateral>3.2)continue;
+   if(alignment<-.35&&gap<7.2){if(String(d.bus_id)>String(other.data.bus_id))targetSpeed=0}
+   else if(alignment>.35&&along>0){
+    if(along<3.7)targetSpeed=0;
+    else if(along<9)targetSpeed=Math.min(targetSpeed,Math.max(2.4,(along-2.8)*.72));
+   }
+  }
+  const vehicles=getOtherVehicles?.()||[];
+  for(const vehicle of vehicles){
+   const group=vehicle?.group;if(!group||group.visible===false)continue;
+   const rx=group.position.x-Number(d.x),rz=group.position.z-Number(d.z);
+   const along=rx*dirX+rz*dirZ,lateral=Math.abs(rx*dirZ-rz*dirX);
+   if(along<0||along>11||lateral>2.35)continue;
+   if(along<2.8)targetSpeed=0;
+   else if(along<7.5)targetSpeed=Math.min(targetSpeed,2.6);
+  }
+  const previousSpeed=Number.isFinite(state.currentSpeed)?state.currentSpeed:0;
+  const rate=targetSpeed<previousSpeed?8.5:3.2;
+  state.currentSpeed=previousSpeed+Math.sign(targetSpeed-previousSpeed)*Math.min(Math.abs(targetSpeed-previousSpeed),rate*delta);
+  const speed=state.currentSpeed;
+  const step=Math.min(distance,speed*delta),nx=Number(d.x)+dirX*step,nz=Number(d.z)+dirZ*step;
   const desiredYaw=Math.atan2(dx,dz);let turn=desiredYaw-(Number(d.rotation)||0);while(turn>Math.PI)turn-=Math.PI*2;while(turn< -Math.PI)turn+=Math.PI*2;
-  d.rotation=(Number(d.rotation)||0)+turn*Math.min(1,delta*4.5);
+  d.rotation=(Number(d.rotation)||0)+turn*(1-Math.exp(-5.8*delta));
   d.x=nx;d.z=nz;
   const wheelSpin=step/.48;for(const wheel of state.model.userData.transitWheels||[])wheel.rotation.x+=wheelSpin;
   placeBus(state,speed);persist(state);
