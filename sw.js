@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v67-transferencia-jogadores-v1-20261120';
+const CACHE_NAME = 'angola-life-3d-v68-policia-casal-interacoes-v1-20261120';
 const APP_SHELL = [
   './',
   './index.html',
