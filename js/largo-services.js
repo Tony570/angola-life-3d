@@ -187,6 +187,10 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }
       html+='<h4>Movimentos bancários recentes</h4><div class="life-list">'+((txs||[]).filter(t=>true).map(t=>'<div class="life-row"><span>'+esc(t.description||t.transaction_type)+'<br><small>'+new Date(t.created_at).toLocaleString('pt-PT')+'</small></span><b>'+money(t.amount)+'</b></div>').join('')||'<p class="life-muted">Sem movimentos bancários.</p>')+'</div>';
     } else if(kind==='chevron'){
+      const {data:petroTraining}=await sb.from('isced_enrollments').select('id').eq('user_id',user.id).eq('course_id','petrolifera').eq('status','completed').maybeSingle();
+      if(!petroTraining){
+        html+='<h4>Formação obrigatória para trabalhar na Chevron</h4><p class="life-muted">Ainda não tens a certificação petrolífera. Primeiro, faz a matrícula na Universidade ISCED, conclui a Formação Profissional Petrolífera com 15 presenças em 15 dias e regressa a esta recepção para te candidatares.</p><p class="life-muted">Sem aprovação nesta formação, o sistema não aceita candidaturas nem entrevistas para os postos da Chevron.</p>';
+      }else{
       const {data:job,error}=await sb.from('largo_chevron_employments').select('role,salary,status,last_paid_at,applied_at').eq('user_id',user.id).maybeSingle();
       const roles=[['soldador_industrial','Soldador industrial',220000],['tecnico_instrumentacao','Técnico de instrumentação',210000],['operador_petrolifero','Operador petrolífero',190000],['electricista_industrial','Electricista industrial',205000],['mecanico_industrial','Mecânico industrial',195000],['engenheiro_petrolifero','Engenheiro petrolífero',280000],['administrativo','Administrativo',160000]];
       html+='<h4>Oportunidades de emprego</h4><p class="life-muted">Recrutamento da Chevron. Depois da entrevista, o contrato fica activo e o salário é creditado na carteira a cada 24 horas.</p>';
@@ -196,6 +200,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
         html+='<div class="life-row"><span><b>Candidatura recebida</b><br><small>'+esc(job.role)+' · Salário previsto: '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><p class="life-muted">A candidatura foi registada. Realiza a entrevista simulada para concluir a contratação.</p><button id="largo-interview-chevron">Realizar entrevista</button>';
       }else{
         html+='<label for="largo-chevron-role">Função pretendida</label><select id="largo-chevron-role">'+roles.map(r=>'<option value="'+r[0]+'">'+r[1]+' · '+money(r[2])+'/dia</option>').join('')+'</select><button id="largo-apply-chevron">Enviar candidatura</button>';
+      }
       }
     } else if(kind==='restaurant-polonia'){
       html+='<h4>Menu e preços</h4><div class="life-list">'+serviceButton('Prato do dia','polonia-meal',2500)+serviceButton('Refeição familiar','polonia-family-meal',5000)+'</div><p class="life-muted">O pedido é registado e o valor sai da tua carteira quando pagares.</p>';
@@ -219,15 +224,17 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       const ownedCodes=new Set((owned||[]).map(x=>x.apartment_code));
       html+='<h4>Apartamentos e preços</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span><b>'+x.code+' · '+x.label+'</b><br><small>'+money(x.price)+'</small></span><button class="secondary" data-largo-apartment="'+x.code+'" '+(ownedCodes.has(x.code)?'disabled':'')+'>'+(ownedCodes.has(x.code)?'Adquirido':'Comprar')+'</button></div>').join('')+'</div><p class="life-muted">A aquisição é registada na tua conta. Cada apartamento só pode ter um proprietário.</p>';
     } else if(kind==='isced-university'){
-      const [{data:courses,error:courseError},{data:enrollments,error:enrollmentError}]=await Promise.all([
+      const [{data:courses,error:courseError},{data:enrollments,error:enrollmentError},{data:registration}]=await Promise.all([
         sb.from('isced_courses').select('id,faculty,name,description,price,duration_days,lesson_titles').eq('active',true).order('faculty').order('name'),
-        sb.from('isced_enrollments').select('id,course_id,amount_paid,start_date,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false})
+        sb.from('isced_enrollments').select('id,course_id,amount_paid,start_date,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}),
+        sb.from('isced_student_registrations').select('student_number,registration_fee,registered_at').eq('user_id',user.id).maybeSingle()
       ]);
-      const courseList=courses||[], enrollmentList=enrollments||[];
+      const courseList=courses||[], enrollmentList=enrollments||[],isRegistered=!!registration;
       const attendanceIds=enrollmentList.map(x=>x.id);
       let attendance=[];
       if(attendanceIds.length){const ar=await sb.from('isced_attendance').select('enrollment_id,day_number,class_date,lesson_title,attended_at').in('enrollment_id',attendanceIds).order('day_number');attendance=ar.data||[];}
-      html+='<h4>Catálogo de cursos e preços</h4><p class="life-muted">Todas as formações têm 15 dias de aulas consecutivas. A inscrição é paga uma única vez pela carteira virtual.</p>';
+      html+='<h4>Matrícula institucional</h4>'+(isRegistered?'<p class="life-muted">Matrícula confirmada · Número de estudante: <b>'+esc(registration.student_number)+'</b> · Taxa paga: '+money(registration.registration_fee)+'.</p>':'<p class="life-muted">Para frequentar qualquer curso, faz primeiro a matrícula institucional. A taxa única é de 100.000 Kz e é debitada da carteira virtual.</p><button id="isced-register-student">Pagar matrícula · 100.000 Kz</button>');
+      html+='<h4>Catálogo de cursos e preços</h4><p class="life-muted">Todas as formações têm 15 dias de aulas consecutivas. Depois da matrícula, cada curso é pago uma única vez pela carteira virtual.</p>';
       if(courseError)html+='<p class="life-muted">Não foi possível carregar o catálogo de cursos.</p>';
       else {
         const faculties=[...new Set(courseList.map(c=>c.faculty))];
@@ -235,7 +242,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
           html+='<h5>'+esc(faculty)+'</h5><div class="life-list">'+courseList.filter(c=>c.faculty===faculty).map(c=>{
             const active=enrollmentList.some(e=>e.course_id===c.id&&e.status==='active');
             const completed=enrollmentList.some(e=>e.course_id===c.id&&e.status==='completed');
-            return '<div class="life-row"><span><b>'+esc(c.name)+'</b><br><small>'+esc(c.description)+' · '+c.duration_days+' dias · '+money(c.price)+'</small></span><button '+(active||completed?'disabled':'')+' data-isced-enroll="'+esc(c.id)+'">'+(active?'Em curso':completed?'Concluído':'Inscrever-se')+'</button></div>';
+            return '<div class="life-row"><span><b>'+esc(c.name)+'</b><br><small>'+esc(c.description)+' · '+c.duration_days+' dias · '+money(c.price)+'</small></span><button '+(active||completed||!isRegistered?'disabled':'')+' data-isced-enroll="'+esc(c.id)+'">'+(active?'Em curso':completed?'Concluído':!isRegistered?'Matrícula obrigatória':'Inscrever-se')+'</button></div>';
           }).join('')+'</div>';
         }
       }
@@ -281,6 +288,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     const salary=document.getElementById('largo-claim-salary');if(salary)salary.onclick=()=>run(salary,()=>sb.rpc('largo_claim_chevron_salary'),d=>'Salário recebido: '+money(d.salary)+'.');
     panel.querySelectorAll('[data-largo-buy]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_pay_service',{p_service_key:button.dataset.largoBuy}),d=>'Pagamento concluído: '+d.label+' · '+money(d.amount)+'.'));
     panel.querySelectorAll('[data-largo-apartment]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_purchase_apartment',{p_apartment_code:button.dataset.largoApartment}),d=>'Apartamento adquirido: '+d.label+' · '+money(d.price)+'.'));
+    const registerStudent=document.getElementById('isced-register-student');if(registerStudent)registerStudent.onclick=()=>run(registerStudent,()=>sb.rpc('isced_register_student'),d=>'Matrícula confirmada. Número de estudante: '+d.student_number+'. Foram descontados '+money(d.amount)+' da carteira.');
     panel.querySelectorAll('[data-isced-enroll]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('isced_enroll',{p_course_id:button.dataset.iscedEnroll}),d=>'Inscrição confirmada em '+d.course+'. Foram descontados '+money(d.amount)+' da carteira. A primeira aula já está disponível.'));
     panel.querySelectorAll('[data-isced-attend]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('isced_attend_today',{p_enrollment_id:button.dataset.iscedAttend}),d=>d.status==='failed'?'Frequência insuficiente. A formação foi reprovada.':d.status==='completed'?'Parabéns! Concluíste os 15 dias e foste aprovado.':d.already_attended?'A tua presença de hoje já está registada.':'Presença registada: Dia '+d.day_number+'/15 · '+d.lesson_title+'.'));
   };
