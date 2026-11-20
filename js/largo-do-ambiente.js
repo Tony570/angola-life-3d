@@ -210,8 +210,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(25,.9,.2,govFence,govX-govW/2+12.5,.45,govZ+govD/2);box(25,.9,.2,govFence,govX+govW/2-12.5,.45,govZ+govD/2);
   for(const px of [govX-govW/2,govX-12.5,govX+12.5,govX+govW/2])box(.32,1.4,.32,govMetal,px,.7,govZ+govD/2);
   box(24,.16,.28,govGold,govX,.88,govZ+govD/2);
-  building('GOVERNO PROVINCIAL',govX+18,govZ-4,30,18,2,'#dedfd8',{sign:'#7b2632',roof:'#555b61',dest:'government'});
-  label('GOVERNO PROVINCIAL · SERVIÇOS PÚBLICOS',govX+18,5.1,govZ+govD/2+1.2,29,1.3,'#7b2632');
+  building('GOVERNO PROVINCIAL',govX+20,govZ-4,30,18,2,'#dedfd8',{sign:'#7b2632',roof:'#555b61',dest:'government'});
+  label('GOVERNO PROVINCIAL · SERVIÇOS PÚBLICOS',govX+20,5.1,govZ+govD/2+1.2,29,1.3,'#7b2632');
   // Parque pavimentado, oito viaturas oficiais, circulação interna e guarita.
   const govLine=mat('#f4e8c8'),govPaints=['#f1f0e9','#173d64','#d8d9d2','#a52e31','#e4e0d6','#315c73','#f1f0e9','#777b7c'];
   box(62,.12,12,asphalt,govX,0,govZ+20);
