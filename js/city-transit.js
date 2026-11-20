@@ -111,6 +111,8 @@ function makeBusModel(THREE,label){
   const door=part(new THREE.BoxGeometry(.055,1.72,1.05),glass,side*1.255,1.34,.08);
   door.userData.transitDoor=true;
   part(new THREE.BoxGeometry(.075,.08,1.1),blue,side*1.27,2.2,.08);
+  const sideSign=part(new THREE.PlaneGeometry(2.15,.28),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),side*1.245,1.02,0);
+  sideSign.rotation.y=side>0?Math.PI/2:-Math.PI/2;
   // Rodas duplas por eixo.
   for(const z of [-2.35,2.35]){
    const wheel=part(new THREE.CylinderGeometry(.48,.48,.22,18),rubber,side*1.23,.5,z);wheel.rotation.z=Math.PI/2;wheel.userData.transitWheel=true;
