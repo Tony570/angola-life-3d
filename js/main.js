@@ -100,7 +100,7 @@ async function openMarketPanel(){
  await refreshPlayerWallet();
  const items=await loadFoodInventory();
  const rows=marketCatalog.map(([key,label,price,emoji])=>'<div class="life-row"><span><b>'+emoji+' '+label+'</b><br><small>'+new Intl.NumberFormat('pt-PT').format(price)+' Kz · Stock: '+foodCount(items,key)+'</small></span><span class="market-buy-controls"><input aria-label="Quantidade de '+label+'" type="number" min="1" max="99" value="1" data-market-qty="'+key+'"><button class="secondary" data-market-buy="'+key+'">Comprar</button></span></div>').join('');
- openLifePanel('🛒 Mercado de Povo Grande','<p class="life-muted">Escolhe os produtos e as quantidades. O valor é descontado da tua carteira e os ingredientes seguem para o teu inventário.</p><p><b>Saldo:</b> <span id="market-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p><div class="life-list">'+rows+'</div><p id="market-message" class="life-muted">Os preços apresentados são os preços definidos no jogo.</p>');
+ openLifePanel('🛒 Mercado de Cidade de Cabinda','<p class="life-muted">Escolhe os produtos e as quantidades. O valor é descontado da tua carteira e os ingredientes seguem para o teu inventário.</p><p><b>Saldo:</b> <span id="market-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p><div class="life-list">'+rows+'</div><p id="market-message" class="life-muted">Os preços apresentados são os preços definidos no jogo.</p>');
  $('life-panel').querySelectorAll('[data-market-buy]').forEach(button=>button.onclick=async()=>{
   const key=button.dataset.marketBuy,qty=Number($('life-panel').querySelector('[data-market-qty="'+key+'"]')?.value||1);
   if(!Number.isInteger(qty)||qty<1||qty>99){$('market-message').textContent='Escolhe uma quantidade entre 1 e 99.';return}
@@ -603,21 +603,21 @@ const doorDefs={
  quarto:[{label:'SALA',dest:'sala',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2},{label:'CASA DE BANHO',dest:'banheiro',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  cozinha:[{label:'SALA',dest:'sala',side:'east',center:1.25,spawn:{x:2.55,z:1.25},face:Math.PI/2}],
  banheiro:[{label:'QUARTO',dest:'quarto',side:'west',center:1.25,spawn:{x:-2.55,z:1.25},face:-Math.PI/2}],
- garagem:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:14,z:-17.5,face:Math.PI}}],
- esquadra:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:28,z:-17.2,face:Math.PI}}],
- hospital:[{label:'SALA DE TRATAMENTO',dest:'hospital-tratamento',side:'east',center:0,spawn:{x:-2.55,z:0,face:Math.PI/2},hospitalDoor:true},{label:'CONSULTÓRIO MÉDICO',dest:'hospital-consultorio',side:'west',center:0,spawn:{x:2.55,z:0,face:-Math.PI/2},hospitalDoor:true},{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:-28,z:-22.65,face:Math.PI}}],
+ garagem:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:14,z:-17.5,face:Math.PI}}],
+ esquadra:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spanX:18.4,spanZ:18.4,spawn:{x:28,z:-17.2,face:Math.PI}}],
+ hospital:[{label:'SALA DE TRATAMENTO',dest:'hospital-tratamento',side:'east',center:0,spawn:{x:-2.55,z:0,face:Math.PI/2},hospitalDoor:true},{label:'CONSULTÓRIO MÉDICO',dest:'hospital-consultorio',side:'west',center:0,spawn:{x:2.55,z:0,face:-Math.PI/2},hospitalDoor:true},{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-22.65,face:Math.PI}}],
  'hospital-tratamento':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:2.55,z:0,face:Math.PI}}],
  'hospital-consultorio':[{label:'VOLTAR À RECEPÇÃO',dest:'hospital',side:'south',center:0,spawn:{x:-2.55,z:0,face:Math.PI}}],
- hotel:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'north',center:0,spawn:{x:0,z:-5.45,face:Math.PI}}],
- bar:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:-28,z:12.45,face:Math.PI}},{label:'SALA PRIVADA 1',dest:'bar-private-1',side:'west',center:0,spanX:36,spanZ:28,spawn:{x:-15.4,z:0,face:-Math.PI/2}},{label:'SALA PRIVADA 2',dest:'bar-private-2',side:'east',center:0,spanX:36,spanZ:28,spawn:{x:15.4,z:0,face:Math.PI/2}}],
+ hotel:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'north',center:0,spawn:{x:0,z:-5.45,face:Math.PI}}],
+ bar:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:-28,z:12.45,face:Math.PI}},{label:'SALA PRIVADA 1',dest:'bar-private-1',side:'west',center:0,spanX:36,spanZ:28,spawn:{x:-15.4,z:0,face:-Math.PI/2}},{label:'SALA PRIVADA 2',dest:'bar-private-2',side:'east',center:0,spanX:36,spanZ:28,spawn:{x:15.4,z:0,face:Math.PI/2}}],
  'bar-private-1':[{label:'VOLTAR AO BAR',dest:'bar',side:'east',center:0,spawn:{x:-15.4,z:0,face:Math.PI/2}}],
  'bar-private-2':[{label:'VOLTAR AO BAR',dest:'bar',side:'west',center:0,spawn:{x:15.4,z:0,face:-Math.PI/2}}],
- party:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:28,z:12.45,face:Math.PI}},{label:'SAÍDA DE EMERGÊNCIA',dest:'city',side:'south',center:0,spanX:36,spanZ:28,spawn:{x:28,z:43.55,face:0}}],
- market:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:28,z:-11.8,face:Math.PI}}],
- quarry:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:0,z:-16.7,face:Math.PI}}],
- cars:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:-28,z:-11.8,face:Math.PI}}],
- salon:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:-3.4,z:22.7,face:Math.PI}}],
- clothes:[{label:'SAIR PARA POVO GRANDE',dest:'city',side:'south',center:0,spawn:{x:3.4,z:22.7,face:Math.PI}}],
+ party:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'north',center:0,spanX:36,spanZ:28,spawn:{x:28,z:12.45,face:Math.PI}},{label:'SAÍDA DE EMERGÊNCIA',dest:'city',side:'south',center:0,spanX:36,spanZ:28,spawn:{x:28,z:43.55,face:0}}],
+ market:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:28,z:-11.8,face:Math.PI}}],
+ quarry:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:0,z:-16.7,face:Math.PI}}],
+ cars:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:-28,z:-11.8,face:Math.PI}}],
+ salon:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:-3.4,z:22.7,face:Math.PI}}],
+ clothes:[{label:'SAIR PARA CIDADE DE CABINDA',dest:'city',side:'south',center:0,spawn:{x:3.4,z:22.7,face:Math.PI}}],
  ...Object.fromEntries(Array.from({length:10},(_,i)=>['hotel-suite-'+(i+1),[{label:'VOLTAR À RECEPÇÃO',dest:'hotel',side:'south',center:0,spawn:{x:0,z:2.7,face:Math.PI}}]]))
 };
 let roomDoorMeshes=[];let policeEntryMeshes=[];
