@@ -172,6 +172,73 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   for(const x of [243,287]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===243?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
   label('CAMPO DE FUTEBOL TAF',265,5,56,18,1.3,'#174b37');
   const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(265,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:265,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
+
+  // CAMPUS ISCED — terreno contínuo, campus único e escala universitária.
+  // A expansão ocupa o novo quarteirão a leste, sem deslocar os edifícios existentes.
+  const campusX=397,campusZ=12;
+  box(176,.24,142,mat('#668b4c'),campusX,-.18,campusZ);
+  const campusWalk=mat('#d9d5c7'),campusGreen=mat('#397747'),campusDark=mat('#174b37');
+  const campusPath=(w,d,x,z)=>box(w,.10,d,campusWalk,x,-.015,z);
+  // Avenida de acesso e portão monumental.
+  box(92,.13,9,asphalt,315,-.075,14);
+  box(92,.08,1.1,curb,315,-.015,8.8);box(92,.08,1.1,curb,315,-.015,19.2);
+  for(let i=0;i<9;i++)box(2.4,.025,.12,roadMark,277+i*9.2,.005,14);
+  box(1.1,5.2,1.1,mat('#e8e2d3'),330,2.6,8.5);box(1.1,5.2,1.1,mat('#e8e2d3'),330,2.6,19.5);
+  box(1.3,.5,12,mat('#174b37'),330,5.1,14);
+  label('ISCED · CAMPUS UNIVERSITÁRIO',330,7.1,14,18,1.7,'#174b37');
+  // Passeio principal, alameda central e praça verde.
+  campusPath(12,88,397,-2);campusPath(104,10,397,12);campusPath(12,82,397,43);
+  box(48,.16,38,campusGreen,397,.05,10);
+  box(38,.10,28,campusWalk,397,.16,10);
+  box(31,.08,21,mat('#6f9b55'),397,.23,10);
+  for(const [x,z] of [[379,-3],[415,-3],[379,23],[415,23],[390,-7],[404,27]]){tree(x,z,1.25);lamp(x+2,z+1)}
+  for(const [x,z] of [[384,5],[410,5],[384,15],[410,15]]){box(3.2,.18,.72,mat('#76583f'),x,.48,z);box(3.2,.1,.2,mat('#c29a6a'),x,.62,z-.22)}
+  // Bloco principal monumental: administração, reitoria e secretaria.
+  const campusBuilding=(name,x,z,w,d,floors,color,dest=null)=>{
+    const h=floors*3.35,wallMat=mat(color),trim=mat('#e9e5d8'),roofMat=mat('#17613d');
+    box(w+2,.24,d+2,mat('#c5c3b7'),x,.03,z);
+    box(w,h,d,wallMat,x,h/2+.15,z);
+    box(w+.65,.32,d+.65,roofMat,x,h+.34,z);
+    box(w+.25,.13,d+.25,trim,x,h-.05,z);
+    for(let f=0;f<floors;f++){
+      const y=1.15+f*3.35;
+      for(let c=0;c<Math.floor(w/3);c++){
+        const wx=x-w/2+1.8+c*(w-3.6)/Math.max(1,Math.floor(w/3)-1);
+        box(1.65,1.55,.11,glass,wx,y,z-d/2-.07);
+        box(1.78,.1,.15,trim,wx,y+.83,z-d/2-.08);
+      }
+      box(w+.12,.13,d+.12,trim,x,.52+f*3.35,z);
+    }
+    box(w*.16,2.55,.18,dark,x,1.35,z-d/2-.14);
+    label(name,x,h+.9,z-d/2-.18,Math.min(w*1.2,25),1.25,'#174b37');
+    collision(x,z,w,d);
+    if(dest){
+      const e=new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.8),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
+      e.position.set(x,1.25,z-d/2-.3);e.userData.worldEntry={dest,label:name,x,z,front:-1,d};target.add(e);
+      if(cityWorldEntrances)cityWorldEntrances.push(e.userData.worldEntry);if(entryMeshes)entryMeshes.push(e);
+    }
+  };
+  campusBuilding('ISCED · REITORIA E SECRETARIA',397,-31,42,20,4,'#dce5d5','isced-university');
+  campusBuilding('FACULDADE DE EDUCAÇÃO',359,-3,28,18,3,'#d7e2d0');
+  campusBuilding('FACULDADE DE CIÊNCIAS',435,-3,28,18,3,'#d7e2d0');
+  campusBuilding('BIBLIOTECA CENTRAL',359,42,30,20,2,'#e0e8d9');
+  campusBuilding('LABORATÓRIOS',435,42,30,20,2,'#d4e1d4');
+  campusBuilding('AUDITÓRIO UNIVERSITÁRIO',397,76,42,20,2,'#dce5d5');
+  // Cantina, instalações desportivas e apoio ao estudante dentro do mesmo recinto.
+  campusBuilding('CANTINA UNIVERSITÁRIA',350,82,20,14,1,'#e6e2d2');
+  campusBuilding('CENTRO DE ESTUDANTES',444,82,20,14,1,'#e6e2d2');
+  box(32,.18,22,mat('#397747'),397,-8,70);
+  box(28,.05,18,mat('#4c9851'),397,.12,70);
+  const campusLine=mat('#f5f0df');box(.12,.04,18,campusLine,383,.16,70);box(.12,.04,18,campusLine,411,.16,70);box(28,.04,.12,campusLine,397,.16,61);box(28,.04,.12,campusLine,397,.16,79);
+  // Parque para estudantes, professores e visitantes.
+  box(46,.16,18,asphalt,397,-.02,-58);
+  for(let i=0;i<7;i++){const px=376+i*7;box(.12,.035,12,campusLine,px,.075,-58)}
+  for(const [x,z] of [[340,-48],[454,-48],[340,55],[454,55],[340,92],[454,92],[367,-60],[427,-60],[367,95],[427,95]]){tree(x,z,1.05);lamp(x+2,z)}
+  // Jardim periférico e caminhos de ligação entre todos os edifícios.
+  for(const [x,z] of [[365,-20],[429,-20],[365,28],[429,28],[365,62],[429,62],[385,95],[409,95]])tree(x,z,.95);
+  campusPath(78,5,397,-49);campusPath(5,118,344,18);campusPath(5,118,450,18);
+  label('ISCED · INSTITUTO SUPERIOR DE CIÊNCIAS DA EDUCAÇÃO',397,13,2,36,2.2,'#174b37');
+
   // Passeios, árvores e iluminação de enquadramento.
   for(const [x,z] of [[135,-45],[135,45],[135,95],[295,-45],[295,45],[295,95],[205,105],[245,105],[165,-45],[185,-45]]){tree(x,z,.82);lamp(x+2,z)}
   // Placa monumental na entrada, voltada para a avenida de ligação.
