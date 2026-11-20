@@ -210,8 +210,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(25,.9,.2,govFence,govX-govW/2+12.5,.45,govZ+govD/2);box(25,.9,.2,govFence,govX+govW/2-12.5,.45,govZ+govD/2);
   for(const px of [govX-govW/2,govX-12.5,govX+12.5,govX+govW/2])box(.32,1.4,.32,govMetal,px,.7,govZ+govD/2);
   box(24,.16,.28,govGold,govX,.88,govZ+govD/2);
-  building('GOVERNO PROVINCIAL',govX,govZ-4,34,18,2,'#dedfd8',{sign:'#7b2632',roof:'#555b61',dest:'government'});
-  label('GOVERNO PROVINCIAL · SERVIÇOS PÚBLICOS',govX,5.1,govZ+govD/2+1.2,29,1.3,'#7b2632');
+  building('GOVERNO PROVINCIAL',govX+18,govZ-4,30,18,2,'#dedfd8',{sign:'#7b2632',roof:'#555b61',dest:'government'});
+  label('GOVERNO PROVINCIAL · SERVIÇOS PÚBLICOS',govX+18,5.1,govZ+govD/2+1.2,29,1.3,'#7b2632');
   // Parque pavimentado, oito viaturas oficiais, circulação interna e guarita.
   const govLine=mat('#f4e8c8'),govPaints=['#f1f0e9','#173d64','#d8d9d2','#a52e31','#e4e0d6','#315c73','#f1f0e9','#777b7c'];
   box(62,.12,12,asphalt,govX,0,govZ+20);
@@ -227,6 +227,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(8,.12,74,asphalt,govX,-.075,-114);
   box(1.1,.08,74,curb,govX-4.5,-.015,-114);box(1.1,.08,74,curb,govX+4.5,-.015,-114);
   box(6,.12,38,asphalt,govX,-.075,-125);
+  box(24,.12,6,asphalt,govX+9,-.075,govZ-13);
   for(let k=0;k<6;k++)box(2.1,.025,.13,govGold,govX,.005,-84-k*8.5);
   for(const [x,z] of [[govX-36,govZ-25],[govX+36,govZ-25],[govX-36,govZ+25],[govX+36,govZ+25]])lamp(x,z);
   label('PARQUE OFICIAL · GOVERNO PROVINCIAL',govX,3.4,govZ+govD/2-1,24,1.05,'#7b2632');
@@ -257,11 +258,11 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   // Avenida e passeios internos pavimentados.
   box(92,.13,9,asphalt,315,-.075,14);box(92,.08,1.1,curb,315,-.015,8.8);box(92,.08,1.1,curb,315,-.015,19.2);
   for(let i=0;i<9;i++)box(2.4,.025,.12,roadMark,277+i*9.2,.005,14);
-  box(142,.12,7,campusWalk,campusX,-.015,14);box(7,.12,142,campusWalk,campusX,-.015,14);
-  box(122,.1,5,campusWalk,campusX,-.01,-48);box(122,.1,5,campusWalk,campusX,-.01,76);
-  box(5,.1,118,campusWalk,338,-.01,14);box(5,.1,118,campusWalk,456,-.01,14);
+  box(142,.12,7,campusWalk,campusX,-.015,14);
+  box(122,.1,5,campusWalk,campusX,-.01,-48);box(122,.1,5,campusWalk,campusX,-.01,68);
+  box(5,.1,118,campusWalk,329,-.01,14);box(5,.1,118,campusWalk,465,-.01,14);
   // Recepção e secretaria com entrada acessível.
-  building('RECEPÇÃO · MATRÍCULAS ISCED',397,-61,38,18,1,'#dce5d5',{sign:'#174b37',roof:'#17613d',dest:'isced-university'});
+  building('RECEPÇÃO · MATRÍCULAS ISCED',397,-54,38,18,1,'#dce5d5',{sign:'#174b37',roof:'#17613d',dest:'isced-university'});
   box(28,.12,8,campusWalk,397,-.01,-48);
   // Dois blocos térreos, cada um com dez divisões, portas, janelas e carteiras.
   const classroomWing=(name,x,z)=>{
@@ -290,8 +291,8 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(38,.16,25,campusGreen,397,0,48);box(30,.08,18,campusWalk,397,.12,48);
   for(const [x,z] of [[378,42],[416,42],[378,55],[416,55]]){tree(x,z,.95);lamp(x+2,z+1)}
   for(const [x,z] of [[384,48],[410,48]])box(3.2,.18,.72,mat('#76583f'),x,.48,z);
-  box(52,.16,18,asphalt,397,-.02,-77);
-  const campusLine=mat('#f5f0df');for(let i=0;i<8;i++)box(.12,.035,13,campusLine,372+i*7.2,.075,-77);
+  box(52,.16,14,asphalt,397,-.02,-74);
+  const campusLine=mat('#f5f0df');for(let i=0;i<8;i++)box(.12,.035,10,campusLine,372+i*7.2,.075,-74);
   for(const [x,z] of [[340,-70],[454,-70],[340,96],[454,96],[367,96],[427,96]]){tree(x,z,1.05);lamp(x+2,z)}
   label('UNIVERSIDADE ISCED · CAMPUS ACADÉMICO',397,12,1,36,2,'#174b37');
 
