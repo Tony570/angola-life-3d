@@ -1,11 +1,12 @@
-const CACHE_NAME = 'angola-life-3d-v38-realistic-interiors-fleet-20261119';
+const CACHE_NAME = 'angola-life-3d-v39-city-transit-20261120';
 const APP_SHELL = [
   './',
   './index.html',
   './css/style.css',
   './js/main.js',
   './js/largo-do-ambiente.js',
-  './js/largo-services.js'
+  './js/largo-services.js',
+  './js/city-transit.js'
 ];
 
 self.addEventListener('install', event => {
