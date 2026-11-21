@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v78-taf-goal-alignment-v78-20261121';
+const CACHE_NAME = 'angola-life-3d-v79-player-life-systems-20261121';
 const APP_SHELL = [
   './',
   './index.html',
