@@ -33,7 +33,7 @@ jobs:
           grep -q "largo_resign_public_job" js/largo-services.js
           grep -q "data-bar-resign" js/main.js
       - name: Validar alinhamento das balizas do campo TAF
-        run: grep -Fq "x+(x===273?1.8:-1.8)" js/largo-do-ambiente.js
+        run: test "$(grep -oF "x+(x===273?1.8:-1.8)" js/largo-do-ambiente.js | wc -l)" -eq 2
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
       - name: Preparar ficheiros do jogo
