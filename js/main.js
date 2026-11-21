@@ -1153,6 +1153,33 @@ function buildRoom(name){
  /* Sem tecto: a câmara mantém sempre a vista aberta sobre o interior. */
  exits.forEach(addRoomDoor);
  // Divisões vazias: sem mobília. As aberturas ficam alinhadas com as portas.
+ if(name==='banheiro'){
+  const ceramic=mat('#f1f4f3',.28),chrome=mat('#8d9ba2',.25),wood=mat('#8a674d',.72),glass=new THREE.MeshStandardMaterial({color:'#a8d6e4',roughness:.12,transparent:true,opacity:.28,metalness:.08});
+  // Base antiderrapante e cabine de duche com resguardo de vidro.
+  box(2.05,.13,2.05,mat('#d4e0e1',.48),-2.45,.02,-2.55);
+  box(1.92,.035,1.92,mat('#f8fbfa',.3),-2.45,.105,-2.55);
+  box(.055,2.12,1.95,glass,-3.42,1.12,-2.55);
+  box(1.9,2.12,.055,glass,-2.45,1.12,-1.58);
+  const showerPipe=hcyl(.035,1.9,chrome,-3.05,1.12,-3.65);showerPipe.position.y=1.18;
+  const showerArm=hcyl(.035,.55,chrome,-2.78,2.08,-3.65);showerArm.rotation.z=Math.PI/2;
+  const showerHead=hcyl(.19,.07,chrome,-2.53,2.08,-3.65);showerHead.rotation.x=Math.PI/2;
+  hcyl(.09,.035,chrome,-3.04,.82,-3.52);
+  // Lavatório, torneira e espelho.
+  box(1.48,.72,.62,wood,2.45,.39,-3.05);
+  box(1.56,.11,.72,ceramic,2.45,.81,-3.05);
+  box(1.08,.08,.4,mat('#dbe7e8',.3),2.45,.89,-3.05);
+  hcyl(.035,.35,chrome,2.45,1.04,-3.29);
+  const tapArm=hcyl(.025,.26,chrome,2.45,1.18,-3.16);tapArm.rotation.x=Math.PI/2;
+  box(1.15,1.22,.055,chrome,2.45,2.08,-3.88);
+  box(1.04,1.1,.025,mat('#b7d5df',.18),2.45,2.08,-3.84);
+  // Sanita compacta, autoclismo e suporte de toalha.
+  box(.78,.78,.62,ceramic,2.42,.42,.75);
+  const toiletSeat=hcyl(.36,.12,ceramic,2.42,.86,.75);toiletSeat.scale.set(1,.5,1.2);
+  box(.78,.95,.24,ceramic,2.42,1.22,1.28);
+  box(.85,.08,.08,chrome,2.42,1.66,1.13);
+  box(.72,.08,.08,chrome,-.8,1.72,-3.82);
+  box(.62,.38,.045,mat('#d9e7e7',.85),-.8,1.48,-3.82);
+ }
  if(name==='cozinha'){
   const cabinet=mat('#8b603e',.82),stone=mat('#d5d4ca',.5),steel=mat('#77868b',.38),dark=mat('#292f35',.55);
   // Cozinha funcional: bancada, lava-loiça, fogão, frigorífico e armários.
