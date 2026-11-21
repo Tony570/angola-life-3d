@@ -438,7 +438,12 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
       }
     }
     label(name,x,h+1.1,z-d/2-.2,25,1.15,'#174b37');collision(x,z,w,d);
-    campusEntry(name,x,z,d,1,name.includes('BLOCO ACADÉMICO A')?'isced-classroom-a':'isced-classroom-b');
+    const classroomDest=name.includes('BLOCO ACADÉMICO A')?'isced-classroom-a':'isced-classroom-b';
+    // As dez portas de cada bloco têm gatilhos próprios para permitir entrar em qualquer sala.
+    for(let i=0;i<10;i++){
+      const doorX=x-w/2+(i+.5)*w/10-3.25;
+      campusEntry(name+' · SALA '+String(i+1).padStart(2,'0'),doorX,z,d,1,classroomDest);
+    }
   };
   classroomWing('BLOCO ACADÉMICO A · 10 SALAS',397,-15);
   classroomWing('BLOCO ACADÉMICO B · 10 SALAS',397,32);
