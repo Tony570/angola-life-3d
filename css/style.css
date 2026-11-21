@@ -196,3 +196,50 @@
  #life-phone{top:244px}
  #life-audio{top:293px}
 }
+
+
+/* HUD compacto aprovado: menos elementos sobre o cenário, sem remover funções */
+#life-player{top:52px;left:9px;max-width:42vw;gap:6px;padding:3px 9px 3px 3px;border-width:2px;border-radius:28px;box-shadow:0 2px 8px #0004}
+#life-face{width:36px;height:36px;font-size:19px;border-width:2px}
+#life-level{font-size:10px;padding:2px 5px}
+#life-player strong{font-size:10px;max-width:27vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#life-player small{font-size:9px}
+#life-wallet{top:51px;right:9px;width:174px;max-width:48vw;align-items:stretch;gap:4px}
+.needs-hud{width:100%;padding:6px 8px;border-radius:11px;display:grid;grid-template-columns:1fr 1fr;gap:5px 9px;box-shadow:0 2px 8px #0004}
+.need-line{font-size:9px;gap:2px 5px;min-width:0}.need-line strong{font-size:9px}.need-track{height:4px}
+.wallet-chip{width:100%;max-width:none;padding:5px 7px;font-size:10px}
+#life-left,#life-right{top:auto;bottom:10px;display:flex;gap:5px}
+#life-left{left:50%;right:auto;transform:translateX(-50%);bottom:10px}
+#life-right{right:8px;left:auto;bottom:10px}
+.life-icon{width:34px;height:34px;border-radius:11px;font-size:17px;border-width:1px;box-shadow:0 2px 7px #0004}
+#life-task,#life-friends,#life-globe,#life-menu,#life-phone,#life-audio{position:static;inset:auto}
+#life-chat{right:8px;bottom:52px;width:34px;height:34px}
+#move-pad{left:8px;bottom:10px;gap:3px}
+#move-pad button{width:34px;height:34px;border-radius:10px;font-size:15px}
+#room-door-nav{bottom:56px;width:min(68%,430px);gap:4px}
+#room-door-nav button{padding:6px 9px;font-size:10px;border-radius:13px}
+#room-current{top:96px;padding:5px 10px;font-size:10px}
+#game .scene-label{top:8px;max-width:60%;font-size:10px;padding:6px 8px}
+#life-panel{right:8px;bottom:54px;width:min(300px,calc(100vw - 16px));max-height:62vh}
+@media(max-width:700px){
+#life-player{top:49px;left:7px;max-width:43vw}
+#life-wallet{top:49px;right:7px;width:158px;max-width:46vw}
+.needs-hud{padding:5px 7px;gap:4px 7px}
+.need-line{font-size:8px}.need-line strong{font-size:8px}
+.wallet-chip{font-size:9px;padding:5px}
+#life-left{left:50%;bottom:8px;gap:4px}
+#life-right{right:6px;bottom:8px;gap:4px}
+.life-icon{width:31px;height:31px;font-size:15px;border-radius:10px}
+#life-chat{right:6px;bottom:47px;width:31px;height:31px}
+#move-pad{left:6px;bottom:8px}
+#move-pad button{width:31px;height:31px;font-size:14px}
+#room-door-nav{bottom:48px;width:min(65%,360px);gap:3px}
+#room-door-nav button{padding:5px 7px;font-size:9px}
+#room-current{top:88px}
+#life-panel{right:6px;bottom:48px;width:min(290px,calc(100vw - 12px))}
+}
+@media(max-width:380px){
+#life-player{max-width:40vw}#life-wallet{width:146px;max-width:45vw}
+#life-player strong{max-width:24vw;font-size:9px}
+.needs-hud{gap:3px 5px}#life-left{left:46%}#room-door-nav{width:60%}
+}
