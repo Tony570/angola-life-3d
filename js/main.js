@@ -310,33 +310,34 @@ function updateCharacterActionPose(root,delta=0){
  if(!root)return;
  const state=root.userData.actionState||{type:'idle',time:0};state.time=(state.time||0)+delta;
  if(state.type==='wave'&&state.time>1.9){state.type='idle';state.time=0}
- const pose=root.userData.poseRig;
+ const pose=root.userData.poseRig,blend=1-Math.exp(-9*Math.max(.001,delta));
  if(pose?.bones&&pose?.base){
-  for(const [key,bone] of Object.entries(pose.bones)){const base=pose.base[key];if(base){bone.rotation.copy(base.rotation);bone.position.copy(base.position)}}
-  const apply=(key,x=0,z=0)=>{const bone=pose.bones[key],base=pose.base[key];if(bone&&base){bone.rotation.x=base.rotation.x+x;bone.rotation.z=base.rotation.z+z}};
-  if(state.type==='sit'){apply('LThigh',-1.12);apply('RThigh',-1.12);apply('LCalf',1.35);apply('RCalf',1.35);apply('LArm',-.12);apply('RArm',-.12);apply('LForearm',.22);apply('RForearm',.22);const hips=pose.bones.Hips,base=pose.base.Hips;if(hips&&base)hips.position.y=base.position.y-.035}
-  else if(state.type==='wave'){apply('RArm',0,-2.1);apply('RForearm',0,-.38+Math.sin(state.time*10)*.34)}
+  const seated=state.type==='sit',waving=state.type==='wave';
+  for(const [key,bone] of Object.entries(pose.bones)){
+   const base=pose.base[key];if(!base)continue;
+   const targetX=seated&&key==='LThigh'?-1.12:seated&&key==='RThigh'?-1.12:seated&&key==='LCalf'?1.35:seated&&key==='RCalf'?1.35:seated&&key==='LArm'?-.12:seated&&key==='RArm'?-.12:seated&&key==='LForearm'?.22:seated&&key==='RForearm'?.22:waving&&key==='RArm'?base.rotation.x: waving&&key==='RForearm'?base.rotation.x:base.rotation.x;
+   const targetZ=waving&&key==='RArm'?base.rotation.z-2.1:waving&&key==='RForearm'?base.rotation.z-.38+Math.sin(state.time*10)*.34:base.rotation.z;
+   bone.rotation.x=THREE.MathUtils.lerp(bone.rotation.x,targetX,blend);
+   bone.rotation.y=THREE.MathUtils.lerp(bone.rotation.y,base.rotation.y,blend);
+   bone.rotation.z=THREE.MathUtils.lerp(bone.rotation.z,targetZ,blend);
+   const targetY=seated&&key==='Hips'?base.position.y-.035:base.position.y;
+   bone.position.y=THREE.MathUtils.lerp(bone.position.y,targetY,blend);
+  }
   return;
  }
  const rig=root.userData.fallbackRig;if(!rig)return;
- if(state.type==='idle'){
-  if(rig.head)rig.head.rotation.y=Math.sin(state.time*1.25)*.035;
-  if(rig.torso)rig.torso.rotation.x=Math.sin(state.time*2.1)*.008;
-  return;
+ const smooth=(part,axis,value)=>{if(part)part.rotation[axis]+=(value-part.rotation[axis])*blend};
+ const seated=state.type==='sit',waving=state.type==='wave';
+ for(const key of ['leftArm','rightArm','leftForearm','rightForearm','leftLeg','rightLeg','leftCalf','rightCalf']){
+  const part=rig[key];if(!part)continue;
+  const targetX=seated&&key==='leftLeg'||seated&&key==='rightLeg'?-.92:seated&&key==='leftCalf'||seated&&key==='rightCalf'?1.22:seated&&key==='leftArm'||seated&&key==='rightArm'?-.12:seated&&key==='leftForearm'||seated&&key==='rightForearm'?.22:0;
+  const targetZ=waving&&key==='rightArm'?-2.1:0;
+  smooth(part,'x',targetX);smooth(part,'y',0);smooth(part,'z',targetZ);
  }
- for(const key of ['leftArm','rightArm','leftForearm','rightForearm','leftLeg','rightLeg','leftCalf','rightCalf'])if(rig[key])rig[key].rotation.set(0,0,0);
- if(rig.head)rig.head.rotation.set(0,0,0);if(rig.torso)rig.torso.rotation.set(0,0,0);
- if(state.type==='sit'){
-  if(rig.leftLeg)rig.leftLeg.rotation.x=-.92;if(rig.rightLeg)rig.rightLeg.rotation.x=-.92;
-  if(rig.leftCalf)rig.leftCalf.rotation.x=1.22;if(rig.rightCalf)rig.rightCalf.rotation.x=1.22;
-  if(rig.leftArm)rig.leftArm.rotation.x=-.12;if(rig.rightArm)rig.rightArm.rotation.x=-.12;
-  if(rig.leftForearm)rig.leftForearm.rotation.x=.22;if(rig.rightForearm)rig.rightForearm.rotation.x=.22;
- }else if(state.type==='wave'){
-  if(rig.rightArm){rig.rightArm.rotation.z=-2.1;rig.rightArm.rotation.x=-.15}
-  if(rig.rightForearm)rig.rightForearm.rotation.z=-.38+Math.sin(state.time*10)*.34;
- }
+ if(rig.rightForearm)smooth(rig.rightForearm,'z',waving?-.38+Math.sin(state.time*10)*.34:0);
+ if(rig.head){smooth(rig.head,'x',0);smooth(rig.head,'y',Math.sin(state.time*1.15)*.025);smooth(rig.head,'z',0)}
+ if(rig.torso){smooth(rig.torso,'x',seated?.018+Math.sin(state.time*1.7)*.004:Math.sin(state.time*2.1)*.008);smooth(rig.torso,'y',0);smooth(rig.torso,'z',0)}
 }
-
 function updateFallbackHumanGait(root,delta,speed,walking){
  const rig=root?.userData?.fallbackRig,figure=root?.userData?.fallbackFigure;if(!rig||!figure)return;
  const action=root.userData.actionState?.type||'idle',blend=1-Math.exp(-10*Math.max(.001,delta));
@@ -511,7 +512,7 @@ function createFallbackHuman(look){
  const collar=new THREE.Mesh(new THREE.TorusGeometry(.074,.009,8,24),white);collar.rotation.x=Math.PI/2;collar.position.set(0,1.36,.01);figure.add(collar);
  if(female){for(const side of [-1,1])sphere(head,gold,[side*.145,-.015,.01],[.014,.014,.014],12)}
  // Reajusta a malha completa para manter rigorosamente a altura de 1,72 m após os ajustes de proporção.
- figure.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(figure),measuredHeight=Math.max(.001,bounds.max.y-bounds.min.y);figure.scale.setScalar(CHARACTER_HEIGHT/measuredHeight);figure.position.y=-bounds.min.y*figure.scale.y;figure.userData.gaitRig=rig;figure.userData.styleVersion=5;return figure;
+ figure.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(figure),measuredHeight=Math.max(.001,bounds.max.y-bounds.min.y);figure.scale.setScalar(CHARACTER_HEIGHT/measuredHeight);figure.position.y=-bounds.min.y*figure.scale.y;figure.userData.gaitRig=rig;figure.userData.styleVersion=6;return figure;
 }
 function applyAvatarLook(model,look){
  model.updateMatrixWorld(true);const whole=new THREE.Box3().setFromObject(model),height=Math.max(.001,whole.max.y-whole.min.y);
@@ -541,7 +542,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',styledLook={...look,gender,beardStyle:look.beardStyle||(gender==='male'?'goatee':'none')},root=new THREE.Group();
- root.userData.keepWorldScale=true;root.userData.styleVersion=5;root.userData.actionState={type:'idle',time:0};
+ root.userData.keepWorldScale=true;root.userData.styleVersion=6;root.userData.actionState={type:'idle',time:0};
  if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  const figure=createFallbackHuman(styledLook);
@@ -2074,7 +2075,7 @@ function renderWardrobe(){const host=$('wardrobe-items');if(!host)return;host.in
 function renderInventoryPage(){updateWardrobeGender();renderWardrobe();if(disposeInventory)disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}
 document.querySelectorAll('[data-gender-choice]').forEach(button=>button.onclick=()=>{avatar.gender=button.dataset.genderChoice;updateWardrobeGender();renderWardrobe();if(disposeInventory){disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}});
 document.querySelectorAll('[data-wardrobe]').forEach(button=>button.onclick=()=>{activeWardrobe=button.dataset.wardrobe;document.querySelectorAll('[data-wardrobe]').forEach(b=>b.classList.toggle('active',b===button));renderWardrobe()});
-$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:5};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
+$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:6};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
 const icons={cabelo:'💇',roupa:'👕',calçado:'👟',acessório:'⌚'};
 const furnitureLabels={sofa:['Sofá de 3 lugares','🛋️'],bed:['Cama de casal','🛏️'],dining_table:['Mesa de jantar com 4 cadeiras','🍽️'],wardrobe:['Guarda-roupa','🚪'],tv:['Televisor','📺'],lamp:['Candeeiro de pé','💡'],rug:['Tapete decorativo','🧶'],plant:['Planta decorativa','🪴']};
 function renderInventory(){
