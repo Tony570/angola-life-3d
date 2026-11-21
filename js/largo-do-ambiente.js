@@ -397,10 +397,10 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   const campusX=397,campusZ=12,campusW=176,campusD=190;
   box(campusW,.24,campusD,mat('#668b4c'),campusX,-.18,campusZ);
   // Cada edifício académico tem um ponto de entrada próprio e abre o acesso ao campus.
-  const campusEntry=(name,x,z,d,front=-1)=>{
+  const campusEntry=(name,x,z,d,front=-1,dest='isced-university')=>{
     const entry=new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.8),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));
     entry.position.set(x,1.2,z+front*(d/2+.34));
-    entry.userData.worldEntry={dest:'isced-university',label:name,x,z,front,d};
+    entry.userData.worldEntry={dest,label:name,x,z,front,d};
     target.add(entry);if(cityWorldEntrances)cityWorldEntrances.push(entry.userData.worldEntry);if(entryMeshes)entryMeshes.push(entry);
   };
   const campusWalk=mat('#d9d5c7'),campusGreen=mat('#397747'),campusDark=mat('#174b37'),campusFence=mat('#e0ded4');
@@ -438,16 +438,16 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
       }
     }
     label(name,x,h+1.1,z-d/2-.2,25,1.15,'#174b37');collision(x,z,w,d);
-    campusEntry(name,x,z,d,1);
+    campusEntry(name,x,z,d,1,name.includes('BLOCO ACADÉMICO A')?'isced-classroom-a':'isced-classroom-b');
   };
   classroomWing('BLOCO ACADÉMICO A · 10 SALAS',397,-15);
   classroomWing('BLOCO ACADÉMICO B · 10 SALAS',397,32);
   // Biblioteca, laboratórios, auditório e serviços — edifícios de um piso.
-  building('BIBLIOTECA CENTRAL',350,53,28,16,1,'#e0e8d9',{sign:'#174b37'});campusEntry('BIBLIOTECA CENTRAL',350,53,16,-1);
-  building('LABORATÓRIOS',444,53,28,16,1,'#d4e1d4',{sign:'#356d49'});campusEntry('LABORATÓRIOS',444,53,16,-1);
-  building('AUDITÓRIO UNIVERSITÁRIO',397,82,38,14,1,'#dce5d5',{sign:'#174b37'});campusEntry('AUDITÓRIO UNIVERSITÁRIO',397,82,14,-1);
-  building('CANTINA UNIVERSITÁRIA',350,82,20,12,1,'#e6e2d2',{sign:'#8b6a3e'});campusEntry('CANTINA UNIVERSITÁRIA',350,82,12,-1);
-  building('CENTRO DE ESTUDANTES',444,82,20,12,1,'#e6e2d2',{sign:'#356d49'});campusEntry('CENTRO DE ESTUDANTES',444,82,12,-1);
+  building('BIBLIOTECA CENTRAL',350,53,28,16,1,'#e0e8d9',{sign:'#174b37'});campusEntry('BIBLIOTECA CENTRAL',350,53,16,-1,'isced-library');
+  building('LABORATÓRIOS',444,53,28,16,1,'#d4e1d4',{sign:'#356d49'});campusEntry('LABORATÓRIOS',444,53,16,-1,'isced-labs');
+  building('AUDITÓRIO UNIVERSITÁRIO',397,82,38,14,1,'#dce5d5',{sign:'#174b37'});campusEntry('AUDITÓRIO UNIVERSITÁRIO',397,82,14,-1,'isced-auditorium');
+  building('CANTINA UNIVERSITÁRIA',350,82,20,12,1,'#e6e2d2',{sign:'#8b6a3e'});campusEntry('CANTINA UNIVERSITÁRIA',350,82,12,-1,'isced-canteen');
+  building('CENTRO DE ESTUDANTES',444,82,20,12,1,'#e6e2d2',{sign:'#356d49'});campusEntry('CENTRO DE ESTUDANTES',444,82,12,-1,'isced-students');
   // Jardim, bancos, árvores e parque de estacionamento pavimentado.
   box(38,.16,25,campusGreen,397,0,48);box(30,.08,18,campusWalk,397,.12,48);
   for(const [x,z] of [[378,42],[416,42],[378,55],[416,55]]){tree(x,z,.95);lamp(x+2,z+1)}
