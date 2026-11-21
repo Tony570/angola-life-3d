@@ -389,7 +389,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   box(44,.04,26,mat('#4c9851'),295,.14,72);
   const white=mat('#f4f0dc');box(.12,.04,26,white,273,.18,72);box(.12,.04,26,white,317,.18,72);box(44,.04,.12,white,295,.18,59);box(44,.04,.12,white,295,.18,85);
   const circle=new THREE.Mesh(new THREE.RingGeometry(4.8,4.94,48),white);circle.rotation.x=-Math.PI/2;circle.position.set(295,.18,72);target.add(circle);
-  for(const x of [273,317]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===243?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
+  for(const x of [273,317]){box(.12,2.4,.12,white,x,1.3,72);box(3.6,2.4,.12,white,x+(x===273?1.8:-1.8),1.3,72);box(3.6,.12,.12,white,x+(x===243?1.8:-1.8),2.5,72)}
   label('CAMPO DE FUTEBOL TAF',295,5,56,18,1.3,'#174b37');
   const tafEntry=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.6),new THREE.MeshBasicMaterial({transparent:true,opacity:.001,side:THREE.DoubleSide,depthWrite:false}));tafEntry.position.set(295,1.2,54.5);tafEntry.userData.worldEntry={dest:'taf',label:'CAMPO DE FUTEBOL TAF',x:295,z:72,front:-1,d:30};target.add(tafEntry);if(cityWorldEntrances)cityWorldEntrances.push(tafEntry.userData.worldEntry);if(entryMeshes)entryMeshes.push(tafEntry);
 
