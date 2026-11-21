@@ -1,4 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneSkinnedModel } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/utils/SkeletonUtils.js';
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
@@ -40,6 +42,57 @@ let socialWorldChannel=null,socialPresenceState=[],socialRemoteStates=new Map(),
 let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#171412',shirt:'#294d78',pants:'#29313c',hairStyle:'medio',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:5};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
+const avatarGLTFLoader=new GLTFLoader();
+const avatarModelPromises=new Map();
+function loadAvatarModel(gender){
+ const asset=characterAssets[gender==='female'?'female':'male'];
+ if(!asset?.model)return Promise.reject(new Error('Modelo 3D não configurado.'));
+ if(!avatarModelPromises.has(asset.model))avatarModelPromises.set(asset.model,new Promise((resolve,reject)=>avatarGLTFLoader.load(asset.model,resolve,undefined,reject)));
+ return avatarModelPromises.get(asset.model);
+}
+function attachDetailedAvatar(root,look,onMixer=()=>{}){
+ const gender=look.gender==='female'?'female':'male';
+ loadAvatarModel(gender).then(gltf=>{
+  if(!root.parent||root.userData.avatarAssetApplied)return;
+  const model=cloneSkinnedModel(gltf.scene);
+  model.name='AngolaLifeDetailedAvatar';
+  model.traverse(object=>{
+   if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false}
+  });
+  applyAvatarLook(model,look);
+  model.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(model),height=Math.max(.001,bounds.max.y-bounds.min.y);
+  const scale=CHARACTER_HEIGHT/height;
+  model.scale.setScalar(scale);
+  model.position.set(-(bounds.min.x+bounds.max.x)*.5*scale,-bounds.min.y*scale,-(bounds.min.z+bounds.max.z)*.5*scale);
+  const mixer=new THREE.AnimationMixer(model);
+  const clips=gltf.animations||[];
+  const walkClip=clips.find(clip=>/walk|run|locomotion/i.test(clip.name))||clips[0];
+  const idleClip=clips.find(clip=>/idle|stand|breath/i.test(clip.name));
+  const walk=walkClip?mixer.clipAction(walkClip):null;
+  const idle=idleClip?mixer.clipAction(idleClip):null;
+  if(walk){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
+  if(idle){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
+  else if(walk){walk.setEffectiveWeight(1)}
+  const old=root.userData.fallbackFigure;
+  if(old)root.remove(old);
+  root.add(model);
+  root.userData.fallbackFigure=null;
+  root.userData.fallbackRig=null;
+  root.userData.characterModel=model;
+  root.userData.characterMixer=mixer;
+  root.userData.animationActions={walk,idle};
+  root.userData.poseRig=findGaitBones(model);
+  root.userData.modelBaseY=0;
+  root.userData.avatarAssetApplied=true;
+  root.userData.styleVersion=7;
+  onMixer(mixer);
+ }).catch(error=>{
+  root.userData.avatarAssetError=error?.message||'Não foi possível carregar o modelo 3D.';
+  console.warn('Modelo 3D detalhado indisponível; a manter o personagem de segurança.',error);
+ });
+}
+
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
 function say(id,msg){$(id).textContent=msg}
 function setTab(which){$('login-form').classList.toggle('hidden',which!=='login');$('signup-form').classList.toggle('hidden',which!=='signup');$('tab-login').classList.toggle('active',which==='login');$('tab-signup').classList.toggle('active',which==='signup');$('tab-login').classList.toggle('secondary',which!=='login');$('tab-signup').classList.toggle('secondary',which!=='signup');say('auth-message','')}
@@ -542,11 +595,12 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',styledLook={...look,gender,beardStyle:look.beardStyle||(gender==='male'?'goatee':'none')},root=new THREE.Group();
- root.userData.keepWorldScale=true;root.userData.styleVersion=6;root.userData.actionState={type:'idle',time:0};
+ root.userData.keepWorldScale=true;root.userData.styleVersion=7;root.userData.actionState={type:'idle',time:0};
  if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  const figure=createFallbackHuman(styledLook);
  root.userData.fallbackFigure=figure;root.userData.fallbackRig=figure.userData.gaitRig;root.add(figure);
+ attachDetailedAvatar(root,styledLook,onMixer);
  return root;
 }
 async function openHomeDecorPanel(){
