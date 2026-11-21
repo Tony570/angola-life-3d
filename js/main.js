@@ -41,7 +41,7 @@ window.addEventListener('unhandledrejection',event=>showGameError('Uma operaçã
 let socialWorldChannel=null,socialPresenceState=[],socialRemoteStates=new Map(),activeCityRemoteSync=null,activeHouseGuestSync=null,activeHouseVisit=null,socialZone='home',socialLastPositionBroadcast=0,socialLastPresenceSave=0,activePrivateConversationId=null,socialLocalPosition={x:0,z:0};
 let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#171412',shirt:'#294d78',pants:'#29313c',hairStyle:'medio',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:5};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
- const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
+ const characterAssets={male:{model:'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb',credit:'Cesium / Khronos glTF Sample Assets · CC BY 4.0'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const avatarGLTFLoader=new GLTFLoader();
 const avatarModelPromises=new Map();
 function loadAvatarModel(gender){
@@ -59,7 +59,7 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
   model.traverse(object=>{
    if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false}
   });
-  applyAvatarLook(model,look);
+  if(gender!=='male')applyAvatarLook(model,look);
   model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model),height=Math.max(.001,bounds.max.y-bounds.min.y);
   const scale=CHARACTER_HEIGHT/height;
@@ -69,11 +69,11 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
   const clips=gltf.animations||[];
   const walkClip=clips.find(clip=>/walk|run|locomotion/i.test(clip.name))||clips[0];
   const idleClip=clips.find(clip=>/idle|stand|breath/i.test(clip.name));
-  const walk=walkClip?mixer.clipAction(walkClip):null;
-  const idle=idleClip?mixer.clipAction(idleClip):null;
-  if(walk){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
-  if(idle){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
-  else if(walk){walk.setEffectiveWeight(1)}
+  const noAction={setEffectiveWeight(){},setEffectiveTimeScale(){},play(){},stop(){}};
+  const walk=walkClip?mixer.clipAction(walkClip):noAction;
+  const idle=idleClip?mixer.clipAction(idleClip):noAction;
+  if(walk!==noAction){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
+  if(idle!==noAction){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
   const old=root.userData.fallbackFigure;
   if(old)root.remove(old);
   root.add(model);
@@ -85,7 +85,7 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
   root.userData.poseRig=findGaitBones(model);
   root.userData.modelBaseY=0;
   root.userData.avatarAssetApplied=true;
-  root.userData.styleVersion=7;
+  root.userData.styleVersion=8;
   onMixer(mixer);
  }).catch(error=>{
   root.userData.avatarAssetError=error?.message||'Não foi possível carregar o modelo 3D.';
@@ -595,7 +595,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',styledLook={...look,gender,beardStyle:look.beardStyle||(gender==='male'?'goatee':'none')},root=new THREE.Group();
- root.userData.keepWorldScale=true;root.userData.styleVersion=7;root.userData.actionState={type:'idle',time:0};
+ root.userData.keepWorldScale=true;root.userData.styleVersion=8;root.userData.actionState={type:'idle',time:0};
  if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  const figure=createFallbackHuman(styledLook);
