@@ -1,6 +1,4 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
-import { clone as cloneSkinnedModel } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/utils/SkeletonUtils.js';
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
@@ -41,56 +39,11 @@ window.addEventListener('unhandledrejection',event=>showGameError('Uma operaçã
 let socialWorldChannel=null,socialPresenceState=[],socialRemoteStates=new Map(),activeCityRemoteSync=null,activeHouseGuestSync=null,activeHouseVisit=null,socialZone='home',socialLastPositionBroadcast=0,socialLastPresenceSave=0,activePrivateConversationId=null,socialLocalPosition={x:0,z:0};
 let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#171412',shirt:'#294d78',pants:'#29313c',hairStyle:'medio',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:5};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
- const characterAssets={male:{model:'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb',credit:'Cesium / Khronos glTF Sample Assets · CC BY 4.0'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
-const avatarGLTFLoader=new GLTFLoader();
-const avatarModelPromises=new Map();
-function loadAvatarModel(gender){
- const asset=characterAssets[gender==='female'?'female':'male'];
- if(!asset?.model)return Promise.reject(new Error('Modelo 3D não configurado.'));
- if(!avatarModelPromises.has(asset.model))avatarModelPromises.set(asset.model,new Promise((resolve,reject)=>avatarGLTFLoader.load(asset.model,resolve,undefined,reject)));
- return avatarModelPromises.get(asset.model);
-}
+// O personagem usa o humanoide procedural integrado no jogo.
+// Não depende de GLB externo: evita o boneco de demonstração e poses em T.
 function attachDetailedAvatar(root,look,onMixer=()=>{}){
- const gender=look.gender==='female'?'female':'male';
- loadAvatarModel(gender).then(gltf=>{
-  if(!root.parent||root.userData.avatarAssetApplied)return;
-  const model=cloneSkinnedModel(gltf.scene);
-  model.name='AngolaLifeDetailedAvatar';
-  model.traverse(object=>{
-   if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false}
-  });
-  if(gender!=='male')applyAvatarLook(model,look);
-  model.updateMatrixWorld(true);
-  const bounds=new THREE.Box3().setFromObject(model),height=Math.max(.001,bounds.max.y-bounds.min.y);
-  const scale=CHARACTER_HEIGHT/height;
-  model.scale.setScalar(scale);
-  model.position.set(-(bounds.min.x+bounds.max.x)*.5*scale,-bounds.min.y*scale,-(bounds.min.z+bounds.max.z)*.5*scale);
-  const mixer=new THREE.AnimationMixer(model);
-  const clips=gltf.animations||[];
-  const walkClip=clips.find(clip=>/walk|run|locomotion/i.test(clip.name))||clips[0];
-  const idleClip=clips.find(clip=>/idle|stand|breath/i.test(clip.name));
-  const noAction={setEffectiveWeight(){},setEffectiveTimeScale(){},play(){},stop(){}};
-  const walk=walkClip?mixer.clipAction(walkClip):noAction;
-  const idle=idleClip?mixer.clipAction(idleClip):noAction;
-  if(walk!==noAction){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
-  if(idle!==noAction){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
-  const old=root.userData.fallbackFigure;
-  if(old)root.remove(old);
-  root.add(model);
-  root.userData.fallbackFigure=null;
-  root.userData.fallbackRig=null;
-  root.userData.characterModel=model;
-  root.userData.characterMixer=mixer;
-  root.userData.animationActions={walk,idle};
-  root.userData.poseRig=findGaitBones(model);
-  root.userData.modelBaseY=0;
-  root.userData.avatarAssetApplied=true;
-  root.userData.styleVersion=8;
-  onMixer(mixer);
- }).catch(error=>{
-  root.userData.avatarAssetError=error?.message||'Não foi possível carregar o modelo 3D.';
-  console.warn('Modelo 3D detalhado indisponível; a manter o personagem de segurança.',error);
- });
+ root.userData.avatarAssetApplied='procedural-human-v9';
+ root.userData.styleVersion=9;
 }
 
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
@@ -279,6 +232,13 @@ async function boot(){
     if(!savedAvatar.pants||savedAvatar.pants==='#e6e8ee')avatar.pants='#29313c';
     if(!savedAvatar.hairStyle||savedAvatar.hairStyle==='curto')avatar.hairStyle='medio';
     avatar.beardStyle=savedAvatar.beardStyle||(avatar.gender==='male'?'goatee':'none');avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=5;
+   }
+   if((savedAvatar.modelVersion||0)<7){
+    // Preserva escolhas pessoais; actualiza apenas cores brancas antigas de fábrica.
+    if(['#eef2f5','#ffffff'].includes((savedAvatar.hair||'').toLowerCase()))avatar.hair='#171412';
+    if(['#f2f2ee','#ffffff','#3867a8'].includes((savedAvatar.shirt||'').toLowerCase()))avatar.shirt='#294d78';
+    if((savedAvatar.pants||'').toLowerCase()==='#e6e8ee')avatar.pants='#29313c';
+    avatar.modelVersion=7;
    }
    $('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';$('side-name').textContent=p.display_name||p.username;fillProfile();
    // Mostra primeiro a página jogável; serviços de rede secundários não podem bloquear o arranque.
@@ -482,10 +442,7 @@ function createFallbackHuman(look){
  // Cinto e fivela metálica visíveis por cima das calças.
  const beltRing=new THREE.Mesh(new THREE.TorusGeometry(.151,.014,8,32),belt);beltRing.rotation.x=Math.PI/2;beltRing.position.set(0,.91,.004);figure.add(beltRing);
  box(figure,gold,[.055,.045,.018],[0,.91,.151]);
- // Corrente dourada e pendente, inspirados no acessório da referência.
- const chain=new THREE.Mesh(new THREE.TorusGeometry(.126,.012,8,32,Math.PI*2),gold);chain.rotation.x=Math.PI/2;chain.position.set(0,1.365,0);figure.add(chain);
- box(figure,gold,[.105,.105,.025],[0,1.245,.124]);
- box(figure,gold,[.065,.025,.012],[0,1.31,.132]);
+ // Sem corrente ou pendente exagerado: mantém o peito e a roupa com aspecto natural.
  // Cabeça com proporções suaves, maxilar definido e expressão amigável.
  const head=new THREE.Group();head.position.set(0,1.505,0);head.scale.setScalar(.92);figure.add(head);rig.head=head;
  sphere(head,skin,[0,.004,0],[.139,.174,.124],32);
@@ -545,7 +502,7 @@ function createFallbackHuman(look){
   capsule(arm,shirt,.057,.19,[0,-.145,0]);
   const forearm=new THREE.Group();forearm.position.set(0,-.265,0);arm.add(forearm);rig[side<0?'leftForearm':'rightForearm']=forearm;
   capsule(forearm,shirt,.045,.16,[0,-.085,0]);
-  const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.046,.046,.035,16),gold);cuff.position.set(0,-.177,0);forearm.add(cuff);
+  const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.046,.046,.025,16),shirt);cuff.position.set(0,-.177,0);forearm.add(cuff);
   sphere(forearm,skin,[0,-.22,.006],[.045,.055,.039]);
   // Pequenos dedos simplificados para dar leitura às mãos.
   for(let f=0;f<3;f++)capsule(forearm,skin,.009,.025,[(f-1)*.018,-.255,.027]);
@@ -565,7 +522,7 @@ function createFallbackHuman(look){
  const collar=new THREE.Mesh(new THREE.TorusGeometry(.074,.009,8,24),white);collar.rotation.x=Math.PI/2;collar.position.set(0,1.36,.01);figure.add(collar);
  if(female){for(const side of [-1,1])sphere(head,gold,[side*.145,-.015,.01],[.014,.014,.014],12)}
  // Reajusta a malha completa para manter rigorosamente a altura de 1,72 m após os ajustes de proporção.
- figure.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(figure),measuredHeight=Math.max(.001,bounds.max.y-bounds.min.y);figure.scale.setScalar(CHARACTER_HEIGHT/measuredHeight);figure.position.y=-bounds.min.y*figure.scale.y;figure.userData.gaitRig=rig;figure.userData.styleVersion=6;return figure;
+ figure.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(figure),measuredHeight=Math.max(.001,bounds.max.y-bounds.min.y);figure.scale.setScalar(CHARACTER_HEIGHT/measuredHeight);figure.position.y=-bounds.min.y*figure.scale.y;figure.userData.gaitRig=rig;figure.userData.styleVersion=9;return figure;
 }
 function applyAvatarLook(model,look){
  model.updateMatrixWorld(true);const whole=new THREE.Box3().setFromObject(model),height=Math.max(.001,whole.max.y-whole.min.y);
