@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v74-cabinda-decor-scope-fix-v4-20261121';
+const CACHE_NAME = 'angola-life-3d-v75-largo-police-campus-access-v5-20261121';
 const APP_SHELL = [
   './',
   './index.html',
