@@ -186,3 +186,13 @@
  .need-line strong{font-size:9px}
  .wallet-chip{max-width:100%;width:100%;padding:6px 7px;font-size:10px}
 }
+
+/* Evita que o painel de necessidades cubra os atalhos laterais */
+#life-menu{top:265px}
+#life-phone{top:326px}
+#life-audio{top:387px}
+@media(max-width:700px){
+ #life-menu{top:195px}
+ #life-phone{top:244px}
+ #life-audio{top:293px}
+}
