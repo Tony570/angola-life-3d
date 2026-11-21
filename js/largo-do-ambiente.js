@@ -139,7 +139,7 @@ export function buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorl
   const yard=(x,z,w,d,front=-1,green='#668653')=>{
     const lawn=mat(green),fence=mat('#d9d6ca'),post=mat('#777b78'),gate=mat('#76543b'),edge=mat('#d6d0c1');
     box(w,.10,d,lawn,x,-.025,z);
-    box(Math.min(w*.72,10),.08,1.05,edge,x,z-front*(d*.28),-.0);
+    box(Math.min(w*.72,10),.08,1.05,edge,x,-.0,z-front*(d*.28));
     const thick=.16,gap=3.2,y=.68,side=(w-gap)/2;
     box(w,.78,thick,fence,x,y,z+front*d/2);
     box(thick,.78,d,fence,x-w/2,y,z);box(thick,.78,d,fence,x+w/2,y,z);
