@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v75-largo-police-campus-access-v5-20261121';
+const CACHE_NAME = 'angola-life-3d-v76-largo-police-campus-access-v6-20261121';
 const APP_SHELL = [
   './',
   './index.html',
