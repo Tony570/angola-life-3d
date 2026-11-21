@@ -37,7 +37,7 @@ function updateNeighborhoodWelcome(x,z){
 window.addEventListener('error',event=>{if(event.error)showGameError('Ocorreu um erro ao executar o jogo.',event.error)});
 window.addEventListener('unhandledrejection',event=>showGameError('Uma operação do jogo falhou.',event.reason));
 let socialWorldChannel=null,socialPresenceState=[],socialRemoteStates=new Map(),activeCityRemoteSync=null,activeHouseGuestSync=null,activeHouseVisit=null,socialZone='home',socialLastPositionBroadcast=0,socialLastPresenceSave=0,activePrivateConversationId=null,socialLocalPosition={x:0,z:0};
-let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#eef2f5',shirt:'#f2f2ee',pants:'#e6e8ee',hairStyle:'curto',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:4};
+let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#171412',shirt:'#294d78',pants:'#29313c',hairStyle:'medio',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:5};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
  const characterAssets={male:{model:'https://files.innerscene.com/library/locomotion-collection-sam-3d-person-animated-dc23800f/735aec6a564c1def48e8/locomotion-collection-sam-3d-person-animated.glb'},female:{model:'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb'}};
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
@@ -219,11 +219,13 @@ async function boot(){
    const {data:p,error}=await sb.from('profiles').select('*').eq('id',u.id).single();
    if(error||!p)throw new Error('Não foi possível carregar o perfil'+(error?.message?': '+error.message:'.'));
    profile=p;const [residenceResult,decorResult]=await Promise.all([sb.rpc('get_or_assign_cabinda_residence'),sb.from('player_home_decor').select('room,settings').eq('user_id',u.id)]);if(!residenceResult.error&&residenceResult.data)playerResidence=residenceResult.data;if(!decorResult.error)homeDecorByRoom=Object.fromEntries((decorResult.data||[]).map(row=>[row.room,row.settings]));const savedAvatar=p.avatar||{};avatar={...avatar,...savedAvatar};
-   if((savedAvatar.modelVersion||0)<4){
-    if(!savedAvatar.hair||['#241b18','#171412'].includes(savedAvatar.hair))avatar.hair=avatar.gender==='male'?'#eef2f5':'#38251d';
-    if(!savedAvatar.shirt||savedAvatar.shirt==='#3867a8')avatar.shirt='#f2f2ee';
-    if(!savedAvatar.pants||savedAvatar.pants==='#26364b')avatar.pants='#e6e8ee';
-    avatar.beardStyle=avatar.gender==='male'?'goatee':'none';avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=4;
+   if((savedAvatar.modelVersion||0)<5){
+    // Atualiza apenas as cores antigas de fábrica; escolhas personalizadas são preservadas.
+    if(!savedAvatar.hair||['#eef2f5','#241b18'].includes(savedAvatar.hair))avatar.hair='#171412';
+    if(!savedAvatar.shirt||savedAvatar.shirt==='#f2f2ee'||savedAvatar.shirt==='#3867a8')avatar.shirt='#294d78';
+    if(!savedAvatar.pants||savedAvatar.pants==='#e6e8ee')avatar.pants='#29313c';
+    if(!savedAvatar.hairStyle||savedAvatar.hairStyle==='curto')avatar.hairStyle='medio';
+    avatar.beardStyle=savedAvatar.beardStyle||(avatar.gender==='male'?'goatee':'none');avatar.beardColor=savedAvatar.beardColor||'#332a27';avatar.browColor=savedAvatar.browColor||'#332a27';avatar.modelVersion=5;
    }
    $('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';$('side-name').textContent=p.display_name||p.username;fillProfile();
    // Mostra primeiro a página jogável; serviços de rede secundários não podem bloquear o arranque.
@@ -414,8 +416,13 @@ function createFallbackHuman(look){
  const female=look.gender==='female',hairStyle=look.hairStyle||(female?'comprido':'curto');
  // Silhueta estilizada: cabeça expressiva, ombros definidos e corpo com proporções de jogo.
  const torso=new THREE.Group();figure.add(torso);rig.torso=torso;
- sphere(torso,shirt,[0,1.13,0],[.18,.265,.125],24);
- sphere(torso,shirt,[0,1.335,-.004],[.17,.115,.12],20);
+ sphere(torso,shirt,[0,1.13,0],[.185,.255,.132],28);
+ sphere(torso,shirt,[0,1.335,-.004],[.176,.108,.126],24);
+ // Costuras e bolso discreto para dar acabamento de roupa, sem peças exageradas.
+ const seam=new THREE.MeshStandardMaterial({color:'#172f4b',roughness:.9});
+ curveTube(torso,seam,[[-.145,1.29,.095],[-.13,1.12,.125],[-.105,.99,.105]],.0025,18);
+ box(torso,seam,[.065,.072,.008],[.105,1.205,.124]);
+ curveTube(torso,white,[[.074,1.238,.13],[.136,1.238,.13]],.002,10);
  sphere(torso,pants,[0,.895,0],[.16,.105,.12],20);
  capsule(figure,skin,.045,.065,[0,1.405,0]);
  // Cinto e fivela metálica visíveis por cima das calças.
@@ -426,7 +433,7 @@ function createFallbackHuman(look){
  box(figure,gold,[.105,.105,.025],[0,1.245,.124]);
  box(figure,gold,[.065,.025,.012],[0,1.31,.132]);
  // Cabeça com proporções suaves, maxilar definido e expressão amigável.
- const head=new THREE.Group();head.position.set(0,1.505,0);figure.add(head);rig.head=head;
+ const head=new THREE.Group();head.position.set(0,1.505,0);head.scale.setScalar(.92);figure.add(head);rig.head=head;
  sphere(head,skin,[0,.004,0],[.139,.174,.124],32);
  sphere(head,skin,[0,-.071,.018],[.105,.094,.103],28);
  sphere(head,skin,[0,-.125,.043],[.061,.043,.071],24);
@@ -499,10 +506,12 @@ function createFallbackHuman(look){
   sphere(calf,shoe,[0,-.265,.13],[.057,.045,.075]);
   for(let lace=0;lace<3;lace++)box(calf,white,[.052,.006,.012],[0,-.238,.025+lace*.026]);
  }
- // Ombros e gola reforçam o aspecto de personagem de jogo.
- const collar=new THREE.Mesh(new THREE.TorusGeometry(.074,.012,8,24),white);collar.rotation.x=Math.PI/2;collar.position.set(0,1.36,.01);figure.add(collar);
+ // Ombros, gola e pequenos detalhes de acabamento reforçam o aspecto de roupa moderna.
+ for(const side of [-1,1])sphere(figure,shirt,[side*.175,1.305,0],[.072,.082,.073],20);
+ const collar=new THREE.Mesh(new THREE.TorusGeometry(.074,.009,8,24),white);collar.rotation.x=Math.PI/2;collar.position.set(0,1.36,.01);figure.add(collar);
  if(female){for(const side of [-1,1])sphere(head,gold,[side*.145,-.015,.01],[.014,.014,.014],12)}
- figure.scale.setScalar(CHARACTER_HEIGHT/1.72);figure.userData.gaitRig=rig;figure.userData.styleVersion=4;return figure;
+ // Reajusta a malha completa para manter rigorosamente a altura de 1,72 m após os ajustes de proporção.
+ figure.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(figure),measuredHeight=Math.max(.001,bounds.max.y-bounds.min.y);figure.scale.setScalar(CHARACTER_HEIGHT/measuredHeight);figure.position.y=-bounds.min.y*figure.scale.y;figure.userData.gaitRig=rig;figure.userData.styleVersion=5;return figure;
 }
 function applyAvatarLook(model,look){
  model.updateMatrixWorld(true);const whole=new THREE.Box3().setFromObject(model),height=Math.max(.001,whole.max.y-whole.min.y);
@@ -532,7 +541,7 @@ function applyAvatarLook(model,look){
 }
 function buildCharacter(target,look,position={x:0,y:0,z:0},onMixer=()=>{},animateWalk=false){
  const gender=look.gender==='female'?'female':'male',styledLook={...look,gender,beardStyle:look.beardStyle||(gender==='male'?'goatee':'none')},root=new THREE.Group();
- root.userData.keepWorldScale=true;root.userData.styleVersion=4;root.userData.actionState={type:'idle',time:0};
+ root.userData.keepWorldScale=true;root.userData.styleVersion=5;root.userData.actionState={type:'idle',time:0};
  if(!target.userData.characters)target.userData.characters=[];target.userData.characters.push(root);
  root.position.set(position.x,position.y,position.z);target.add(root);
  const figure=createFallbackHuman(styledLook);
@@ -2065,7 +2074,7 @@ function renderWardrobe(){const host=$('wardrobe-items');if(!host)return;host.in
 function renderInventoryPage(){updateWardrobeGender();renderWardrobe();if(disposeInventory)disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}
 document.querySelectorAll('[data-gender-choice]').forEach(button=>button.onclick=()=>{avatar.gender=button.dataset.genderChoice;updateWardrobeGender();renderWardrobe();if(disposeInventory){disposeInventory();disposeInventory=makeRenderer($('inventory-avatar-scene'),'avatar')}});
 document.querySelectorAll('[data-wardrobe]').forEach(button=>button.onclick=()=>{activeWardrobe=button.dataset.wardrobe;document.querySelectorAll('[data-wardrobe]').forEach(b=>b.classList.toggle('active',b===button));renderWardrobe()});
-$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:4};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
+$('save-wardrobe').onclick=async()=>{say('wardrobe-message','A guardar visual…');const updated={...avatar,completed:avatar.completed===true,modelVersion:5};const {error}=await sb.from('profiles').update({avatar:updated,updated_at:new Date().toISOString()}).eq('id',user.id);if(error){say('wardrobe-message',error.message);return}avatar=updated;profile.avatar=updated;$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';say('wardrobe-message','Visual guardado com sucesso.')};
 const icons={cabelo:'💇',roupa:'👕',calçado:'👟',acessório:'⌚'};
 const furnitureLabels={sofa:['Sofá de 3 lugares','🛋️'],bed:['Cama de casal','🛏️'],dining_table:['Mesa de jantar com 4 cadeiras','🍽️'],wardrobe:['Guarda-roupa','🚪'],tv:['Televisor','📺'],lamp:['Candeeiro de pé','💡'],rug:['Tapete decorativo','🧶'],plant:['Planta decorativa','🪴']};
 function renderInventory(){
