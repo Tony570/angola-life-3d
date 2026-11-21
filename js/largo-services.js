@@ -29,7 +29,14 @@ const serviceRooms = {
   'residential-tower': {title:'Torre Residencial',color:'#37566b'},
   'residential-family': {title:'Residencial Familiar',color:'#79543c'},
   'taf': {title:'Campo de Futebol TAF',color:'#174b37'},
-  'isced-university': {title:'ISCED · Instituto Superior de Ciências da Educação',color:'#174b37'}
+  'isced-university': {title:'ISCED · Instituto Superior de Ciências da Educação',color:'#174b37'},
+  'isced-classroom-a': {title:'ISCED · Bloco Académico A',color:'#174b37'},
+  'isced-classroom-b': {title:'ISCED · Bloco Académico B',color:'#174b37'},
+  'isced-library': {title:'ISCED · Biblioteca Central',color:'#315f48'},
+  'isced-labs': {title:'ISCED · Laboratórios',color:'#356d49'},
+  'isced-auditorium': {title:'ISCED · Auditório Universitário',color:'#174b37'},
+  'isced-canteen': {title:'ISCED · Cantina Universitária',color:'#8b6a3e'},
+  'isced-students': {title:'ISCED · Centro de Estudantes',color:'#356d49'}
 };
 
 export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avatar,addWorkAgent}) {
@@ -119,6 +126,15 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
     // Iluminação de tecto, sinalética e acabamento institucional.
     for(const x of [-4,0,4]){box(1.8,.07,.55,white,x,3.82,-1.8);box(1.8,.025,.55,gold,x,3.77,-1.8)}
     box(4.8,.08,.08,gold,0,3.15,6.65);box(4.8,.08,.08,gold,0,3.15,-6.65);
+  }else if(kind.startsWith('isced-')){
+    const deskColors=[mat('#b58a5d'),mat('#526d7b')];
+    for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+      const x=-4.8+col*4.8,z=-2.5+row*3.6;
+      box(1.8,.12,.82,deskColors[0],x,.82,z);box(.12,.72,.12,wood,x-.72,.4,z);box(.12,.72,.12,wood,x+.72,.4,z);
+      box(.72,.62,.12,deskColors[1],x,.52,z+1.0);box(.72,.12,.72,deskColors[1],x,.85,z+1.0);
+    }
+    box(5.8,1.4,.15,mat('#174b37'),0,2.1,-6.78);wallScreen(0,-6.82,cfg.title);
+    for(const x of [-6.3,6.3])plant(x,5.4);
   }else if(['bank-bci','bank-bai','government','largo-police'].includes(kind)){
     box(7.2,.95,.95,wood,0,.48,-3.45);box(7.35,.12,1.02,metal,0,1.02,-3.45);
     for(let i=0;i<3;i++){const x=-4.7+i*4.7;box(1.15,.82,.09,glass,x,2.15,-6.8);box(1.3,.08,.12,metal,x,2.62,-6.76);box(.85,.08,.55,wood,x,.57,1.2);box(.07,.65,.07,metal,x-.34,.32,1.2);box(.07,.65,.07,metal,x+.34,.32,1.2);desk(x, -1.9);officeChair(x,-.72,Math.PI)}
@@ -260,6 +276,8 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       const {data:owned}=await sb.from('largo_apartment_ownership').select('apartment_code').eq('user_id',user.id);
       const ownedCodes=new Set((owned||[]).map(x=>x.apartment_code));
       html+='<h4>Apartamentos e preços</h4><div class="life-list">'+listings.map(x=>'<div class="life-row"><span><b>'+x.code+' · '+x.label+'</b><br><small>'+money(x.price)+'</small></span><button class="secondary" data-largo-apartment="'+x.code+'" '+(ownedCodes.has(x.code)?'disabled':'')+'>'+(ownedCodes.has(x.code)?'Adquirido':'Comprar')+'</button></div>').join('')+'</div><p class="life-muted">A aquisição é registada na tua conta. Cada apartamento só pode ter um proprietário.</p>';
+    } else if(kind.startsWith('isced-') && kind!=='isced-university'){
+      html+='<h4>Instalação académica</h4><p class="life-muted">Estás na área '+esc(cfg.title)+'. O acesso a este edifício é independente da recepção e das restantes instalações do campus.</p><p class="life-muted">Respeita os espaços de estudo, mantém as salas organizadas e utiliza os equipamentos de acordo com a sua finalidade.</p>';
     } else if(kind==='isced-university'){
       const [{data:courses,error:courseError},{data:enrollments,error:enrollmentError},{data:registration}]=await Promise.all([
         sb.from('isced_courses').select('id,faculty,name,description,price,duration_days,lesson_titles').eq('active',true).order('faculty').order('name'),
