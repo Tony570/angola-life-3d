@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v93-rigged-human-avatar-20261121';
+const CACHE_NAME = 'angola-life-3d-v94-rigged-human-avatar-20261121';
 const APP_SHELL = [
   './',
   './index.html',
