@@ -1,4 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneSkinnedModel } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/utils/SkeletonUtils.js';
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
@@ -39,11 +41,47 @@ window.addEventListener('unhandledrejection',event=>showGameError('Uma operaçã
 let socialWorldChannel=null,socialPresenceState=[],socialRemoteStates=new Map(),activeCityRemoteSync=null,activeHouseGuestSync=null,activeHouseVisit=null,socialZone='home',socialLastPositionBroadcast=0,socialLastPresenceSave=0,activePrivateConversationId=null,socialLocalPosition={x:0,z:0};
 let user=null,profile=null,inventory=[],furnitureInventory=[],playerWalletBalance=500,playerVehicles=[],activeCategory='todos',activeWardrobe='tops',avatar={gender:'male',skin:'#b77b5c',hair:'#171412',shirt:'#294d78',pants:'#29313c',hairStyle:'medio',eyes:'#35251f',beardStyle:'goatee',beardColor:'#332a27',browColor:'#332a27',shoe:'#e9eef2',belt:'#252b32',accessory:'#c69b45',modelVersion:5};
 const CHARACTER_HEIGHT=1.72; // altura humana padrão: 1,72 m
-// O personagem usa o humanoide procedural integrado no jogo.
-// Não depende de GLB externo: evita o boneco de demonstração e poses em T.
+// Modelos humanos completos, com malha, texturas e esqueleto de animação.
+const characterAssets={
+ male:{model:'https://models.vinish.dev/people/casual-man.glb',credit:'Casual Man by vinish.dev (https://vinish.dev/free-3d-models/), CC BY 4.0'},
+ female:{model:'https://models.vinish.dev/people/casual-woman.glb',credit:'Casual Woman by vinish.dev (https://vinish.dev/free-3d-models/), CC BY 4.0'}
+};
+const avatarGLTFLoader=new GLTFLoader();
+const avatarModelPromises=new Map();
+function loadAvatarModel(gender){
+ const asset=characterAssets[gender==='female'?'female':'male'];
+ if(!avatarModelPromises.has(asset.model))avatarModelPromises.set(asset.model,new Promise((resolve,reject)=>avatarGLTFLoader.load(asset.model,resolve,undefined,reject)));
+ return avatarModelPromises.get(asset.model);
+}
 function attachDetailedAvatar(root,look,onMixer=()=>{}){
- root.userData.avatarAssetApplied='procedural-human-v9';
- root.userData.styleVersion=9;
+ const gender=look.gender==='female'?'female':'male';
+ loadAvatarModel(gender).then(gltf=>{
+  if(!root.parent||root.userData.avatarAssetApplied)return;
+  const model=cloneSkinnedModel(gltf.scene);model.name='AngolaLifeRealHumanAvatar';
+  model.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false}});
+  model.updateMatrixWorld(true);
+  const bounds=new THREE.Box3().setFromObject(model),height=Math.max(.001,bounds.max.y-bounds.min.y);
+  const scale=CHARACTER_HEIGHT/height;
+  model.scale.setScalar(scale);
+  model.position.set(-(bounds.min.x+bounds.max.x)*.5*scale,-bounds.min.y*scale,-(bounds.min.z+bounds.max.z)*.5*scale);
+  const mixer=new THREE.AnimationMixer(model),clips=gltf.animations||[];
+  const walkClip=clips.find(clip=>/walk/i.test(clip.name));
+  const idleClip=clips.find(clip=>/idle/i.test(clip.name));
+  const noAction={setEffectiveWeight(){},setEffectiveTimeScale(){},play(){},stop(){}};
+  const walk=walkClip?mixer.clipAction(walkClip):noAction,idle=idleClip?mixer.clipAction(idleClip):noAction;
+  if(walk!==noAction){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
+  if(idle!==noAction){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
+  const old=root.userData.fallbackFigure;if(old)root.remove(old);
+  root.add(model);root.userData.fallbackFigure=null;root.userData.fallbackRig=null;
+  root.userData.characterModel=model;root.userData.characterMixer=mixer;
+  root.userData.animationActions={walk,idle};root.userData.poseRig=findGaitBones(model);
+  root.userData.modelBaseY=0;root.userData.avatarAssetApplied=true;
+  root.userData.avatarAssetName=gender==='female'?'Casual Woman':'Casual Man';
+  root.userData.styleVersion=10;onMixer(mixer);
+ }).catch(error=>{
+  root.userData.avatarAssetError=error?.message||'Não foi possível carregar o modelo humano.';
+  console.warn('Modelo humano indisponível; a manter personagem de segurança.',error);
+ });
 }
 
 const palettes={skin:['#f1c7a5','#dca77c','#c98962','#985b42','#633d32'],hair:['#171412','#38251d','#75482b','#c49a55','#9b3030','#d7d1c5'],eyes:['#35251f','#4d6b50','#4a78a8','#7893a5'],shirt:['#3867a8','#a83f43','#43866b','#d39a43','#654b91','#e6e8ee'],pants:['#26364b','#42464e','#806044','#273e35','#171a22']};
