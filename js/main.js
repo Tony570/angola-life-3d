@@ -5,7 +5,7 @@ import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
 import { applyCityRealism } from './city-realism.js';
-import { createDayNightCycle } from './day-night.js';
+import { createDayNightCycle } from './day-night.js?v=angola-world-v113-daylight-20261122';
 import { createDailyMissions } from './daily-missions.js';
 const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf','isced-university','isced-classroom-a','isced-classroom-b','isced-library','isced-labs','isced-auditorium','isced-canteen','isced-students']);
 const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
