@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v101-world-clock-weather-20261122';
+const CACHE_NAME = 'angola-life-3d-v102-rain-effects-20261122';
 const APP_SHELL = [
   './',
   './index.html',
