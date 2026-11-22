@@ -63,14 +63,19 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
   const scale=CHARACTER_HEIGHT/height;
   model.scale.setScalar(scale);
   model.position.set(-(bounds.min.x+bounds.max.x)*.5*scale,-bounds.min.y*scale,-(bounds.min.z+bounds.max.z)*.5*scale);
-  const mixer=new THREE.AnimationMixer(model),clips=Array.isArray(gltf.animations)?gltf.animations:[];
-  const walkClip=clips.find(clip=>/walk|walking/i.test(typeof clip?.name==='string'?clip.name:''));
-  const idleClip=clips.find(clip=>/idle|standing/i.test(typeof clip?.name==='string'?clip.name:''));
+  const clips=Array.isArray(gltf.animations)?gltf.animations:[];
+  const poseRig=findGaitBones(model);
+  const walkClip=clips.find(clip=>/walk|walking|locomotion|jog|run/i.test(typeof clip?.name==='string'?clip.name:''));
+  const idleClip=clips.find(clip=>/idle|standing|stand|breath|rest/i.test(typeof clip?.name==='string'?clip.name:''));
+  // Só substitui a personagem humana de segurança quando existe esqueleto utilizável
+  // e uma animação de marcha ou ossos suficientes para gerar a marcha procedural.
+  if(skinnedMeshCount===0)throw new Error('O modelo externo não tem esqueleto humano animável.');
+  if(!walkClip&&!poseRig.ready)throw new Error('O modelo externo não tem animação de marcha nem ossos compatíveis; foi mantido o modelo humano de segurança.');
+  const mixer=new THREE.AnimationMixer(model);
   const noAction={setEffectiveWeight(){},setEffectiveTimeScale(){},play(){},stop(){}};
   const walk=walkClip?mixer.clipAction(walkClip):noAction,idle=idleClip?mixer.clipAction(idleClip):noAction;
   if(walk!==noAction){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
   if(idle!==noAction){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
-  const poseRig=findGaitBones(model);
   // O modelo externo só substitui a personagem humana de segurança depois de validado.
   root.add(model);
   const old=root.userData.fallbackFigure;if(old)root.remove(old);
@@ -81,7 +86,7 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
   root.userData.proceduralGait=poseRig.ready?{bones:poseRig.bones,base:poseRig.base}:null;
   root.userData.modelBaseY=0;root.userData.avatarAssetApplied=true;
   root.userData.avatarAssetName=gender==='female'?'Casual Woman':'Casual Man';
-  root.userData.styleVersion=11;root.userData.avatarAssetError=null;
+  root.userData.styleVersion=12;root.userData.avatarAssetError=null;
   try{onMixer(mixer)}catch(callbackError){console.warn('Não foi possível ligar o misturador de animação:',callbackError)}
   if(skinnedMeshCount===0)console.warn('O modelo não possui malha esquelética; será usada animação procedural quando possível.');
  }).catch(error=>{
@@ -392,14 +397,16 @@ function updateCharacterActionPose(root,delta=0){
  const pose=root.userData.poseRig,blend=1-Math.exp(-9*Math.max(.001,delta));
  if(pose?.bones&&pose?.base){
   const seated=state.type==='sit',waving=state.type==='wave';
+  const breathing=!seated&&!waving?Math.sin(state.time*1.7):0;
   for(const [key,bone] of Object.entries(pose.bones)){
    const base=pose.base[key];if(!base)continue;
-   const targetX=seated&&key==='LThigh'?-1.12:seated&&key==='RThigh'?-1.12:seated&&key==='LCalf'?1.35:seated&&key==='RCalf'?1.35:seated&&key==='LArm'?-.12:seated&&key==='RArm'?-.12:seated&&key==='LForearm'?.22:seated&&key==='RForearm'?.22:waving&&key==='RArm'?base.rotation.x: waving&&key==='RForearm'?base.rotation.x:base.rotation.x;
-   const targetZ=waving&&key==='RArm'?base.rotation.z-2.1:waving&&key==='RForearm'?base.rotation.z-.38+Math.sin(state.time*10)*.34:base.rotation.z;
+   const targetX=seated&&(key==='LThigh'||key==='RThigh')?-1.12:seated&&(key==='LCalf'||key==='RCalf')?1.35:seated&&(key==='LArm'||key==='RArm')?-.12:seated&&(key==='LForearm'||key==='RForearm')?.22:key==='Chest'?base.rotation.x+breathing*.012:base.rotation.x;
+   const targetZ=waving&&key==='RArm'?base.rotation.z-2.1:waving&&key==='RForearm'?base.rotation.z-.38+Math.sin(state.time*10)*.34:key==='Chest'&&!seated?base.rotation.z+Math.sin(state.time*1.2)*.006:base.rotation.z;
+   const targetRotationY=key==='Head'&&!seated&&!waving?base.rotation.y+Math.sin(state.time*.7)*.018:base.rotation.y;
    bone.rotation.x=THREE.MathUtils.lerp(bone.rotation.x,targetX,blend);
-   bone.rotation.y=THREE.MathUtils.lerp(bone.rotation.y,base.rotation.y,blend);
+   bone.rotation.y=THREE.MathUtils.lerp(bone.rotation.y,targetRotationY,blend);
    bone.rotation.z=THREE.MathUtils.lerp(bone.rotation.z,targetZ,blend);
-   const targetY=seated&&key==='Hips'?base.position.y-.035:base.position.y;
+   const targetY=seated&&key==='Hips'?base.position.y-.035:key==='Hips'&&!waving?base.position.y+breathing*.002:base.position.y;
    bone.position.y=THREE.MathUtils.lerp(bone.position.y,targetY,blend);
   }
   return;
