@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v95-city-realism-20261122';
+const CACHE_NAME = 'angola-life-3d-v96-day-night-20261122';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,7 +7,8 @@ const APP_SHELL = [
   './js/largo-do-ambiente.js',
   './js/largo-services.js',
   './js/city-transit.js',
-  './js/city-realism.js'
+  './js/city-realism.js',
+  './js/day-night.js'
 ];
 
 self.addEventListener('install', event => {
