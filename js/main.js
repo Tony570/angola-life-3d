@@ -4,6 +4,7 @@ import { clone as cloneSkinnedModel } from 'https://cdn.jsdelivr.net/npm/three@0
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
 import { createCityTransit } from './city-transit.js';
+import { applyCityRealism } from './city-realism.js';
 const LARGO_SERVICE_ROOMS=new Set(['bank-bci','bank-bai','chevron','restaurant-polonia','parish','government','largo-police','residential-10','residential-tower','residential-family','taf','isced-university','isced-classroom-a','isced-classroom-b','isced-library','isced-labs','isced-auditorium','isced-canteen','isced-students']);
 const SUPABASE_URL='https://aowchqmhablulwwjexil.supabase.co';
 const SUPABASE_KEY='sb_publishable_Gp7jRkTVsdvaO31Qnz23cA_kwBrR6gQ';
@@ -273,9 +274,9 @@ async function boot(){
    }
    if((savedAvatar.modelVersion||0)<7){
     // Preserva escolhas pessoais; actualiza apenas cores brancas antigas de fábrica.
-    if(['#eef2f5','#ffffff'].includes((savedAvatar.hair||'').toLowerCase()))avatar.hair='#171412';
-    if(['#f2f2ee','#ffffff','#3867a8'].includes((savedAvatar.shirt||'').toLowerCase()))avatar.shirt='#294d78';
-    if((savedAvatar.pants||'').toLowerCase()==='#e6e8ee')avatar.pants='#29313c';
+    if(['#eef2f5','#ffffff'].includes(String(savedAvatar.hair??'').toLowerCase()))avatar.hair='#171412';
+    if(['#f2f2ee','#ffffff','#3867a8'].includes(String(savedAvatar.shirt??'').toLowerCase()))avatar.shirt='#294d78';
+    if(String(savedAvatar.pants??'').toLowerCase()==='#e6e8ee')avatar.pants='#29313c';
     avatar.modelVersion=7;
    }
    $('life-name').textContent=p.display_name||p.username||'Residente';$('life-face').textContent=avatar.gender==='female'?'👩🏽':'👨🏽';$('side-name').textContent=p.display_name||p.username;fillProfile();
@@ -627,7 +628,7 @@ renderer.setSize(initialSize.width,initialSize.height);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.05;
-renderer.shadowMap.enabled=!compactDevice&&kind!=='city';
+renderer.shadowMap.enabled=!compactDevice;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.domElement.style.display='block';renderer.domElement.style.width='100%';renderer.domElement.style.height='100%';host.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6c7481,kind==='avatar'?2.35:2));
@@ -1922,6 +1923,7 @@ function buildVianaStreets(){
  cityDrivableCars.push({group:patrolCar,label:'Viatura policial',driver,patrol:policePatrol});
  buildVianaOtherBuildings();
  buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorldEntrances, entryMeshes:policeEntryMeshes });
+ applyCityRealism({ THREE, target, scene, compactDevice });
 }
 
 if(kind==='avatar'){
