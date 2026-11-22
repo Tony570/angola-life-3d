@@ -668,7 +668,7 @@ gameAudioState.currentVenue=kind==='room'&&(roomName==='bar'||roomName==='party'
 if(gameAudioState.currentVenue){wakeGameAudio()}else stopVenueMusic();
 host.querySelectorAll('canvas').forEach(c=>c.remove());
 const scene=new THREE.Scene();scene.background=new THREE.Color(kind==='room'?'#c6d0d7':kind==='avatar'?'#211b29':'#58a9ed');
- const worldClock=$('world-time');if(worldClock)worldClock.classList.toggle('hidden',kind!=='city');
+ const worldClock=$('world-time');if(worldClock)worldClock.classList.toggle('hidden',kind==='avatar');
 const hostSize=()=>({width:Math.max(1,Math.round(host.clientWidth||host.getBoundingClientRect().width||320)),height:Math.max(1,Math.round(host.clientHeight||host.getBoundingClientRect().height||(kind==='avatar'?420:320)))});const initialSize=hostSize();const camera=new THREE.PerspectiveCamera(42,initialSize.width/initialSize.height,.1,kind==='city'?900:100);
 camera.position.set(kind==='room'?0:0,kind==='room'?2.5:1.6,kind==='room'?10.5:5.4);
 const compactDevice=window.innerWidth<=700;
@@ -1974,7 +1974,7 @@ function buildVianaStreets(){
  buildVianaOtherBuildings();
  buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorldEntrances, entryMeshes:policeEntryMeshes });
  applyCityRealism({ THREE, target, scene, compactDevice });
-  dayNightCycle=createDayNightCycle({THREE,scene,target,hemisphereLight,directionalLight:light,compactDevice,kind});
+  // O relógio global é iniciado depois da construção de cada cenário, para não ser apagado pelo target.clear().
 }
 
 if(kind==='avatar'){
@@ -2060,6 +2060,7 @@ const moveButtons=[...host.querySelectorAll('[data-move]')];let activePadKey=nul
 const blockGameBrowserMenu=e=>{if(e.target.closest?.('#vehicle-controls, #move-pad, #vehicle-prompt, canvas'))e.preventDefault()};
 host.addEventListener('contextmenu',blockGameBrowserMenu);host.addEventListener('selectstart',blockGameBrowserMenu);host.addEventListener('dragstart',blockGameBrowserMenu);
 const onWindowBlur=()=>{Object.keys(moveKeys).forEach(k=>moveKeys[k]=false);Object.keys(driveKeys).forEach(k=>driveKeys[k]=false);activePadKey=null;activeDrivePointers.clear()};window.addEventListener('pointerup',clearPad);window.addEventListener('pointercancel',clearPad);window.addEventListener('pointerup',clearDrive);window.addEventListener('pointercancel',clearDrive);window.addEventListener('blur',onWindowBlur);
+if(kind!=='avatar'&&!dayNightCycle)dayNightCycle=createDayNightCycle({THREE,scene,target,hemisphereLight,directionalLight:light,compactDevice,kind});
 let velocityX=0,velocityZ=0,walkPhase=0,raf,lastFrame=0,receptionShown=false;const animate=(now=0)=>{raf=requestAnimationFrame(animate);if(document.hidden||now-lastFrame<33)return;const delta=Math.min(clock.getDelta(),.05);lastFrame=now;if(mixer)mixer.update(delta);if(dayNightCycle){const worldTime=dayNightCycle.update(delta);const clockLabel=$('world-time');if(clockLabel)clockLabel.textContent=worldTime.label;}
 if(kind==='room'&&roomName==='bar')updateBarServiceAI(delta,now);
  if(kind==='city')cityTransit?.update(delta,now);
