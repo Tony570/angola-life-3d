@@ -249,3 +249,19 @@
 @media(max-width:700px){.scene-label{font-size:10px;gap:6px}.scene-label #world-time{font-size:10px;padding:4px 6px}}
 
 .daily-mission-summary{padding:13px;border:1px solid #d9e0e8;border-radius:13px;background:#f7f9fb;margin:10px 0 14px;color:#172638}.daily-mission-summary>div:first-child{display:flex;justify-content:space-between;align-items:center}.daily-mission-track{height:9px;border-radius:99px;background:#dce4ec;overflow:hidden;margin-top:10px}.daily-mission-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#368f73,#7fc99a)}.daily-mission-summary p{font-size:12px;color:#536477;margin:8px 0 0}.daily-mission-list{display:grid;gap:8px}.daily-mission-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel,#fff)}.daily-mission-icon{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;background:#e7f0eb;color:#267b58;font-weight:800}.daily-mission-copy{display:grid;gap:2px;min-width:0;flex:1}.daily-mission-copy small{font-size:11px;color:var(--muted);line-height:1.35}.daily-mission-reward{font-size:11px;font-weight:700;color:#397a60;white-space:nowrap}
+
+/* Confirmação uniforme e comprovativo dos pagamentos do jogo */
+.purchase-summary,.purchase-receipt{padding:14px;border:1px solid #d6dfdf;border-radius:14px;background:#f7faf9;color:#24343a}
+.purchase-summary-item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid #e1e8e6;font-size:13px}
+.purchase-summary-item:last-of-type{border-bottom:0}
+.purchase-summary-item span{color:#60716d}
+.purchase-summary-item b{text-align:right;font-variant-numeric:tabular-nums}
+.purchase-description{margin:10px 0;color:#526762;font-size:12px;line-height:1.5}
+.purchase-payment-method{margin-top:12px;padding:10px;border-radius:10px;background:#e8f1ed;color:#245c47;font-size:12px;font-weight:800;text-align:center}
+.purchase-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:8px;margin-top:12px}
+.purchase-actions button{margin:0}
+.purchase-actions button:disabled{opacity:.55}
+.purchase-receipt{text-align:center}
+.purchase-success-icon{display:grid;place-items:center;width:48px;height:48px;margin:2px auto 8px;border-radius:50%;background:#d9efe3;color:#197447;font-size:27px;font-weight:900}
+.purchase-receipt h4{margin:5px 0 8px;color:#197447}
+#life-panel #purchase-continue{width:100%;margin-top:10px}
