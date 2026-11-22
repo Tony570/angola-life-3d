@@ -243,3 +243,7 @@
 #life-player strong{max-width:24vw;font-size:9px}
 .needs-hud{gap:3px 5px}#life-left{left:46%}#room-door-nav{width:60%}
 }
+
+.scene-label{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:min(92%,560px)}
+.scene-label #world-time{flex:none;padding:5px 8px;border:1px solid #ffffff38;border-radius:8px;background:#0b1728d9;color:#ffe2a5;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+@media(max-width:700px){.scene-label{font-size:10px;gap:6px}.scene-label #world-time{font-size:10px;padding:4px 6px}}
