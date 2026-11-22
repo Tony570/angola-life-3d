@@ -37,9 +37,9 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const getMinute=()=>((baseMinute+(Date.now()-baseStamp)/RATE_MS_PER_GAME_MINUTE)%1440+1440)%1440;
   const climateAt=minute=>{
     const absolute=baseMinute+(Date.now()-baseStamp)/RATE_MS_PER_GAME_MINUTE,day=Math.floor(absolute/1440),slot=Math.floor(minute/240),value=(day*7+slot*13+Math.floor(slot/3)*5)%20;
-    if(value<3)return {key:'rain',label:'🌧️ CHUVA',fog:.012,light:.68};
-    if(value<6)return {key:'cloud',label:'☁️ NUBLADO',fog:.004,light:.86};
-    if(value===11)return {key:'fog',label:'🌫️ NEBLINA',fog:.022,light:.78};
+    if(value<3)return {key:'rain',label:'🌧️ CHUVA',fog:.012,light:.90};
+    if(value<6)return {key:'cloud',label:'☁️ NUBLADO',fog:.004,light:.96};
+    if(value===11)return {key:'fog',label:'🌫️ NEBLINA',fog:.022,light:.92};
     return {key:'sun',label:'☀️ SOL',fog:0,light:1};
   };
   const update=(delta=0)=>{
@@ -54,10 +54,10 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     // A iluminação global acompanha o ciclo apenas no exterior. Os interiores
     // mantêm a iluminação própria para não ficarem artificialmente escuros.
     if(isCity){
-      directionalLight.intensity=(.12+daylight*2.08)*weatherFactor;
+      directionalLight.intensity=(.65+daylight*2.25)*weatherFactor;
       directionalLight.color.setRGB(.58+.42*daylight,.66+.34*daylight,.82+.18*daylight);
       directionalLight.position.set(sunX*.28,Math.max(4,sunY*.24+10),-24);
-      hemisphereLight.intensity=(.28+daylight*1.72)*weatherFactor;
+      hemisphereLight.intensity=(.90+daylight*1.75)*weatherFactor;
       hemisphereLight.color.set('#eaf4ff');hemisphereLight.groundColor.set(daylight>.2?'#68745d':'#202b3d');
     }
     if(isCity){
