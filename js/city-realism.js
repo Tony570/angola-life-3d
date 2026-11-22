@@ -51,7 +51,7 @@ export function applyCityRealism({ THREE, target, scene, compactDevice = false }
   const whitePaint = makeMat('#eee9dc', 0.9);
   const yellowPaint = makeMat('#d9b64e', 0.88);
 
-  // Camadas de asfalto e passeios na malha central de Cabinda.
+  // Camadas de asfalto e passeios na malha urbana de Angola.
   const streets = [-70, -42, -14, 14, 42, 70];
   const roadWidth = value => Math.abs(value) === 70 || value === 14 ? 8.2 : 6.4;
   streets.forEach(x => {
