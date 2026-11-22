@@ -44,11 +44,15 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     if(sunHeight<0)sky.copy(colors.night).lerp(colors.dawn,smooth(-.5,0,sunHeight)*.22);
     const climate=climateAt(minute);weatherLight+=(climate.light-weatherLight)*(1-Math.exp(-Math.max(delta,.033)*.22));const weatherFactor=weatherLight;
     if(isCity){scene.background=sky;if(scene.fog?.color){scene.fog.color.copy(sky);if('density'in scene.fog)scene.fog.density+=(climate.fog-scene.fog.density)*(1-Math.exp(-Math.max(delta,.033)*.2))}}
-    directionalLight.intensity=(.12+daylight*2.08)*weatherFactor;
-    directionalLight.color.setRGB(.58+.42*daylight,.66+.34*daylight,.82+.18*daylight);
-    directionalLight.position.set(sunX*.28,Math.max(4,sunY*.24+10),-24);
-    hemisphereLight.intensity=(.28+daylight*1.72)*weatherFactor;
-    hemisphereLight.color.set('#eaf4ff');hemisphereLight.groundColor.set(daylight>.2?'#68745d':'#202b3d');
+    // A iluminação global acompanha o ciclo apenas no exterior. Os interiores
+    // mantêm a iluminação própria para não ficarem artificialmente escuros.
+    if(isCity){
+      directionalLight.intensity=(.12+daylight*2.08)*weatherFactor;
+      directionalLight.color.setRGB(.58+.42*daylight,.66+.34*daylight,.82+.18*daylight);
+      directionalLight.position.set(sunX*.28,Math.max(4,sunY*.24+10),-24);
+      hemisphereLight.intensity=(.28+daylight*1.72)*weatherFactor;
+      hemisphereLight.color.set('#eaf4ff');hemisphereLight.groundColor.set(daylight>.2?'#68745d':'#202b3d');
+    }
     if(isCity){
       starMaterial.opacity=clamp((.22-daylight)/.22,0,1)*.92;
       lamps.forEach(({bulb,glow})=>{glow.intensity=night*1.55;bulb.material.color.setRGB(1,.72+.2*daylight,.38+.48*daylight)});
@@ -56,7 +60,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
       if(climate.key==='rain'){const p=rainGeometry.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=(delta||.033)*25;if(p[i*3+1]<0){p[i*3+1]=35+rand()*15;p[i*3]=(rand()-.5)*190;p[i*3+2]=(rand()-.5)*190}}rainGeometry.attributes.position.needsUpdate=true}
     }
     if(Date.now()-lastPersist>15000){lastPersist=Date.now();try{localStorage.setItem(KEY,JSON.stringify({minute,stamp:Date.now()}))}catch(error){}}
-    const label=(hour<10?'0':'')+hour+':'+(mins<10?'0':'')+mins+' · '+(hour>=6&&hour<18?'DIA':'NOITE')+(isCity?' · '+climate.label:'');
+    const label=(hour<10?'0':'')+hour+':'+(mins<10?'0':'')+mins+' · '+(hour>=6&&hour<18?'DIA':'NOITE')+' · '+climate.label;
     return {minute,label,weather:climate.label};
   };
   update();
