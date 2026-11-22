@@ -1974,7 +1974,7 @@ function buildVianaStreets(){
  buildVianaOtherBuildings();
  buildLargoDoAmbiente({ THREE, target, addCityCollision, cityWorldEntrances, entryMeshes:policeEntryMeshes });
  applyCityRealism({ THREE, target, scene, compactDevice });
-  dayNightCycle=createDayNightCycle({THREE,scene,target,hemisphereLight,directionalLight:light,compactDevice});
+  dayNightCycle=createDayNightCycle({THREE,scene,target,hemisphereLight,directionalLight:light,compactDevice,kind});
 }
 
 if(kind==='avatar'){
