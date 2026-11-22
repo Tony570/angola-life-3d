@@ -376,7 +376,7 @@ function findGaitBones(model){
   const side=sideOf(n);
   if(side){
    if(/thigh|upleg|upper.?leg|hip.?joint/.test(n))bones[side+'Thigh']=o;
-   else if(/calf|shin|lower.?leg|leg.?lower/.test(n))bones[side+'Calf']=o;
+   else if(/calf|shin|lower.?leg|leg.?lower|leg$/.test(n))bones[side+'Calf']=o;
    else if(/foot|ankle|toe/.test(n))bones[side+'Foot']=o;
    else if(/upper.?arm|arm$|shoulder/.test(n)&&!/forearm|lower.?arm/.test(n))bones[side+'Arm']=o;
    else if(/forearm|lower.?arm/.test(n))bones[side+'Forearm']=o;
@@ -388,7 +388,7 @@ function findGaitBones(model){
   else if(/head/.test(n))bones.Head=o;
  });
  for(const [key,bone] of Object.entries(bones))base[key]={rotation:bone.rotation.clone(),position:bone.position.clone()};
- return {bones,base,ready:!!(bones.LThigh&&bones.RThigh&&bones.LArm&&bones.RArm)};
+ return {bones,base,ready:!!(bones.LThigh&&bones.RThigh&&bones.LCalf&&bones.RCalf&&bones.LArm&&bones.RArm)};
 }
 function updateCharacterActionPose(root,delta=0){
  if(!root)return;
