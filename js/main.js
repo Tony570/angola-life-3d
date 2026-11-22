@@ -35,9 +35,21 @@ function showNeighborhoodWelcome(name){
  neighborhoodWelcomeTimer=setTimeout(()=>{toast.style.opacity='0'},3600);
 }
 function updateNeighborhoodWelcome(x,z){
- let next='';const closest=cabindaNeighborhoods.map(a=>({a,d:Math.hypot(x-a.x,z-a.z)})).sort((a,b)=>a.d-b.d)[0];
- if(closest&&closest.d<=15)next=closest.a.name;else if(x>=125&&x<=490&&z>=-175&&z<=115)next='Largo do Ambiente';else if(x>=-100&&x<=100&&z>=-100&&z<=100)next='Centro de Cabinda';
- if(next!==currentNeighborhood){currentNeighborhood=next;if(next)showNeighborhoodWelcome(next)}
+ // Deteção com histerese: evita trocar de bairro a cada pequeno movimento.
+ const current=cabindaNeighborhoods.find(a=>a.name===currentNeighborhood);
+ let next='';
+ if(current&&Math.hypot(x-current.x,z-current.z)<=19)next=current.name;
+ else{
+  const closest=cabindaNeighborhoods.map(a=>({a,d:Math.hypot(x-a.x,z-a.z)})).sort((a,b)=>a.d-b.d)[0];
+  if(closest&&closest.d<=12)next=closest.a.name;
+  else if(x>=125&&x<=490&&z>=-175&&z<=115)next='Largo do Ambiente';
+  else if(x>=-100&&x<=100&&z>=-100&&z<=100)next='Centro de Cabinda';
+ }
+ // Zonas de transição sem nome não apagam a última zona conhecida.
+ if(next&&next!==currentNeighborhood){
+  currentNeighborhood=next;
+  showNeighborhoodWelcome(next);
+ }
 }
 window.addEventListener('error',event=>{if(event.error)showGameError('Ocorreu um erro ao executar o jogo.',event.error)});
 window.addEventListener('unhandledrejection',event=>showGameError('Uma operação do jogo falhou.',event.reason));
