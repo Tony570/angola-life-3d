@@ -26,7 +26,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const rainMaterial=new THREE.PointsMaterial({color:'#c9e4ff',size:compactDevice ? 0.11 : 0.16,transparent:true,opacity:0,depthWrite:false});
   const rain=new THREE.Points(rainGeometry,rainMaterial);rain.name='AngolaLifeRain';if(isCity)scene.add(rain);
   const puddles=[];
-  if(isCity){for(let i=0;i<18;i++){const material=new THREE.MeshBasicMaterial({color:'#9bbac8',transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});const puddle=new THREE.Mesh(new THREE.CircleGeometry(.7+(i%4)*.22,18),material);puddle.rotation.x=-Math.PI/2;puddle.scale.set(1.35,.62,1);puddle.position.set(((i*37)%130)-65,.004,((i*53)%130)-65);puddle.name='AngolaLifeRainPuddle';target.add(puddle);puddles.push(puddle)}}
+  if(isCity){for(let i=0;i<18;i++){const material=new THREE.MeshStandardMaterial({color:'#9bbac8',roughness:.22,metalness:.12,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});const puddle=new THREE.Mesh(new THREE.CircleGeometry(.7+(i%4)*.22,18),material);puddle.rotation.x=-Math.PI/2;puddle.scale.set(1.35,.62,1);const roads=[-70,-42,-14,14,42,70],lane=roads[i%roads.length];puddle.position.set(i%2===0?lane+(rand()-.5)*2.4:(rand()-.5)*130,.004,i%2===0?(rand()-.5)*130:lane+(rand()-.5)*2.4);puddle.name='AngolaLifeRainPuddle';target.add(puddle);puddles.push(puddle)}}
   const lightning=isCity?new THREE.PointLight(0xddeaff,0,190,1.5):null;
   if(lightning){lightning.position.set(12,58,-18);scene.add(lightning)}
   let nextLightningAt=Date.now()+18000,lightningUntil=0,lightningPower=0;
@@ -65,7 +65,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
       lamps.forEach(({bulb,glow})=>{glow.intensity=night*1.55;bulb.material.color.setRGB(1,.72+.2*daylight,.38+.48*daylight)});
       rainOpacity+=((climate.key==='rain' ? .72 : 0)-rainOpacity)*(1-Math.exp(-Math.max(delta,.033)*.55));rainMaterial.opacity=rainOpacity;rain.visible=rainOpacity>.01;
       puddles.forEach((puddle,index)=>{puddle.material.opacity=rainOpacity*.24;puddle.visible=rainOpacity>.025;puddle.scale.set(1.1+(index%3)*.22,.55+(index%2)*.12,1)});
-      const wetness=rainOpacity>.04?rainOpacity:0;wetMaterials.forEach(material=>{material.roughness=.98-wetness*.48;material.metalness=wetness*.12;material.needsUpdate=true});
+      const wetness=rainOpacity>.04?rainOpacity:0;wetMaterials.forEach(material=>{material.roughness=.98-wetness*.48;material.metalness=wetness*.12});
       if(climate.key==='rain'){const p=rainGeometry.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=(delta||.033)*25;p[i*3]+=Math.sin(Date.now()*.00035)*((delta||.033)*2.2);if(p[i*3+1]<0){p[i*3+1]=35+rand()*15;p[i*3]=(rand()-.5)*190;p[i*3+2]=(rand()-.5)*190}}rainGeometry.attributes.position.needsUpdate=true}
       const now=Date.now();if(climate.key==='rain'&&now>nextLightningAt){lightningUntil=now+110+rand()*100;lightningPower=.75+rand()*.85;nextLightningAt=now+16000+rand()*36000}
       if(lightning){const remaining=lightningUntil-now;lightning.intensity=remaining>0?lightningPower*(remaining<70?.45:1):0;if(remaining<=0&&lightning.intensity>0)lightning.intensity=0;}
