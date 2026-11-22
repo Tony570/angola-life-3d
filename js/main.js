@@ -125,7 +125,6 @@ function showPage(page){
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
 
 function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz'}
-async 
 async function confirmGamePurchase({item,quantity=1,total,description='',execute,afterPurchase,onCancel,onContinue}){
  const fmt=value=>new Intl.NumberFormat('pt-PT').format(Number(value)||0);
  const amount=Number(total),count=Number(quantity);
