@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Angola Life 3D</title>
 <meta name="theme-color" content="#111827">
-<link rel="stylesheet" href="css/style.css?v=angola-world-v110-avatar-rig-validation-20261122">
+<link rel="stylesheet" href="css/style.css?v=angola-world-v112-cache-reset-20261122">
 </head>
 <body>
 <section id="auth" class="auth-wrap">
@@ -55,14 +55,27 @@
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}
 </script>
-<script type="module" src="js/main.js?v=angola-world-v111-async-startup-fix-20261122"></script>
 <script>
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
-      .then(registration => registration.update())
-      .catch(error => console.warn('Não foi possível activar o modo offline:', error));
-  });
-}
+(async () => {
+  try {
+    // Remove versões antigas que possam continuar a servir JavaScript desactualizado.
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
+    }
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.filter(name => name.startsWith('angola-life-3d-')).map(name => caches.delete(name)));
+    }
+    await import('./js/main.js?v=angola-world-v112-cache-reset-20261122');
+  } catch (error) {
+    const host = document.getElementById('global-message');
+    if (host) {
+      host.classList.remove('hidden');
+      host.textContent = 'Não foi possível carregar o Angola Life 3D: ' + (error?.message || String(error));
+    }
+    console.error('Falha ao iniciar Angola Life 3D:', error);
+  }
+})();
 </script>
 </body></html>
