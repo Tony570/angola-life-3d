@@ -143,7 +143,7 @@ async function confirmGamePurchase({item,quantity=1,total,description='',execute
  };
 }
 
-function refreshPlayerWallet(){
+async function refreshPlayerWallet(){
  if(!user)return;
  const {data,error}=await sb.from('player_wallets').select('balance').eq('user_id',user.id).maybeSingle();
  if(error){console.error('Carteira:',error);return}
