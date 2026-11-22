@@ -19,7 +19,7 @@ jobs:
       - name: Validar sintaxe de todos os módulos JavaScript
         run: |
           set -e
-          for file in js/main.js js/largo-services.js js/largo-do-ambiente.js js/city-transit.js js/city-realism.js js/day-night.js; do
+          for file in js/main.js js/largo-services.js js/largo-do-ambiente.js js/city-transit.js js/city-realism.js js/day-night.js js/daily-missions.js; do
             echo "A validar $file"
             node --input-type=module --check < "$file"
           done
