@@ -17,6 +17,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const sun=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,12),new THREE.MeshBasicMaterial({color:'#fff0c7'}));
   const moon=new THREE.Mesh(new THREE.SphereGeometry(2.1,16,12),new THREE.MeshBasicMaterial({color:'#d9e5f4'}));
   sun.name='AngolaLifeSun';moon.name='AngolaLifeMoon';scene.add(sun,moon);
+  const staticSunGlow=scene.getObjectByName('AngolaLifeSunGlow');
   const starPositions=[];let seed=91371;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
   for(let i=0;i<(compactDevice?70:150);i++){
     const a=rand()*Math.PI*2,y=.16+rand()*.82,r=150+rand()*30;
@@ -37,6 +38,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     const sunX=Math.cos(angle)*112,sunY=Math.sin(angle)*88;
     sun.position.set(sunX,Math.max(-20,sunY),-82);sun.visible=sunY>-4;
     moon.position.set(-sunX,-sunY,75);moon.visible=sunY<8;
+    if(staticSunGlow?.material){staticSunGlow.material.opacity=.72*daylight;staticSunGlow.visible=daylight>.025;}
     const dawnMix=smooth(-.22,.12,sunHeight)*(1-smooth(.12,.38,sunHeight));
     sky.copy(colors.night).lerp(colors.day,daylight).lerp(colors.dawn,Math.max(dawnMix,twilight*.72));
     if(sunHeight<0)sky.copy(colors.night).lerp(colors.dawn,smooth(-.5,0,sunHeight)*.28);
