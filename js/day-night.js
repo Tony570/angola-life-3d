@@ -11,7 +11,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t)};
   const colors={night:new THREE.Color('#101a2a'),day:new THREE.Color('#9fc9e3'),dawn:new THREE.Color('#c98268')};
-  const sky=new THREE.Color(),isCity=kind==='city';
+  const sky=new THREE.Color(),isCity=kind==='city';let weatherLight=1,rainOpacity=0;
   const sun=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,12),new THREE.MeshBasicMaterial({color:'#fff0c7'}));
   const moon=new THREE.Mesh(new THREE.SphereGeometry(2.1,16,12),new THREE.MeshBasicMaterial({color:'#d9e5f4'}));
   sun.name='AngolaLifeSun';moon.name='AngolaLifeMoon';if(isCity)scene.add(sun,moon);
@@ -23,7 +23,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const rainCount=compactDevice?180:420,rainPositions=new Float32Array(rainCount*3);
   for(let i=0;i<rainCount;i++){rainPositions[i*3]=(rand()-.5)*190;rainPositions[i*3+1]=rand()*48+2;rainPositions[i*3+2]=(rand()-.5)*190}
   const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
-  const rainMaterial=new THREE.PointsMaterial({color:'#c9e4ff',size:compactDevice?.11:.16,transparent:true,opacity:0,depthWrite:false});
+  const rainMaterial=new THREE.PointsMaterial({color:'#c9e4ff',size:compactDevice ? 0.11 : 0.16,transparent:true,opacity:0,depthWrite:false});
   const rain=new THREE.Points(rainGeometry,rainMaterial);rain.name='AngolaLifeRain';if(isCity)scene.add(rain);
   const lampPositions=compactDevice?[[-56,-56],[56,-56],[-56,56],[56,56]]:[[-56,-56],[0,-56],[56,-56],[-56,0],[56,0],[-56,56],[0,56],[56,56]];
   const lamps=isCity?lampPositions.map(([x,z])=>{const bulb=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshBasicMaterial({color:'#ffd98b'}));bulb.position.set(x,4.15,z);target.add(bulb);const glow=new THREE.PointLight(0xffc978,0,18,2);glow.position.set(x,4.1,z);target.add(glow);return {bulb,glow}}):[];
@@ -42,8 +42,8 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     const dawn=smooth(-.2,.08,sunHeight)*(1-smooth(.08,.38,sunHeight));
     sky.copy(colors.night).lerp(colors.day,daylight).lerp(colors.dawn,dawn*.8);
     if(sunHeight<0)sky.copy(colors.night).lerp(colors.dawn,smooth(-.5,0,sunHeight)*.22);
-    const climate=climateAt(minute),weatherFactor=climate.light;
-    if(isCity){scene.background=sky;if(scene.fog?.color){scene.fog.color.copy(sky);if('density'in scene.fog)scene.fog.density=climate.fog}}
+    const climate=climateAt(minute);weatherLight+=(climate.light-weatherLight)*(1-Math.exp(-Math.max(delta,.033)*.22));const weatherFactor=weatherLight;
+    if(isCity){scene.background=sky;if(scene.fog?.color){scene.fog.color.copy(sky);if('density'in scene.fog)scene.fog.density+=(climate.fog-scene.fog.density)*(1-Math.exp(-Math.max(delta,.033)*.2))}}
     directionalLight.intensity=(.12+daylight*2.08)*weatherFactor;
     directionalLight.color.setRGB(.58+.42*daylight,.66+.34*daylight,.82+.18*daylight);
     directionalLight.position.set(sunX*.28,Math.max(4,sunY*.24+10),-24);
@@ -52,7 +52,7 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     if(isCity){
       starMaterial.opacity=clamp((.22-daylight)/.22,0,1)*.92;
       lamps.forEach(({bulb,glow})=>{glow.intensity=night*1.55;bulb.material.color.setRGB(1,.72+.2*daylight,.38+.48*daylight)});
-      rainMaterial.opacity=climate.key==='rain'?.72:0;rain.visible=climate.key==='rain';
+      rainOpacity+=((climate.key==='rain' ? .72 : 0)-rainOpacity)*(1-Math.exp(-Math.max(delta,.033)*.55));rainMaterial.opacity=rainOpacity;rain.visible=rainOpacity>.01;
       if(climate.key==='rain'){const p=rainGeometry.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=(delta||.033)*25;if(p[i*3+1]<0){p[i*3+1]=35+rand()*15;p[i*3]=(rand()-.5)*190;p[i*3+2]=(rand()-.5)*190}}rainGeometry.attributes.position.needsUpdate=true}
     }
     if(Date.now()-lastPersist>15000){lastPersist=Date.now();try{localStorage.setItem(KEY,JSON.stringify({minute,stamp:Date.now()}))}catch(error){}}
