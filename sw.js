@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-v98-avatar-animation-20261122';
+const CACHE_NAME = 'angola-life-3d-v99-game-stability-20261122';
 const APP_SHELL = [
   './',
   './index.html',
