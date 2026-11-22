@@ -265,3 +265,14 @@
 .purchase-success-icon{display:grid;place-items:center;width:48px;height:48px;margin:2px auto 8px;border-radius:50%;background:#d9efe3;color:#197447;font-size:27px;font-weight:900}
 .purchase-receipt h4{margin:5px 0 8px;color:#197447}
 #life-panel #purchase-continue{width:100%;margin-top:10px}
+
+
+/* Governo Provincial: eleições, candidaturas e participação cívica */
+.politics-election-card{display:grid;gap:7px;padding:14px;margin:12px 0;border:1px solid #806b3d;border-radius:14px;background:linear-gradient(145deg,#172b43,#111d30)}
+.politics-election-card>span{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#d9e4f2;font-size:13px}
+.politics-election-card small{color:#aebdd0}
+.politics-open{color:#73e0a7}
+.politics-candidate{padding:13px;margin:9px 0;border:1px solid #344a66;border-radius:13px;background:#111e31}
+.politics-candidate p{color:#d4deeb;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+#life-panel textarea{width:100%;min-height:95px;resize:vertical;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:#0d1728;color:white;font:inherit}
+#life-panel textarea:focus{outline:1px solid var(--gold);border-color:var(--gold)}
