@@ -53,7 +53,11 @@ const avatarGLTFLoader=new GLTFLoader();
 const avatarModelPromises=new Map();
 function loadAvatarModel(gender){
  const asset=characterAssets[gender==='female'?'female':'male'];
- if(!avatarModelPromises.has(asset.model))avatarModelPromises.set(asset.model,new Promise((resolve,reject)=>avatarGLTFLoader.load(asset.model,resolve,undefined,reject)));
+ if(!avatarModelPromises.has(asset.model)){
+  const request=new Promise((resolve,reject)=>avatarGLTFLoader.load(asset.model,resolve,undefined,reject));
+  avatarModelPromises.set(asset.model,request);
+  request.catch(()=>{if(avatarModelPromises.get(asset.model)===request)avatarModelPromises.delete(asset.model)});
+ }
  return avatarModelPromises.get(asset.model);
 }
 function attachDetailedAvatar(root,look,onMixer=()=>{}){
@@ -61,29 +65,46 @@ function attachDetailedAvatar(root,look,onMixer=()=>{}){
  loadAvatarModel(gender).then(gltf=>{
   if(!root.parent||root.userData.avatarAssetApplied)return;
   const model=cloneSkinnedModel(gltf.scene);model.name='AngolaLifeRealHumanAvatar';
-  model.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false}});
+  let meshCount=0,skinnedMeshCount=0;
+  model.traverse(object=>{
+   if(!object.isMesh)return;
+   meshCount++;if(object.isSkinnedMesh)skinnedMeshCount++;
+   object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false;
+  });
+  if(!meshCount)throw new Error('O modelo 3D carregado não contém malhas visíveis.');
   model.updateMatrixWorld(true);
-  const bounds=new THREE.Box3().setFromObject(model),height=Math.max(.001,bounds.max.y-bounds.min.y);
+  const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),height=size.y;
+  if(!Number.isFinite(height)||height<.5||height>4.5||size.x<.08||size.z<.04)throw new Error('O modelo humano tem dimensões inválidas; foi mantida a personagem de segurança.');
+  // Aplica as escolhas do jogador ao modelo externo antes de o mostrar.
+  applyAvatarLook(model,look);
+  model.updateMatrixWorld(true);
   const scale=CHARACTER_HEIGHT/height;
   model.scale.setScalar(scale);
   model.position.set(-(bounds.min.x+bounds.max.x)*.5*scale,-bounds.min.y*scale,-(bounds.min.z+bounds.max.z)*.5*scale);
-  const mixer=new THREE.AnimationMixer(model),clips=gltf.animations||[];
-  const walkClip=clips.find(clip=>/walk/i.test(typeof clip?.name==='string'?clip.name:''));
-  const idleClip=clips.find(clip=>/idle/i.test(typeof clip?.name==='string'?clip.name:''));
+  const mixer=new THREE.AnimationMixer(model),clips=Array.isArray(gltf.animations)?gltf.animations:[];
+  const walkClip=clips.find(clip=>/walk|walking/i.test(typeof clip?.name==='string'?clip.name:''));
+  const idleClip=clips.find(clip=>/idle|standing/i.test(typeof clip?.name==='string'?clip.name:''));
   const noAction={setEffectiveWeight(){},setEffectiveTimeScale(){},play(){},stop(){}};
   const walk=walkClip?mixer.clipAction(walkClip):noAction,idle=idleClip?mixer.clipAction(idleClip):noAction;
   if(walk!==noAction){walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(0);walk.play()}
   if(idle!==noAction){idle.enabled=true;idle.setLoop(THREE.LoopRepeat,Infinity);idle.setEffectiveWeight(1);idle.play()}
+  const poseRig=findGaitBones(model);
+  // O modelo externo só substitui a personagem humana de segurança depois de validado.
+  root.add(model);
   const old=root.userData.fallbackFigure;if(old)root.remove(old);
-  root.add(model);root.userData.fallbackFigure=null;root.userData.fallbackRig=null;
+  root.userData.fallbackFigure=null;root.userData.fallbackRig=null;
   root.userData.characterModel=model;root.userData.characterMixer=mixer;
-  root.userData.animationActions={walk,idle};root.userData.poseRig=findGaitBones(model);
+  root.userData.animationActions={walk,idle};root.userData.poseRig=poseRig;
+  root.userData.hasWalkAnimation=walk!==noAction;root.userData.hasIdleAnimation=idle!==noAction;
+  root.userData.proceduralGait=poseRig.ready?{bones:poseRig.bones,base:poseRig.base}:null;
   root.userData.modelBaseY=0;root.userData.avatarAssetApplied=true;
   root.userData.avatarAssetName=gender==='female'?'Casual Woman':'Casual Man';
-  root.userData.styleVersion=10;onMixer(mixer);
+  root.userData.styleVersion=11;root.userData.avatarAssetError=null;
+  try{onMixer(mixer)}catch(callbackError){console.warn('Não foi possível ligar o misturador de animação:',callbackError)}
+  if(skinnedMeshCount===0)console.warn('O modelo não possui malha esquelética; será usada animação procedural quando possível.');
  }).catch(error=>{
   root.userData.avatarAssetError=error?.message||'Não foi possível carregar o modelo humano.';
-  console.warn('Modelo humano indisponível; a manter personagem de segurança.',error);
+  console.warn('Modelo humano indisponível; a manter personagem humana de segurança.',error);
  });
 }
 
@@ -398,8 +419,28 @@ function updateCharacterActionPose(root,delta=0){
  if(rig.torso){smooth(rig.torso,'x',seated?.018+Math.sin(state.time*1.7)*.004:Math.sin(state.time*2.1)*.008);smooth(rig.torso,'y',0);smooth(rig.torso,'z',0)}
 }
 function updateFallbackHumanGait(root,delta,speed,walking){
- const rig=root?.userData?.fallbackRig,figure=root?.userData?.fallbackFigure;if(!rig||!figure)return;
+ if(!root)return;
  const action=root.userData.actionState?.type||'idle',blend=1-Math.exp(-10*Math.max(.001,delta));
+ root.userData.lastMoveSpeed=Number.isFinite(speed)?speed:0;root.userData.isMoving=!!walking;
+ if(root.userData.characterModel){
+  const actions=root.userData.animationActions;
+  if(action!=='idle'){
+   if(actions){actions.walk.setEffectiveWeight(0);actions.idle.setEffectiveWeight(0)}
+   root.userData.walkBlend=0;return;
+  }
+  const target=walking?THREE.MathUtils.clamp((speed||0)/1.65,.08,1):0;
+  root.userData.walkBlend=THREE.MathUtils.lerp(root.userData.walkBlend||0,target,blend);
+  root.userData.walkPhase=(root.userData.walkPhase||0)+delta*(4.2+Math.min(speed||0,3.5)*2.8);
+  if(actions&&root.userData.hasWalkAnimation){
+   actions.walk.setEffectiveWeight(root.userData.walkBlend);
+   actions.idle.setEffectiveWeight(root.userData.hasIdleAnimation?1-root.userData.walkBlend:0);
+   actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp((speed||1)/1.8,.85,1.2));
+  }else if(root.userData.proceduralGait){
+   updateProceduralGait(root,root.userData.walkPhase,root.userData.walkBlend);
+  }
+  return;
+ }
+ const rig=root.userData.fallbackRig,figure=root.userData.fallbackFigure;if(!rig||!figure)return;
  if(action!=='idle'){root.userData.walkBlend=0;figure.position.y+=(0-figure.position.y)*blend;return}
  const target=walking?THREE.MathUtils.clamp(speed/1.65,.08,1):0;
  root.userData.walkBlend=THREE.MathUtils.lerp(root.userData.walkBlend||0,target,blend);
@@ -2027,7 +2068,7 @@ for(const agent of workAgents){
  if(dist<.12){agent.pause+=delta;if(agent.pause>1.8){agent.pause=0;agent.waypoint=(agent.waypoint+1)%agent.route.length;agent.state='working'}else{agent.state='working';npc.userData.actionState={type:'idle',time:(npc.userData.actionState?.time||0)+delta};continue}}
  else{const step=Math.min(dist,0.62*delta);npc.position.x+=dx/dist*step;npc.position.z+=dz/dist*step;npc.rotation.y=Math.atan2(dx,dz);agent.state='walking';updateFallbackHumanGait(npc,delta,.62,true);npc.userData.actionState={type:'idle',time:0}}
 }
-for(const character of target.userData.characters||[]){if(character===houseAvatar||character.userData.characterMixer===mixer)continue;const isPatrol=cityPoliceAgents.some(agent=>agent.group===character);if(!isPatrol&&character.userData.characterMixer)character.userData.characterMixer.update(delta);if(!isPatrol)updateCharacterActionPose(character,delta)}
+for(const character of target.userData.characters||[]){if(character===houseAvatar||character.userData.characterMixer===mixer)continue;const isPatrol=cityPoliceAgents.some(agent=>agent.group===character);if(!isPatrol&&character.userData.characterMixer)character.userData.characterMixer.update(delta);if(!isPatrol){updateCharacterActionPose(character,delta);if(character.userData.characterModel)updateFallbackHumanGait(character,delta,character.userData.lastMoveSpeed||0,!!character.userData.isMoving)}}
 if(kind==='city'&&cityPoliceAgents.length){
  for(const agent of cityPoliceAgents){
   const officer=agent.group,player=houseAvatar;if(!officer)continue;
@@ -2042,8 +2083,8 @@ if(kind==='city'&&cityPoliceAgents.length){
   else if(agent.mode==='investigate'&&player){const wanted=Math.atan2(dx,dz);let turn=(wanted-officer.rotation.y+Math.PI)%(Math.PI*2);if(turn<0)turn+=Math.PI*2;turn-=Math.PI;officer.rotation.y+=turn*(1-Math.exp(-8*delta));}
   if(officer.userData.officerMixer)officer.userData.officerMixer.update(delta);
   const actions=officer.userData.animationActions;
-  if(actions){actions.walk.setEffectiveWeight(walking?1:0);actions.idle.setEffectiveWeight(walking?0:1);actions.walk.setEffectiveTimeScale(.9);}
-  else if(officer.userData.fallbackRig){updateFallbackHumanGait(officer,delta,walking?speed:0,walking);}
+  if(actions&&officer.userData.hasWalkAnimation){actions.walk.setEffectiveWeight(walking?1:0);actions.idle.setEffectiveWeight(officer.userData.hasIdleAnimation?(walking?0:1):0);actions.walk.setEffectiveTimeScale(.9);}
+  updateFallbackHumanGait(officer,delta,walking?speed:0,walking);
  }
 }
 if(kind==='room'&&roomName==='esquadra'&&houseAvatar&&!receptionShown){
@@ -2111,7 +2152,7 @@ if((kind==='room'||kind==='city')&&houseAvatar&&!vehicleState&&!cityTransit?.isP
  houseAvatar.position.y=houseAvatar.userData.actionState?.type==='sit'?((houseAvatar.userData.actionState.seat?.y)||.55)-.86:-.03;
  const model=houseAvatar.userData.characterModel,actionType=houseAvatar.userData.actionState?.type||'idle';
  if(model){const actions=houseAvatar.userData.animationActions;if(actions){const walkWeight=actionType==='sit'||actionType==='wave'?0:(walking?THREE.MathUtils.clamp(speed/1.05,.0,1):0);actions.walk.setEffectiveWeight(walkWeight);actions.idle.setEffectiveWeight(1-walkWeight);actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp(speed/1.8,.85,1.15))}model.position.y=houseAvatar.userData.modelBaseY||0;model.rotation.z=0;model.rotation.x=0}
- updateCharacterActionPose(houseAvatar,delta);if(!model)updateFallbackHumanGait(houseAvatar,delta,speed,walking);
+ updateCharacterActionPose(houseAvatar,delta);updateFallbackHumanGait(houseAvatar,delta,speed,walking);
  if(kind==='city'){socialLocalPosition={x:houseAvatar.position.x,z:houseAvatar.position.z}}if(kind==='room'&&activeHouseVisit?.role==='visitor'&&socialWorldChannel&&now-socialLastPositionBroadcast>450){socialLastPositionBroadcast=now;socialWorldChannel.send({type:'broadcast',event:'player_state',payload:{user_id:user?.id,display_name:profile?.display_name||profile?.username||'Morador',avatar:{...avatar},zone:'visiting-house',house_host_id:activeHouseVisit.hostId,x:houseAvatar.position.x,z:houseAvatar.position.z,rotation:houseAvatar.rotation.y,walking:!!destination}}).catch(()=>{})}if(kind==='city'&&socialWorldChannel&&now-socialLastPresenceSave>2500){socialLastPresenceSave=now;sb.rpc('set_social_world_presence',{p_zone:'city',p_x:houseAvatar.position.x,p_z:houseAvatar.position.z}).then(({error})=>{if(error)console.warn('Posição social:',error.message)})}if(kind==='city'&&socialWorldChannel&&now-socialLastPositionBroadcast>450){socialLastPositionBroadcast=now;const payload={user_id:user?.id,display_name:profile?.display_name||profile?.username||'Morador',avatar:{...avatar},zone:'city',x:houseAvatar.position.x,z:houseAvatar.position.z,rotation:houseAvatar.rotation.y,walking};socialWorldChannel.send({type:'broadcast',event:'player_state',payload}).catch(()=>{})}
  if(kind==='city'){updateNeighborhoodWelcome(houseAvatar.position.x,houseAvatar.position.z);const nearest=cityDrivableCars.map(v=>({vehicle:v,distance:Math.hypot(houseAvatar.position.x-v.group.position.x,houseAvatar.position.z-v.group.position.z)})).sort((a,b)=>a.distance-b.distance)[0];nearbyVehicle=nearest&&nearest.distance<3.7?nearest.vehicle:null;const cp=$('vehicle-prompt'),cl=$('vehicle-prompt-label');if(cp){if(nearbyVehicle){cp.classList.remove('hidden');const canDrive=nearbyVehicle.ownerId===user?.id&&!!nearbyVehicle.vehicleId;if(cl)cl.textContent=canDrive?nearbyVehicle.label+' · Pressiona E para entrar':(nearbyVehicle.ownerId?'Veículo de outro jogador · Só o proprietário pode conduzir':'Veículo da cidade · Não disponível para condução');if(vehicleEnterButton)vehicleEnterButton.disabled=!canDrive}else{cp.classList.add('hidden');if(vehicleEnterButton)vehicleEnterButton.disabled=true}}const nearPoliceDoor=Math.hypot(houseAvatar.position.x-28,houseAvatar.position.z+21.196)<2.05,nearHospitalDoor=Math.hypot(houseAvatar.position.x+28,houseAvatar.position.z+23.8)<2.45,nearVenue=cityWorldEntrances.find(entry=>Math.hypot(houseAvatar.position.x-entry.x,houseAvatar.position.z-(entry.z+entry.front*(entry.d/2+1.15)))<2.15);const enterPrompt=$('room-enter-prompt');if(nearVenue){activeRoomDoor={label:nearVenue.label,dest:nearVenue.dest,spawn:{x:0,z:(nearVenue.dest==='bar'||nearVenue.dest==='party')?-11.5:-2.65,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar em '+nearVenue.label;if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearHospitalDoor){activeRoomDoor={label:'HOSPITAL',dest:'hospital',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar no hospital';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(nearPoliceDoor){activeRoomDoor={label:'ESQUADRA',dest:'esquadra',spawn:{x:0,z:2.75,face:Math.PI}};const enterLabel=$('room-enter-label');if(enterLabel)enterLabel.textContent='Entrar na esquadra';if(enterPrompt)enterPrompt.classList.remove('hidden')}else if(activeRoomDoor?.dest&&activeRoomDoor.dest!=='city'){activeRoomDoor=null;if(enterPrompt)enterPrompt.classList.add('hidden')}cameraTarget.set(houseAvatar.position.x,0,houseAvatar.position.z);updateOrbit()}else{cameraTarget.set(0,0,0)}
  if(kind==='city'&&cityTransit?.isPassenger()){const ride=cityTransit.getRidePosition();if(ride){cameraTarget.set(ride.x,.2,ride.z);updateOrbit()}}
