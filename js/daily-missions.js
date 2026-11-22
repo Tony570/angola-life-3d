@@ -14,9 +14,10 @@ export function createDailyMissions(userId){
  let state={day:dateKey(),completed:{},xp:0};
  try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&typeof saved==='object'){state={...state,...saved};if(state.day!==dateKey()){state.day=dateKey();state.completed={}}if(!state.completed||typeof state.completed!=='object')state.completed={};state.xp=Math.max(0,Number(state.xp)||0)}}catch(error){console.warn('Metas diárias: armazenamento local indisponível.',error)}
  const save=()=>{try{localStorage.setItem(key,JSON.stringify(state))}catch(error){console.warn('Não foi possível guardar as metas diárias.',error)}};
+ const rollover=()=>{if(state.day!==dateKey()){state.day=dateKey();state.completed={};save()}};
  const level=()=>Math.floor(state.xp/250)+1;
- const updateHud=()=>{const el=document.getElementById('life-level');if(el){el.textContent=String(level());el.title=state.xp+' pontos de experiência';}};
- const record=action=>{const mission=MISSIONS.find(x=>x.action===action);if(!mission||state.completed[mission.id])return false;state.completed[mission.id]=true;state.xp+=mission.reward;save();updateHud();return true};
+ const updateHud=()=>{rollover();const el=document.getElementById('life-level');if(el){el.textContent=String(level());el.title=state.xp+' pontos de experiência';}};
+ const record=action=>{rollover();const mission=MISSIONS.find(x=>x.action===action);if(!mission||state.completed[mission.id])return false;state.completed[mission.id]=true;state.xp+=mission.reward;save();updateHud();return true};
  const renderHtml=()=>{
   if(state.day!==dateKey()){state.day=dateKey();state.completed={};save()}
   const done=MISSIONS.filter(x=>state.completed[x.id]).length,percent=Math.round(done/MISSIONS.length*100);
