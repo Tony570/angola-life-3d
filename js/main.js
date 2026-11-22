@@ -120,7 +120,30 @@ function showPage(page){
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));$('go-avatar').onclick=()=>showPage('avatar');
 
 function refreshBarCash(){const display=$('bar-cash-display');if(display)display.textContent='💵 '+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz'}
-async function refreshPlayerWallet(){
+async 
+async function confirmGamePurchase({item,quantity=1,total,description='',execute,afterPurchase,onCancel,onContinue}){
+ const fmt=value=>new Intl.NumberFormat('pt-PT').format(Number(value)||0);
+ const amount=Number(total),count=Number(quantity);
+ if(!item||!Number.isSafeInteger(amount)||amount<0||!Number.isSafeInteger(count)||count<1||typeof execute!=='function')return;
+ const insufficient=playerWalletBalance<amount;
+ openLifePanel('🧾 Confirmar compra','<div class="purchase-summary"><div class="purchase-summary-item"><span>Artigo / serviço</span><b>'+escapeLife(item)+'</b></div>'+(count>1?'<div class="purchase-summary-item"><span>Quantidade</span><b>'+fmt(count)+'</b></div>':'')+(description?'<p class="purchase-description">'+escapeLife(description)+'</p>':'')+'<div class="purchase-summary-item"><span>Total a pagar</span><b>'+fmt(amount)+' Kz</b></div><div class="purchase-summary-item"><span>Saldo disponível</span><b>'+fmt(playerWalletBalance)+' Kz</b></div><div class="purchase-summary-item"><span>Saldo depois do pagamento</span><b>'+fmt(Math.max(0,playerWalletBalance-amount))+' Kz</b></div><div class="purchase-payment-method">Pagamento pela carteira virtual · Kz</div></div><p id="purchase-confirm-message" class="life-muted">'+(insufficient?'Saldo insuficiente. Recebe salário ou dinheiro antes de comprar.':'Confirma os dados antes de concluir o pagamento.')+'</p><div class="purchase-actions"><button type="button" class="secondary" id="purchase-cancel">Cancelar</button><button type="button" id="purchase-confirm" '+(insufficient?'disabled':'')+'>Confirmar e pagar</button></div>');
+ const panel=$('life-panel'),cancel=panel.querySelector('#purchase-cancel'),confirm=panel.querySelector('#purchase-confirm'),message=panel.querySelector('#purchase-confirm-message');
+ cancel.onclick=()=>{if(onCancel)onCancel();else panel.classList.add('hidden')};
+ if(!confirm)return;
+ confirm.onclick=async()=>{
+  if(confirm.disabled)return;
+  confirm.disabled=true;cancel.disabled=true;confirm.textContent='A processar pagamento…';
+  let result;
+  try{result=await execute()}catch(error){result={error}}
+  if(result?.error){message.textContent=result.error.message||'Não foi possível concluir o pagamento. Tenta novamente.';confirm.disabled=false;cancel.disabled=false;confirm.textContent='Tentar novamente';return}
+  try{await refreshPlayerWallet();if(afterPurchase)await afterPurchase(result?.data)}catch(error){console.warn('Actualização após compra:',error)}
+  const paid=Number(result?.data?.total??result?.data?.amount??result?.data?.price??amount);
+  openLifePanel('✅ Pagamento confirmado','<div class="purchase-receipt"><div class="purchase-success-icon">✓</div><h4>Compra concluída</h4><p>'+escapeLife(item)+'</p><div class="purchase-summary-item"><span>Valor pago</span><b>'+fmt(paid)+' Kz</b></div><div class="purchase-summary-item"><span>Novo saldo</span><b>'+fmt(playerWalletBalance)+' Kz</b></div><p class="purchase-description">O pagamento foi registado na tua conta e o artigo/serviço foi processado.</p></div><button type="button" id="purchase-continue">Continuar</button>');
+  const next=$('purchase-continue');if(next)next.onclick=()=>{if(onContinue)onContinue(result?.data);else $('life-panel').classList.add('hidden')};
+ };
+}
+
+function refreshPlayerWallet(){
  if(!user)return;
  const {data,error}=await sb.from('player_wallets').select('balance').eq('user_id',user.id).maybeSingle();
  if(error){console.error('Carteira:',error);return}
@@ -148,24 +171,18 @@ async function loadFoodInventory(){
  return data||[];
 }
 function foodCount(items,key){return Number(items.find(x=>x.item_key===key)?.quantity||0)}
-async function openMarketPanel(){
+async function openMarketPanel(message=''){
  if(activeRoomName!=='market')return;
  await refreshPlayerWallet();
  const items=await loadFoodInventory();
  const rows=marketCatalog.map(([key,label,price,emoji])=>'<div class="life-row"><span><b>'+emoji+' '+label+'</b><br><small>'+new Intl.NumberFormat('pt-PT').format(price)+' Kz · Stock: '+foodCount(items,key)+'</small></span><span class="market-buy-controls"><input aria-label="Quantidade de '+label+'" type="number" min="1" max="99" value="1" data-market-qty="'+key+'"><button class="secondary" data-market-buy="'+key+'">Comprar</button></span></div>').join('');
- openLifePanel('🛒 Mercado de Angola','<p class="life-muted">Escolhe os produtos e as quantidades. O valor é descontado da tua carteira e os ingredientes seguem para o teu inventário.</p><p><b>Saldo:</b> <span id="market-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p><div class="life-list">'+rows+'</div><p id="market-message" class="life-muted">Os preços apresentados são os preços definidos no jogo.</p>');
+ openLifePanel('🛒 Mercado de Angola','<p class="life-muted">Escolhe os produtos e as quantidades. O valor é descontado da tua carteira e os ingredientes seguem para o teu inventário.</p><p><b>Saldo:</b> <span id="market-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p><div class="life-list">'+rows+'</div><p id="market-message" class="life-muted">'+escapeLife(message||'Os preços apresentados são os preços definidos no jogo.')+'</p>');
  $('life-panel').querySelectorAll('[data-market-buy]').forEach(button=>button.onclick=async()=>{
   const key=button.dataset.marketBuy,qty=Number($('life-panel').querySelector('[data-market-qty="'+key+'"]')?.value||1);
   if(!Number.isInteger(qty)||qty<1||qty>99){$('market-message').textContent='Escolhe uma quantidade entre 1 e 99.';return}
-  button.disabled=true;button.textContent='A comprar…';
-  const {data,error}=await sb.rpc('market_buy_food',{p_item:key,p_quantity:qty});
-  if(error){const msg=$('life-panel').querySelector('#market-message');if(msg)msg.textContent=error.message;if(button.isConnected){button.disabled=false;button.textContent='Comprar'}return}
-  await refreshPlayerWallet();
-  const panel=$('life-panel');
-  if(activeRoomName==='market'&&!panel.classList.contains('hidden')&&panel.querySelector('#market-message')){
-   await openMarketPanel();
-   const msg=panel.querySelector('#market-message');if(msg)msg.textContent='Compra concluída: '+data.quantity+' × '+data.item+'. Total: '+new Intl.NumberFormat('pt-PT').format(data.total)+' Kz.';
-  }
+  const product=marketCatalog.find(x=>x[0]===key);if(!product)return;
+  const total=product[2]*qty;
+  confirmGamePurchase({item:product[1],quantity:qty,total,description:'Os produtos serão adicionados ao teu inventário alimentar.',execute:()=>sb.rpc('market_buy_food',{p_item:key,p_quantity:qty}),afterPurchase:loadFoodInventory,onCancel:()=>openMarketPanel(message),onContinue:data=>openMarketPanel('Compra concluída: '+data.quantity+' × '+data.item+'. Total: '+new Intl.NumberFormat('pt-PT').format(data.total)+' Kz.')});
  });
 }
 async function openKitchenPanel(){
@@ -199,7 +216,7 @@ async function openKitchenPanel(){
  });
 }
 
-async function openEconomyPanel(){
+async function openEconomyPanel(message=''){
  await Promise.all([refreshPlayerWallet(),refreshPlayerNeeds()]);
  const foods=[['water','💧 Água',100,'+2 energia · +20 hidratação'],['juice','🧃 Sumo',250,'+5 energia · +15 hidratação'],['fruit','🍎 Fruta',200,'+5 energia · +15 fome'],['sandwich','🥪 Sandes',500,'+10 energia · +25 fome'],['meal','🍛 Refeição completa',1000,'+20 energia · +40 fome']];
  const foodHtml=activeRoomName==='market'?foods.map(x=>'<div class="life-row"><span><b>'+x[1]+'</b><br><small>'+x[3]+' · '+new Intl.NumberFormat('pt-PT').format(x[2])+' Kz</small></span><button class="secondary" data-consumable="'+x[0]+'">Comprar</button></div>').join(''):'<p class="life-muted">Entra no Mercado da cidade para comprar comida e bebidas.</p>';
@@ -215,9 +232,9 @@ async function openEconomyPanel(){
  const jobHtml=currentJobs.length?currentJobs.map(job=>'<div class="life-row"><span><b>'+escapeLife(employerNames[job.employer]||job.employer)+'</b><br><small>'+escapeLife(job.role)+' · '+new Intl.NumberFormat('pt-PT').format(Number(job.salary)||0)+' Kz/dia</small></span><span class="badge">Activo</span></div>').join(''):'<p class="life-muted">Ainda não tens um contrato activo. Consulta as vagas nos edifícios de emprego da cidade.</p>';
  const history=[...(transfers||[]).map(t=>({label:t.sender_id===user.id?'Transferência enviada':'Transferência recebida',amount:t.amount,created_at:t.created_at})),...(purchases||[]).map(x=>({label:x.item_label,amount:x.amount,created_at:x.created_at}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,8);
  const historyHtml=history.length?history.map(x=>'<div class="life-row"><span>'+escapeLife(x.label)+'<br><small>'+new Date(x.created_at).toLocaleString('pt-PT')+'</small></span><b>'+new Intl.NumberFormat('pt-PT').format(x.amount)+' Kz</b></div>').join(''):'<p class="life-muted">Ainda não existem movimentos.</p>';
- openLifePanel('Carteira e necessidades','<p><b>Saldo:</b> <span id="economy-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p>'+needsSummary()+'<h4>Transferir dinheiro</h4><label for="transfer-player">Nome de utilizador do destinatário</label><input id="transfer-player" placeholder="utilizador sem @"><label for="transfer-amount">Valor em Kz</label><input id="transfer-amount" type="number" min="1" step="1" placeholder="Ex.: 1000"><button id="send-transfer">Enviar dinheiro</button><p id="economy-message" class="life-muted"></p><h4>Comida e bebidas · Mercado</h4>'+foodHtml+'<h4>Higiene e banho</h4>'+showerHtml+'<h4>Descanso</h4>'+sleepHtml+'<h4>Emprego actual</h4>'+jobHtml+'<h4>Movimentos recentes</h4>'+historyHtml+'<p class="life-muted">O saldo e as compras ficam guardados na tua conta.</p>');
+ openLifePanel('Carteira e necessidades','<p><b>Saldo:</b> <span id="economy-balance">'+new Intl.NumberFormat('pt-PT').format(playerWalletBalance)+' Kz</span></p>'+needsSummary()+'<h4>Transferir dinheiro</h4><label for="transfer-player">Nome de utilizador do destinatário</label><input id="transfer-player" placeholder="utilizador sem @"><label for="transfer-amount">Valor em Kz</label><input id="transfer-amount" type="number" min="1" step="1" placeholder="Ex.: 1000"><button id="send-transfer">Enviar dinheiro</button><p id="economy-message" class="life-muted">'+escapeLife(message)+'</p><h4>Comida e bebidas · Mercado</h4>'+foodHtml+'<h4>Higiene e banho</h4>'+showerHtml+'<h4>Descanso</h4>'+sleepHtml+'<h4>Emprego actual</h4>'+jobHtml+'<h4>Movimentos recentes</h4>'+historyHtml+'<p class="life-muted">O saldo e as compras ficam guardados na tua conta.</p>');
  const panel=$('life-panel');
- panel.querySelectorAll('[data-consumable]').forEach(btn=>btn.onclick=async()=>{btn.disabled=true;btn.textContent='A comprar…';const {data,error}=await sb.rpc('buy_player_consumable',{p_item:btn.dataset.consumable});if(error){$('economy-message').textContent=error.message;btn.disabled=false;btn.textContent='Comprar';return}await Promise.all([refreshPlayerWallet(),refreshPlayerNeeds()]);await openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Compraste '+data.item+'. Necessidades actualizadas.'});
+ panel.querySelectorAll('[data-consumable]').forEach(btn=>btn.onclick=()=>{const product=foods.find(x=>x[0]===btn.dataset.consumable);if(!product)return;confirmGamePurchase({item:product[1],total:product[2],description:'O artigo será consumido e as tuas necessidades serão actualizadas.',execute:()=>sb.rpc('buy_player_consumable',{p_item:btn.dataset.consumable}),afterPurchase:refreshPlayerNeeds,onCancel:()=>openEconomyPanel(message),onContinue:data=>openEconomyPanel('Compraste '+data.item+'. Necessidades actualizadas.')})});
  const transfer=$('send-transfer');
  if(transfer)transfer.onclick=async()=>{const recipient=$('transfer-player').value.trim(),amount=Number($('transfer-amount').value),msg=$('economy-message');if(!recipient||!Number.isSafeInteger(amount)||amount<=0){msg.textContent='Indica o destinatário e um valor válido.';return}transfer.disabled=true;transfer.textContent='A enviar…';const {error}=await sb.rpc('transfer_player_money',{p_recipient:recipient,p_amount:amount});if(error){msg.textContent=error.message;transfer.disabled=false;transfer.textContent='Enviar dinheiro';return}await refreshPlayerWallet();await openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Transferência enviada com sucesso.'};
  const sleep=$('needs-sleep');
