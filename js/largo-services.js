@@ -1,3 +1,5 @@
+import { openCityPoliticsPanel } from './city-politics.js';
+
 const money = value => new Intl.NumberFormat('pt-PT').format(Number(value)||0) + ' Kz';
 
 const venueMenuItems=[
@@ -210,6 +212,13 @@ function serviceButton(label,key,price) {
   return '<div class="life-row"><span><b>'+label+'</b><br><small>'+money(price)+'</small></span><button class="secondary" data-largo-buy="'+key+'" data-price="'+price+'">Pagar</button></div>';
 }
 
+async function recentPurchasesHtml({sb,user,esc}) {
+  const {data,error}=await sb.from('player_purchase_history').select('item_key,item_label,amount,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(8);
+  if(error)return '<h4>Pedidos e compras recentes</h4><p class="life-muted">Não foi possível consultar o histórico neste momento.</p>';
+  const rows=data||[];
+  return '<h4>Pedidos e compras recentes</h4><p class="life-muted">As compras confirmadas ficam registadas aqui. Estado: pago e concluído.</p>'+(rows.length?'<div class="life-list">'+rows.map(x=>'<div class="life-row"><span><b>'+esc(x.item_label)+'</b><br><small>'+new Date(x.created_at).toLocaleString('pt-PT')+' · Pago</small></span><b>'+money(x.amount)+'</b></div>').join('')+'</div>':'<p class="life-muted">Ainda não tens compras registadas.</p>');
+}
+
 export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshPlayerWallet,refreshPlayerNeeds,escapeLife,confirmPurchase}) {
   const cfg=serviceRooms[kind];if(!cfg||!user)return;
   const esc=escapeLife||((v)=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
@@ -276,7 +285,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }else{
         html+='<label for="largo-government-role">Vaga pretendida</label><select id="largo-government-role">'+jobs.map(j=>'<option value="'+j[0]+'">'+j[1]+' · '+money(j[2])+'/dia</option>').join('')+'</select><button id="largo-government-apply">Enviar candidatura</button>';
       }
-      html+='<h4>Atendimento público e taxas</h4><div class="life-list">'+serviceButton('Emissão de certidão','government-certificate',1500)+serviceButton('Autenticação de documento','government-authentication',2500)+'</div><p class="life-muted">Os restantes pedidos de informação são gratuitos.</p>';
+      html+='<h4>Atendimento público e taxas</h4><div class="life-list">'+serviceButton('Emissão de certidão','government-certificate',1500)+serviceButton('Autenticação de documento','government-authentication',2500)+'</div><p class="life-muted">Os restantes pedidos de informação são gratuitos.</p><h4>Participação política</h4><p class="life-muted">Apresenta um partido, publica o teu manifesto e participa nas eleições do Governo Provincial.</p><button id="open-city-politics">Abrir eleições e candidaturas</button>';
     } else if(kind==='residential-10'||kind==='residential-tower'||kind==='residential-family'){
       const listings=kind==='residential-10'?Array.from({length:10},(_,i)=>({code:'A'+String(i+1).padStart(2,'0'),label:'Apartamento '+(i<2?'T1':i<6?'T2':'T3')+' · Bloco de 10',price:i<2?12000000:i<6?18500000:22000000})):kind==='residential-tower'?Array.from({length:10},(_,i)=>({code:'T'+String(i+1).padStart(2,'0'),label:'Apartamento · Torre Residencial',price:28500000})):Array.from({length:6},(_,i)=>({code:'F'+String(i+1).padStart(2,'0'),label:'Apartamento T2 · Residencial Familiar',price:16000000}));
       const {data:owned}=await sb.from('largo_apartment_ownership').select('apartment_code').eq('user_id',user.id);
@@ -324,14 +333,26 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       html+='<h4>Regras de frequência e aprovação</h4><p class="life-muted">A aula muda diariamente segundo o calendário de início da formação. O estudante deve registar a participação no próprio dia. Uma falta numa aula obrigatória reprova a formação. A aprovação exige 15 presenças em 15 dias.</p>';
       html+='<h4>Instalações do campus</h4><p class="life-muted">Reitoria e secretaria, biblioteca central, laboratórios, auditório, cantina, centro de estudantes, jardins e parque de estacionamento.</p>';
     } else if(kind==='largo-police'){
-      html+='<h4>Serviços policiais</h4><div class="life-list"><div class="life-row"><span>Apresentar ocorrência ou denúncia</span><b>Gratuito</b></div><div class="life-row"><span>Pedir informações e apoio</span><b>Gratuito</b></div><div class="life-row"><span>Solicitar patrulhamento</span><b>Gratuito</b></div></div><p class="life-muted">Dirige-te ao balcão para atendimento.</p>';
+      const {data:incidents,error:incidentError}=await sb.from('police_incidents').select('incident_type,location,description,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(5);
+      html+='<h4>Apresentar ocorrência ou denúncia</h4><label for="police-incident-type">Tipo de ocorrência</label><select id="police-incident-type"><option value="queixa">Queixa ou denúncia</option><option value="seguranca_residencial">Segurança residencial</option><option value="emergencia">Emergência</option></select><label for="police-incident-location">Local</label><input id="police-incident-location" maxlength="120" placeholder="Rua, edifício ou zona"><label for="police-incident-description">Descrição</label><textarea id="police-incident-description" rows="3" maxlength="1000" placeholder="Descreve o que aconteceu (mínimo 10 caracteres)."></textarea><button id="police-incident-submit">Enviar ocorrência</button><p id="police-incident-message" class="life-muted">O registo é gratuito e fica associado à tua conta.</p><h4>As minhas ocorrências</h4>'+(incidentError?'<p class="life-muted">Não foi possível consultar as ocorrências.</p>':(incidents||[]).length?'<div class="life-list">'+incidents.map(x=>'<div class="life-row"><span><b>'+esc(x.incident_type)+'</b><br><small>'+esc(x.location)+' · '+new Date(x.created_at).toLocaleString('pt-PT')+'</small></span><span class="badge">'+esc(x.status)+'</span></div>').join('')+'</div>':'<p class="life-muted">Ainda não apresentaste nenhuma ocorrência.</p>');
     } else if(kind==='parish'){
       html+='<h4>Actividades da paróquia</h4><div class="life-list"><div class="life-row"><span>Oração e visita</span><b>Gratuito</b></div><div class="life-row"><span>Celebrações e actividades comunitárias</span><b>Gratuito</b></div></div><p class="life-muted">A paróquia está aberta aos moradores e visitantes.</p>';
     }
+    html+=await recentPurchasesHtml({sb,user,esc});
     if(message)html+='<p id="largo-service-message" class="life-muted">'+esc(message)+'</p>';
     openLifePanel(cfg.title,html);
     const panel=document.getElementById('life-panel');if(!panel)return;
     const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();if(refreshPlayerNeeds)await refreshPlayerNeeds();await render(success(data));};
+    const politicsButton=panel.querySelector('#open-city-politics');
+    if(politicsButton)politicsButton.onclick=()=>openCityPoliticsPanel({sb,user,openLifePanel});
+    const incidentSubmit=panel.querySelector('#police-incident-submit');
+    if(incidentSubmit)incidentSubmit.onclick=()=>{
+      const type=panel.querySelector('#police-incident-type').value;
+      const location=panel.querySelector('#police-incident-location').value.trim();
+      const description=panel.querySelector('#police-incident-description').value.trim();
+      if(!location||description.length<10){const note=panel.querySelector('#police-incident-message');note.textContent='Indica o local e uma descrição com pelo menos 10 caracteres.';return;}
+      run(incidentSubmit,()=>sb.rpc('submit_police_incident',{p_type:type,p_location:location,p_description:description}),()=>'Ocorrência registada. Podes acompanhar o estado na lista das tuas ocorrências.');
+    };
     if(cfg.bank){
       const transfer=document.getElementById('largo-bank-transfer');
       if(transfer)transfer.onclick=()=>{

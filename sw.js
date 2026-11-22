@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-angola-world-v111-async-startup-fix-20261122';
+const CACHE_NAME = 'angola-life-3d-v115-commercial-politics-20261122';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './js/main.js',
   './js/largo-do-ambiente.js',
   './js/largo-services.js',
+  './js/city-politics.js',
   './js/city-transit.js',
   './js/city-realism.js',
   './js/day-night.js',
