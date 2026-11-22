@@ -25,6 +25,13 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
   const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
   const rainMaterial=new THREE.PointsMaterial({color:'#c9e4ff',size:compactDevice ? 0.11 : 0.16,transparent:true,opacity:0,depthWrite:false});
   const rain=new THREE.Points(rainGeometry,rainMaterial);rain.name='AngolaLifeRain';if(isCity)scene.add(rain);
+  const puddles=[];
+  if(isCity){for(let i=0;i<18;i++){const material=new THREE.MeshBasicMaterial({color:'#9bbac8',transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});const puddle=new THREE.Mesh(new THREE.CircleGeometry(.7+(i%4)*.22,18),material);puddle.rotation.x=-Math.PI/2;puddle.scale.set(1.35,.62,1);puddle.position.set(((i*37)%130)-65,.004,((i*53)%130)-65);puddle.name='AngolaLifeRainPuddle';target.add(puddle);puddles.push(puddle)}}
+  const lightning=isCity?new THREE.PointLight(0xddeaff,0,190,1.5):null;
+  if(lightning){lightning.position.set(12,58,-18);scene.add(lightning)}
+  let nextLightningAt=Date.now()+18000,lightningUntil=0,lightningPower=0;
+  const wetMaterials=[];
+  if(isCity)target.traverse(object=>{const materials=Array.isArray(object.material)?object.material:[object.material];for(const material of materials){if(material?.name==='AngolaLifeAsphalt'&&!wetMaterials.includes(material))wetMaterials.push(material)}});
   const lampPositions=compactDevice?[[-56,-56],[56,-56],[-56,56],[56,56]]:[[-56,-56],[0,-56],[56,-56],[-56,0],[56,0],[-56,56],[0,56],[56,56]];
   const lamps=isCity?lampPositions.map(([x,z])=>{const bulb=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshBasicMaterial({color:'#ffd98b'}));bulb.position.set(x,4.15,z);target.add(bulb);const glow=new THREE.PointLight(0xffc978,0,18,2);glow.position.set(x,4.1,z);target.add(glow);return {bulb,glow}}):[];
   const getMinute=()=>((baseMinute+(Date.now()-baseStamp)/RATE_MS_PER_GAME_MINUTE)%1440+1440)%1440;
@@ -57,7 +64,11 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
       starMaterial.opacity=clamp((.22-daylight)/.22,0,1)*.92;
       lamps.forEach(({bulb,glow})=>{glow.intensity=night*1.55;bulb.material.color.setRGB(1,.72+.2*daylight,.38+.48*daylight)});
       rainOpacity+=((climate.key==='rain' ? .72 : 0)-rainOpacity)*(1-Math.exp(-Math.max(delta,.033)*.55));rainMaterial.opacity=rainOpacity;rain.visible=rainOpacity>.01;
-      if(climate.key==='rain'){const p=rainGeometry.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=(delta||.033)*25;if(p[i*3+1]<0){p[i*3+1]=35+rand()*15;p[i*3]=(rand()-.5)*190;p[i*3+2]=(rand()-.5)*190}}rainGeometry.attributes.position.needsUpdate=true}
+      puddles.forEach((puddle,index)=>{puddle.material.opacity=rainOpacity*.24;puddle.visible=rainOpacity>.025;puddle.scale.set(1.1+(index%3)*.22,.55+(index%2)*.12,1)});
+      const wetness=rainOpacity>.04?rainOpacity:0;wetMaterials.forEach(material=>{material.roughness=.98-wetness*.48;material.metalness=wetness*.12;material.needsUpdate=true});
+      if(climate.key==='rain'){const p=rainGeometry.attributes.position.array;for(let i=0;i<rainCount;i++){p[i*3+1]-=(delta||.033)*25;p[i*3]+=Math.sin(Date.now()*.00035)*((delta||.033)*2.2);if(p[i*3+1]<0){p[i*3+1]=35+rand()*15;p[i*3]=(rand()-.5)*190;p[i*3+2]=(rand()-.5)*190}}rainGeometry.attributes.position.needsUpdate=true}
+      const now=Date.now();if(climate.key==='rain'&&now>nextLightningAt){lightningUntil=now+110+rand()*100;lightningPower=.75+rand()*.85;nextLightningAt=now+16000+rand()*36000}
+      if(lightning){const remaining=lightningUntil-now;lightning.intensity=remaining>0?lightningPower*(remaining<70?.45:1):0;if(remaining<=0&&lightning.intensity>0)lightning.intensity=0;}
     }
     if(Date.now()-lastPersist>15000){lastPersist=Date.now();try{localStorage.setItem(KEY,JSON.stringify({minute,stamp:Date.now()}))}catch(error){}}
     const label=(hour<10?'0':'')+hour+':'+(mins<10?'0':'')+mins+' · '+(hour>=6&&hour<18?'DIA':'NOITE')+' · '+climate.label;
