@@ -214,6 +214,7 @@ export function applyCityRealism({ THREE, target, scene, compactDevice = false }
     new THREE.SphereGeometry(3.4, 16, 12),
     new THREE.MeshBasicMaterial({ color: '#fff0c9', transparent: true, opacity: 0.72, depthWrite: false })
   );
+  sunGlow.name = 'AngolaLifeSunGlow';
   sunGlow.position.set(-95, 78, -115);
   scene.add(sunGlow);
 }
