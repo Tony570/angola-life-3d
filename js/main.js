@@ -436,6 +436,7 @@ function updateFallbackHumanGait(root,delta,speed,walking){
    actions.idle.setEffectiveWeight(root.userData.hasIdleAnimation?1-root.userData.walkBlend:0);
    actions.walk.setEffectiveTimeScale(THREE.MathUtils.clamp((speed||1)/1.8,.85,1.2));
   }else if(root.userData.proceduralGait){
+   if(actions){actions.walk.setEffectiveWeight(0);actions.idle.setEffectiveWeight(0)}
    updateProceduralGait(root,root.userData.walkPhase,root.userData.walkBlend);
   }
   return;
