@@ -45,6 +45,7 @@ export function applyCityRealism({ THREE, target, scene, compactDevice = false }
   asphaltTexture.wrapT = THREE.RepeatWrapping;
   asphaltTexture.repeat.set(2, 18);
   const asphalt = new THREE.MeshStandardMaterial({ map: asphaltTexture, color: '#d1d0c9', roughness: 0.98 });
+  asphalt.name = 'AngolaLifeAsphalt';
   const concrete = makeMat('#aaa99f', 0.96);
   const curb = makeMat('#d2cfc4', 0.95);
   const whitePaint = makeMat('#eee9dc', 0.9);
