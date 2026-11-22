@@ -247,11 +247,17 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }
       }
     } else if(kind==='restaurant-polonia'){
+      html+='<h4>🍽️ Menu do Restaurante Polónia</h4><p class="life-muted">Escolhe uma refeição ou bebida. O preço é apresentado antes da confirmação do pagamento.</p>';
       html+=renderVenueMenuMarkup();
       html+=await basicEmploymentHtml({sb,user,employer:'restaurant',title:'Restaurante Polónia',roles:[['cozinheiro','Cozinheiro'],['empregado_mesa','Empregado de mesa'],['caixa','Caixa'],['limpeza','Limpeza']],esc});
     } else if(kind==='party'){
+      html+='<h4>🎉 Menu do Salão de Festas</h4><p class="life-muted">Consulta as opções de comida e bebida disponíveis para os eventos.</p>';
       html+=renderVenueMenuMarkup();
       html+=await basicEmploymentHtml({sb,user,employer:'party',title:'Salão de Festas',roles:[['organizador_eventos','Organizador de eventos'],['empregado_sala','Empregado de sala'],['barman','Barman'],['seguranca','Segurança'],['limpeza','Limpeza']],esc});
+    } else if(kind==='isced-canteen'){
+      html+='<h4>🥘 Menu da Cantina Universitária</h4><p class="life-muted">Faz uma pausa entre as aulas. Escolhe a refeição ou bebida e confirma o pagamento pela carteira virtual.</p>';
+      html+=renderVenueMenuMarkup();
+      html+='<p class="life-muted">Os pedidos são pagos em kwanzas (Kz) e actualizam as necessidades do teu personagem.</p>';
     } else if(kind==='quarry'){
       html+=await basicEmploymentHtml({sb,user,employer:'quarry',title:'Empresa da Pedreira',roles:[['operador_maquinas','Operador de máquinas'],['ajudante_pedreira','Ajudante de pedreira'],['motorista_maquinas','Motorista de máquinas'],['seguranca','Segurança']],esc});
     } else if(kind==='taf'){
