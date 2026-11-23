@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Angola Life 3D</title>
 <meta name="theme-color" content="#111827">
-<link rel="stylesheet" href="css/style.css?v=angola-world-v123-transit-sync-no-rewind-20261123">
+<link rel="stylesheet" href="css/style.css?v=angola-world-v124-multitouch-movement-20261123">
 </head>
 <body>
 <section id="auth" class="auth-wrap">
@@ -67,7 +67,7 @@
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.filter(name => name.startsWith('angola-life-3d-')).map(name => caches.delete(name)));
     }
-    await import('./js/main.js?v=angola-world-v123-transit-sync-no-rewind-20261123');
+    await import('./js/main.js?v=angola-world-v124-multitouch-movement-20261123');
   } catch (error) {
     const host = document.getElementById('global-message');
     if (host) {
