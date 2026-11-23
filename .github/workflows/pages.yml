@@ -23,6 +23,10 @@ jobs:
             echo "A validar $file"
             node --input-type=module --check < "$file"
           done
+      - name: Validar protecção contra recuo dos autocarros na sincronização
+        run: |
+          grep -Fq "latestSimulation" js/city-transit.js
+          grep -Fq "state.data={...state.data,...data,...latestSimulation};" js/city-transit.js
       - name: Validar regras dos empregos sem formação
         run: |
           if grep -q "const LARGO_SERVICE_ROOMS=.*'party'.*'quarry'" js/main.js; then echo "Erro: interiores próprios de festa/pedreira foram substituídos"; exit 1; fi
