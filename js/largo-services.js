@@ -331,20 +331,23 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
     if(message)html+='<p id="largo-service-message" class="life-muted">'+esc(message)+'</p>';
     openLifePanel(cfg.title,html);
     const panel=document.getElementById('life-panel');if(!panel)return;
-    const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();if(refreshPlayerNeeds)await refreshPlayerNeeds();await render(success(data));};
+    const run=async(button,fn,success)=>{if(!button)return;button.disabled=true;button.textContent='A processar…';try{const {data,error}=await fn();if(error){await render(error.message);return}await refreshPlayerWallet();if(refreshPlayerNeeds)await refreshPlayerNeeds();await render(success(data));}catch(error){await render(error?.message||'Não foi possível concluir a operação. Verifica a ligação e tenta novamente.')}};
     if(cfg.bank){
       const transfer=document.getElementById('largo-bank-transfer');
       if(transfer)transfer.onclick=()=>{
         const recipient=document.getElementById('largo-bank-recipient').value.trim();
         const amount=Number(document.getElementById('largo-bank-transfer-amount').value);
-        if(!recipient||!Number.isSafeInteger(amount)||amount<=0){render('Indica o número da conta do destinatário e um valor inteiro superior a zero.');return;}
-        return run(transfer,()=>sb.rpc('largo_transfer_bank_account',{p_from_account:document.getElementById('largo-bank-account').value,p_to_account_number:recipient,p_amount:amount}),d=>'Transferência concluída: '+money(d.amount)+' enviada para a conta '+d.to_account+' ('+d.bank+').');
+        const source=document.getElementById('largo-bank-account')?.value;
+        if(!source){render('Selecciona uma conta bancária de origem.');return;}
+        if(!recipient||!Number.isSafeInteger(amount)||amount<=0||amount>1000000000){render('Indica o número da conta do destinatário e um valor inteiro entre 1 e 1.000.000.000 Kz.');return;}
+        if(!window.confirm('Confirmas a transferência de '+money(amount)+' para a conta '+recipient+'?'))return;
+        return run(transfer,()=>sb.rpc('largo_transfer_bank_account',{p_from_account:source,p_to_account_number:recipient,p_amount:amount}),d=>'Transferência concluída: '+money(d.amount)+' enviada para a conta '+d.to_account+' ('+d.bank+').');
       };
       const open=document.getElementById('largo-open-account');if(open)open.onclick=()=>{const accountType=document.getElementById('largo-account-type').value;if(confirmPurchase)confirmPurchase({item:'Abertura de conta '+cfg.bank+' · '+accountType,total:2500,description:'A taxa será debitada da carteira virtual e a conta ficará associada ao teu jogador.',execute:()=>sb.rpc('largo_open_bank_account',{p_bank_code:cfg.bank,p_account_type:accountType}),onCancel:()=>render(),onContinue:d=>render('Conta '+d.account_number+' aberta com sucesso. Taxa: '+money(d.fee)+'.')});else run(open,()=>sb.rpc('largo_open_bank_account',{p_bank_code:cfg.bank,p_account_type:accountType}),d=>'Conta '+d.account_number+' aberta com sucesso. Taxa: '+money(d.fee)+'.')};
       const deposit=document.getElementById('largo-deposit'),withdraw=document.getElementById('largo-withdraw');
-      const operation=op=>{const account=document.getElementById('largo-bank-account').value,amount=Number(document.getElementById('largo-bank-amount').value);return sb.rpc('largo_bank_cash_operation',{p_account_id:account,p_operation:op,p_amount:amount})};
-      if(deposit)deposit.onclick=()=>run(deposit,()=>operation('deposit'),d=>'Depósito concluído. Saldo da conta: '+money(d.balance)+'.');
-      if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+'.');
+      const operation=op=>{const account=document.getElementById('largo-bank-account')?.value,amount=Number(document.getElementById('largo-bank-amount')?.value);if(!account)throw new Error('Selecciona uma conta bancária.');if(!Number.isSafeInteger(amount)||amount<=0||amount>1000000000)throw new Error('Indica um valor inteiro entre 1 e 1.000.000.000 Kz.');return sb.rpc('largo_bank_cash_operation',{p_account_id:account,p_operation:op,p_amount:amount})};
+      if(deposit)deposit.onclick=()=>run(deposit,()=>operation('deposit'),d=>'Depósito concluído. Saldo da conta: '+money(d.balance)+' · Carteira: '+money(d.wallet_balance)+'.');
+      if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+' · Carteira: '+money(d.wallet_balance)+'.');
     }
     panel.querySelectorAll('[data-venue-menu-buy]').forEach(button=>button.onclick=()=>{const item=button.dataset.itemLabel||'Pedido do menu',amount=Number(button.dataset.price);if(confirmPurchase)confirmPurchase({item,total:amount,description:'O pedido será processado após a confirmação.',execute:()=>sb.rpc('buy_venue_menu_item',{p_item:button.dataset.venueMenuBuy}),afterPurchase:refreshPlayerNeeds,onCancel:()=>render(),onContinue:d=>render('Pedido concluído: '+d.item+'. Energia, fome e hidratação actualizadas.')});else run(button,()=>sb.rpc('buy_venue_menu_item',{p_item:button.dataset.venueMenuBuy}),d=>'Pedido concluído: '+d.item+'. Energia, fome e hidratação actualizadas.')});
     panel.querySelectorAll('[data-job-apply]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_apply_public_job',{p_employer:button.dataset.jobApply,p_role:document.getElementById('job-role-'+button.dataset.jobApply).value}),d=>'Candidatura registada. Não foi exigida formação. Realiza a entrevista para concluir a contratação.'));
