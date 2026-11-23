@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-angola-world-v118-staff-tap-fix-20261123';
+const CACHE_NAME = 'angola-life-3d-angola-world-v119-all-staff-touch-20261123';
 const APP_SHELL = [
   './',
   './index.html',
