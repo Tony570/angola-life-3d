@@ -213,7 +213,18 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   });
   state.pending=false;
   if(error){console.warn('Sincronização do autocarro '+d.bus_id+':',error.message);state.isController=false;claimControllers().catch(()=>{});return}
-  state.data={...state.data,...data};
+  // A resposta SQL pode chegar depois de vários frames de movimento. Mantém
+  // a simulação local mais recente para não fazer o autocarro recuar.
+  const latest=state.data;
+  const latestSimulation={
+   x:Number(latest.x),z:Number(latest.z),rotation:Number(latest.rotation)||0,
+   current_node:latest.current_node,route_index:Number(latest.route_index)||0,
+   requested_node:latest.requested_node||null,
+   active_path:Array.isArray(latest.active_path)?[...latest.active_path]:null,
+   path_index:Number(latest.path_index)||0,status:latest.status,
+   doors_open:!!latest.doors_open,stop_until:latest.stop_until||null
+  };
+  state.data={...state.data,...data,...latestSimulation};
   if(state.needsAlight&&state.alightNode){
    const node=state.alightNode;state.needsAlight=false;state.alightNode=null;state.lastAlightAttemptAt=Date.now();
    const {error:alightError}=await sb.rpc('city_transit_alight',{p_bus_id:d.bus_id,p_node_id:node});
