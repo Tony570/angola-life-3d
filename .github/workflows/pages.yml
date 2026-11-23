@@ -29,9 +29,20 @@ jobs:
           grep -q "roomName==='party'||roomName==='quarry'" js/main.js
           grep -q "employer:'party'" js/largo-services.js
           grep -q "employer:'quarry'" js/largo-services.js
-          grep -q "30.000 Kz por dia" js/largo-services.js
+          grep -Fq "Number(role[2]||30000)" js/largo-services.js
           grep -q "largo_resign_public_job" js/largo-services.js
           grep -q "data-bar-resign" js/main.js
+      - name: Validar atendimento por toque nos funcionários
+        run: |
+          grep -q "Cabeleireira" js/main.js
+          grep -q "Atendente da loja de roupas" js/main.js
+          grep -q "openMarketPanel();return" js/main.js
+          grep -q "openFurnitureStorePanel();return" js/main.js
+          grep -q "openClothesStorePanel();return" js/main.js
+          grep -q "salon-customize-avatar" js/main.js
+          grep -q "data-hospital-room" js/main.js
+          grep -q "openBarServiceMenu();return" js/main.js
+          grep -q "openLargoServicePanel({kind:roomName" js/main.js
       - name: Validar alinhamento das balizas do campo TAF
         run: test "$(grep -oF "x+(x===273?1.8:-1.8)" js/largo-do-ambiente.js | wc -l)" -eq 2
       - name: Configurar GitHub Pages
