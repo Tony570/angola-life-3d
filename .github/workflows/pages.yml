@@ -35,6 +35,10 @@ jobs:
       - name: Validar atendimento por toque nos funcionários
         run: |
           grep -q "Cabeleireira" js/main.js
+          grep -q "Gerente do bar" js/main.js
+          grep -q "Recepcionista do hotel" js/main.js
+          grep -q "Recepcionista do hospital" js/main.js
+          grep -q "data-hotel-suite" js/main.js
           grep -q "Atendente da loja de roupas" js/main.js
           grep -q "openMarketPanel();return" js/main.js
           grep -q "openFurnitureStorePanel();return" js/main.js
