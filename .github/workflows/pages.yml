@@ -39,6 +39,7 @@ jobs:
           grep -q "Recepcionista do hotel" js/main.js
           grep -q "Recepcionista do hospital" js/main.js
           grep -q "Organizadora de eventos" js/main.js
+          grep -Fq "if(nav){const exit=" js/main.js
           grep -q "data-hotel-suite" js/main.js
           grep -q "Atendente da loja de roupas" js/main.js
           grep -q "openMarketPanel();return" js/main.js
