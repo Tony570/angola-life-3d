@@ -1,18 +1,18 @@
 // Relógio e clima dinâmicos do Angola Life 3D.
 // Um dia completo dura cerca de 2h24 de tempo real (1 minuto de jogo = 6 segundos).
 export function createDayNightCycle({THREE,scene,target,hemisphereLight,directionalLight,compactDevice=false,kind='city'}){
-  const KEY='angola-life-world-clock-v2';
+  const KEY='angola-life-world-clock-v3';
   const RATE_MS_PER_GAME_MINUTE=6000;
-  let baseMinute=8*60,baseStamp=Date.now(),lastPersist=0;
+  let baseMinute=10*60,baseStamp=Date.now(),lastPersist=0;
   try{
     const saved=JSON.parse(localStorage.getItem(KEY)||'null');
     if(saved&&Number.isFinite(saved.minute)&&Number.isFinite(saved.stamp)){baseMinute=((saved.minute%1440)+1440)%1440;baseStamp=Math.min(Date.now(),Math.max(0,saved.stamp))}
   }catch(error){console.warn('Relógio local indisponível; a usar 08:00.',error)}
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t)};
-  const colors={night:new THREE.Color('#101a2a'),day:new THREE.Color('#9fc9e3'),dawn:new THREE.Color('#c98268')};
+  const colors={night:new THREE.Color('#101a2a'),day:new THREE.Color('#b9e2f7'),dawn:new THREE.Color('#c98268')};
   const sky=new THREE.Color(),isCity=kind==='city';let weatherLight=1,rainOpacity=0;
-  const sun=new THREE.Mesh(new THREE.SphereGeometry(3.2,16,12),new THREE.MeshBasicMaterial({color:'#fff0c7'}));
+  const sun=new THREE.Mesh(new THREE.SphereGeometry(4.1,20,14),new THREE.MeshBasicMaterial({color:'#fff0c7'}));
   const moon=new THREE.Mesh(new THREE.SphereGeometry(2.1,16,12),new THREE.MeshBasicMaterial({color:'#d9e5f4'}));
   sun.name='AngolaLifeSun';moon.name='AngolaLifeMoon';if(isCity)scene.add(sun,moon);
   const starPositions=[];let seed=91371;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
@@ -54,11 +54,11 @@ export function createDayNightCycle({THREE,scene,target,hemisphereLight,directio
     // A iluminação global acompanha o ciclo apenas no exterior. Os interiores
     // mantêm a iluminação própria para não ficarem artificialmente escuros.
     if(isCity){
-      directionalLight.intensity=(.65+daylight*2.25)*weatherFactor;
-      directionalLight.color.setRGB(.58+.42*daylight,.66+.34*daylight,.82+.18*daylight);
+      directionalLight.intensity=(1.05+daylight*3.15)*weatherFactor;
+      directionalLight.color.setRGB(.78+.22*daylight,.84+.16*daylight,.92+.08*daylight);
       directionalLight.position.set(sunX*.28,Math.max(4,sunY*.24+10),-24);
-      hemisphereLight.intensity=(.90+daylight*1.75)*weatherFactor;
-      hemisphereLight.color.set('#eaf4ff');hemisphereLight.groundColor.set(daylight>.2?'#68745d':'#202b3d');
+      hemisphereLight.intensity=(1.35+daylight*2.05)*weatherFactor;
+      hemisphereLight.color.set('#f4f9ff');hemisphereLight.groundColor.set(daylight>.2?'#82906f':'#35445a');
     }
     if(isCity){
       starMaterial.opacity=clamp((.22-daylight)/.22,0,1)*.92;
