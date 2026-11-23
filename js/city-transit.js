@@ -200,6 +200,8 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
  }
  async function persist(state,force=false){
   if(!state.isController||state.pending)return;
+  const leaseUntil=Date.parse(state.data?.controller_until||'');
+  if(!Number.isFinite(leaseUntil)||leaseUntil<=Date.now()+1800){state.isController=false;claimControllers().catch(()=>{});return;}
   const now=Date.now();if(!force&&now-state.lastPersist<1050)return;
   state.pending=true;state.lastPersist=now;
   const d=state.data;
@@ -210,7 +212,7 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
    p_status:d.status,p_doors_open:!!d.doors_open,p_stop_until:d.stop_until||null
   });
   state.pending=false;
-  if(error){console.warn('Sincronização do autocarro '+d.bus_id+':',error.message);state.isController=false;return}
+  if(error){console.warn('Sincronização do autocarro '+d.bus_id+':',error.message);state.isController=false;claimControllers().catch(()=>{});return}
   state.data={...state.data,...data};
   if(state.needsAlight&&state.alightNode){
    const node=state.alightNode;state.needsAlight=false;state.alightNode=null;state.lastAlightAttemptAt=Date.now();
@@ -457,6 +459,16 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   alightButton.addEventListener('click',()=>{if(localPassenger)requestAlight(localPassenger.bus_id,alightButton)});
   host.appendChild(alightButton);
  }
+ function resumeControllerClaims(){
+  if(document.visibilityState!=='visible')return;
+  for(const state of buses.values()){
+   const leaseUntil=Date.parse(state.data?.controller_until||'');
+   if(state.isController&&(!Number.isFinite(leaseUntil)||leaseUntil<=Date.now()+1800))state.isController=false;
+  }
+  claimControllers().catch(error=>console.warn('Retoma do controlo dos autocarros:',error));
+ }
+ document.addEventListener('visibilitychange',resumeControllerClaims);
+ window.addEventListener('focus',resumeControllerClaims);
  async function init(){
   const {data,error}=await sb.from('city_transit_buses').select('*');
   if(error){console.warn('Autocarros:',error.message);return}
@@ -496,6 +508,8 @@ export function createCityTransit({THREE,target,sb,user,host,getPlayerPosition,g
   cleanup(){
    alive=false;panel?.removeEventListener('click',onPanelClick);
    if(channel)sb.removeChannel(channel);
+   document.removeEventListener('visibilitychange',resumeControllerClaims);
+   window.removeEventListener('focus',resumeControllerClaims);
    if(mapButton){mapButton.removeEventListener('click',showMap);mapButton.remove()}
    if(alightButton){alightButton.onclick=null;alightButton.remove()}
    for(const state of buses.values())target.remove(state.model);
