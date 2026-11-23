@@ -1069,6 +1069,7 @@ function buildPartyHallInterior(){
  for(const x of [-13,13])for(const z of [-5,1,7])venueTable(x,z,wood,metal,seat);furnCounter(7.5,1,.8,wood,gold,metal,-13,11.3);
  for(const side of [-1,1])for(let row=0;row<2;row++){const sofa=new THREE.Mesh(new THREE.CapsuleGeometry(.36,1.45,3,8),seat);sofa.rotation.z=Math.PI/2;sofa.position.set(side*15.6,.46,-1+row*5.2);target.add(sofa)}
  for(let i=0;i<12;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),new THREE.MeshStandardMaterial({color:'#f3d6a0',emissive:i%2?'#d98eac':'#9b7ad1',emissiveIntensity:.9}));b.position.set(-8.8+i*1.6,4.65,-3.8);target.add(b)}
+ addWorkAgent({gender:'female',skin:'#b98768',hair:'#241b18',shirt:'#7d4054',pants:'#303b48',hairStyle:'medio'},{x:-13,y:0,z:10.2},[[-13,10.2],[-12.5,10.2],[-12.5,10.7],[-13,10.7]],'Organizadora de eventos');
  addVenueCapacitySign('SALÃO DE FESTAS',0,13.82,'#30263a');
 }
 function buildHotelInterior(name){
