@@ -3,7 +3,7 @@ import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/
 import { clone as cloneSkinnedModel } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/utils/SkeletonUtils.js';
 import { buildLargoDoAmbiente } from './largo-do-ambiente.js';
 import { buildLargoServiceInterior, openLargoServicePanel, renderVenueMenuMarkup } from './largo-services.js';
-import { createCityTransit } from './city-transit.js?v=angola-world-v122-transit-controller-resume-20261123';
+import { createCityTransit } from './city-transit.js?v=angola-world-v123-transit-sync-no-rewind-20261123';
 import { applyCityRealism } from './city-realism.js';
 import { createDayNightCycle } from './day-night.js?v=angola-world-v115-bright-day-20261123';
 import { createDailyMissions } from './daily-missions.js';
