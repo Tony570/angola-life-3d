@@ -11,8 +11,13 @@ const venueMenuItems=[
 {key:'agua',label:'Água mineral',price:300,category:'Bebidas',image:'https://www.duralex.com/cdn/shop/products/DURALEX_FW_18_WEB.jpg?v=1773323493&width=1800',alt:'Água servida num copo'}
 ];
 export function renderVenueMenuMarkup(){
- const cards=list=>'<div class="venue-menu-grid">'+list.map(item=>'<article class="venue-menu-card"><img src="'+item.image+'" alt="'+item.alt+'" loading="lazy" decoding="async"><div class="venue-menu-copy"><b>'+item.label+'</b><small>'+new Intl.NumberFormat('pt-PT').format(item.price)+' Kz</small><button class="secondary" data-venue-menu-buy="'+item.key+'" data-price="'+item.price+'" data-item-label="'+item.label+'">PEDIR</button></div></article>').join('')+'</div>';
- return '<h4>Comidas tradicionais de Angola</h4>'+cards(venueMenuItems.filter(x=>x.category==='Comidas angolanas'))+'<h4>Bebidas</h4>'+cards(venueMenuItems.filter(x=>x.category==='Bebidas'))+'<p class="life-muted">As imagens são ilustrativas. Cada pedido actualiza as tuas necessidades.</p>';
+ const categories=[['Comidas angolanas','Comidas tradicionais'],['Bebidas','Bebidas']];
+ const sections=categories.map(([category,title])=>{
+  const items=venueMenuItems.filter(item=>item.category===category);
+  if(!items.length)return '';
+  return '<h4>'+title+'</h4><div class="life-table-wrap"><table class="life-data-table"><thead><tr><th>Produto</th><th>Preço</th><th>Pedido</th></tr></thead><tbody>'+items.map(item=>'<tr><td><span class="life-table-product">'+item.label+'</span></td><td class="life-table-price">'+new Intl.NumberFormat('pt-PT').format(item.price)+' Kz</td><td><button class="secondary" data-venue-menu-buy="'+item.key+'" data-price="'+item.price+'" data-item-label="'+item.label+'">PEDIR</button></td></tr>').join('')+'</tbody></table></div>';
+ }).join('');
+ return sections+'<p class="life-muted">Consulta os preços antes de pedir. O pagamento é confirmado e as necessidades do personagem são actualizadas após a compra.</p>';
 }
 
 const serviceRooms = {
@@ -199,10 +204,15 @@ export function buildLargoServiceInterior({THREE,target,kind,buildCharacter,avat
 async function basicEmploymentHtml({sb,user,employer,title,roles,esc}) {
   const {data:job,error}=await sb.from('largo_employment_applications').select('role,salary,status,last_paid_at').eq('user_id',user.id).eq('employer',employer).in('status',['pending','hired']).maybeSingle();
   if(error)return '<h4>Emprego · '+title+'</h4><p class="life-muted">Não foi possível consultar a candidatura: '+esc(error.message)+'</p>';
-  let body='<h4>Emprego · '+title+'</h4><p class="life-muted">Não precisas de formação para trabalhar aqui. Todas as funções pagam <b>30.000 Kz por dia</b>. Depois da candidatura, realiza a entrevista. O salário fica disponível a cada 24 horas. Para o receber, precisas de pelo menos 20% de energia, 10% de fome e 10% de hidratação.</p>';
+  const vacancyRows=roles.map(role=>{
+    const key=role[0],name=role[1],salary=Number(role[2]||30000);
+    const selected=job?.role===key;
+    return '<tr><td>'+esc(name)+'</td><td class="life-table-price">'+money(salary)+'/dia</td><td>'+(selected?'<span class="badge">A tua candidatura</span>':'<button class="secondary" type="button" data-job-role-pick="'+employer+'" data-role="'+esc(key)+'">Escolher vaga</button>')+'</td></tr>';
+  }).join('');
+  let body='<h4>Emprego · '+title+'</h4><p class="life-muted">Consulta as vagas disponíveis, os salários e escolhe a função. Depois de enviar a candidatura, realiza a entrevista. O salário fica disponível a cada 24 horas, respeitando os requisitos de energia, fome e hidratação.</p><h5>Vagas e salários</h5><div class="life-table-wrap"><table class="life-data-table"><thead><tr><th>Função</th><th>Salário</th><th>Acção</th></tr></thead><tbody>'+vacancyRows+'</tbody></table></div>';
   if(job?.status==='hired') body+='<div class="life-row"><span><b>Contrato activo</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Contratado</span></div><button data-job-salary="'+employer+'">Receber salário · '+money(job.salary)+'</button><button data-job-resign="'+employer+'">Terminar contrato</button><p class="life-muted">Último pagamento: '+(job.last_paid_at?new Date(job.last_paid_at).toLocaleString('pt-PT'):'Ainda não recebido')+'</p>';
   else if(job?.status==='pending') body+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><button data-job-interview="'+employer+'">Realizar entrevista</button><button data-job-resign="'+employer+'">Cancelar candidatura</button>';
-  else body+='<label for="job-role-'+employer+'">Vaga pretendida</label><select id="job-role-'+employer+'">'+roles.map(r=>'<option value="'+r[0]+'">'+esc(r[1])+' · 30.000 Kz/dia</option>').join('')+'</select><button data-job-apply="'+employer+'">Enviar candidatura</button>';
+  else body+='<label for="job-role-'+employer+'">Vaga escolhida</label><select id="job-role-'+employer+'">'+roles.map(r=>'<option value="'+esc(r[0])+'">'+esc(r[1])+' · '+money(r[2]||30000)+'/dia</option>').join('')+'</select><button data-job-apply="'+employer+'">Enviar candidatura</button>';
   return body;
 }
 
@@ -274,7 +284,7 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       }else if(job&&job.status==='pending'){
         html+='<div class="life-row"><span><b>Candidatura pendente</b><br><small>'+esc(job.role)+' · '+money(job.salary)+'/dia</small></span><span class="badge">Pendente</span></div><button id="largo-government-interview">Realizar entrevista</button><button data-job-resign="government">Cancelar candidatura</button>';
       }else{
-        html+='<label for="largo-government-role">Vaga pretendida</label><select id="largo-government-role">'+jobs.map(j=>'<option value="'+j[0]+'">'+j[1]+' · '+money(j[2])+'/dia</option>').join('')+'</select><button id="largo-government-apply">Enviar candidatura</button>';
+        html+='<h5>Vagas e salários</h5><div class="life-table-wrap"><table class="life-data-table"><thead><tr><th>Função</th><th>Salário</th><th>Escolher</th></tr></thead><tbody>'+jobs.map(j=>'<tr><td>'+esc(j[1])+'</td><td class="life-table-price">'+money(j[2])+'/dia</td><td><button class="secondary" type="button" data-gov-role="'+j[0]+'">Escolher</button></td></tr>').join('')+'</tbody></table></div><label for="largo-government-role">Vaga escolhida</label><select id="largo-government-role">'+jobs.map(j=>'<option value="'+j[0]+'">'+esc(j[1])+' · '+money(j[2])+'/dia</option>').join('')+'</select><button id="largo-government-apply">Enviar candidatura</button>';
       }
       html+='<h4>Atendimento público e taxas</h4><div class="life-list">'+serviceButton('Emissão de certidão','government-certificate',1500)+serviceButton('Autenticação de documento','government-authentication',2500)+'</div><p class="life-muted">Os restantes pedidos de informação são gratuitos.</p>';
     } else if(kind==='residential-10'||kind==='residential-tower'||kind==='residential-family'){
@@ -350,11 +360,13 @@ export async function openLargoServicePanel({kind,sb,user,openLifePanel,refreshP
       if(withdraw)withdraw.onclick=()=>run(withdraw,()=>operation('withdrawal'),d=>'Levantamento concluído. Saldo da conta: '+money(d.balance)+' · Carteira: '+money(d.wallet_balance)+'.');
     }
     panel.querySelectorAll('[data-venue-menu-buy]').forEach(button=>button.onclick=()=>{const item=button.dataset.itemLabel||'Pedido do menu',amount=Number(button.dataset.price);if(confirmPurchase)confirmPurchase({item,total:amount,description:'O pedido será processado após a confirmação.',execute:()=>sb.rpc('buy_venue_menu_item',{p_item:button.dataset.venueMenuBuy}),afterPurchase:refreshPlayerNeeds,onCancel:()=>render(),onContinue:d=>render('Pedido concluído: '+d.item+'. Energia, fome e hidratação actualizadas.')});else run(button,()=>sb.rpc('buy_venue_menu_item',{p_item:button.dataset.venueMenuBuy}),d=>'Pedido concluído: '+d.item+'. Energia, fome e hidratação actualizadas.')});
+    panel.querySelectorAll('[data-job-role-pick]').forEach(button=>button.onclick=()=>{const select=document.getElementById('job-role-'+button.dataset.jobRolePick);if(select){select.value=button.dataset.role;select.focus();select.scrollIntoView({block:'nearest',behavior:'smooth'});}});
     panel.querySelectorAll('[data-job-apply]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_apply_public_job',{p_employer:button.dataset.jobApply,p_role:document.getElementById('job-role-'+button.dataset.jobApply).value}),d=>'Candidatura registada. Não foi exigida formação. Realiza a entrevista para concluir a contratação.'));
     panel.querySelectorAll('[data-job-interview]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:button.dataset.jobInterview}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.'));
     panel.querySelectorAll('[data-job-salary]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_claim_public_job_salary',{p_employer:button.dataset.jobSalary}),d=>'Salário recebido na carteira: '+money(d.salary)+'.'));
     panel.querySelectorAll('[data-job-resign]').forEach(button=>button.onclick=()=>run(button,()=>sb.rpc('largo_resign_public_job',{p_employer:button.dataset.jobResign}),d=>'Contrato encerrado. Já podes candidatar-te a outra vaga.'));
     const apply=document.getElementById('largo-apply-chevron');if(apply)apply.onclick=()=>run(apply,()=>sb.rpc('largo_apply_chevron_job',{p_role:document.getElementById('largo-chevron-role').value}),d=>'Candidatura registada. A entrevista está disponível.');
+    panel.querySelectorAll('[data-gov-role]').forEach(button=>button.onclick=()=>{const select=document.getElementById('largo-government-role');if(select){select.value=button.dataset.govRole;select.focus();}});
     const govApply=document.getElementById('largo-government-apply');if(govApply)govApply.onclick=()=>run(govApply,()=>sb.rpc('largo_apply_public_job',{p_employer:'government',p_role:document.getElementById('largo-government-role').value}),d=>'Candidatura ao Governo Provincial registada. Realiza a entrevista.');
     const govInterview=document.getElementById('largo-government-interview');if(govInterview)govInterview.onclick=()=>run(govInterview,()=>sb.rpc('largo_complete_public_job_interview',{p_employer:'government'}),d=>'Entrevista concluída. Contrato activo com salário diário de '+money(d.salary)+'.');
     const govSalary=document.getElementById('largo-government-salary');if(govSalary)govSalary.onclick=()=>run(govSalary,()=>sb.rpc('largo_claim_public_job_salary',{p_employer:'government'}),d=>'Salário recebido na carteira: '+money(d.salary)+'.');
