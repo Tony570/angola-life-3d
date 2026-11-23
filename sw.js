@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-angola-world-v123-transit-sync-no-rewind-20261123';
+const CACHE_NAME = 'angola-life-3d-angola-world-v124-multitouch-movement-20261123';
 const APP_SHELL = [
   './',
   './index.html',
