@@ -1,4 +1,5 @@
 // Transporte público autónomo e partilhado — Angola Life 3D.
+// A sincronização conserva o estado de movimento local mais recente enquanto a RPC termina.
 const ROAD_X=[-70,-42,-14,14,42,70],ROAD_Z=[-70,-42,-14,14,42,70];
 const LARGO_X=[145,205,265],LARGO_Z=[-78,-48,0,48,96];
 const num=v=>v<0?'m'+Math.abs(v):String(v);
