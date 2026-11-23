@@ -265,3 +265,17 @@
 .purchase-success-icon{display:grid;place-items:center;width:48px;height:48px;margin:2px auto 8px;border-radius:50%;background:#d9efe3;color:#197447;font-size:27px;font-weight:900}
 .purchase-receipt h4{margin:5px 0 8px;color:#197447}
 #life-panel #purchase-continue{width:100%;margin-top:10px}
+
+
+/* Tabelas funcionais de preços, menus e candidaturas */
+.life-table-wrap{width:100%;max-width:100%;overflow-x:auto;margin:10px 0 18px;border:1px solid #ffffff30;border-radius:12px;background:#10243b;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.life-data-table{width:100%;min-width:330px;border-collapse:collapse;color:#f3f7fc;font-size:12px;text-align:left}
+.life-data-table th{position:sticky;top:0;padding:10px 9px;background:#1e3b5c;color:#fff;font-size:11px;font-weight:800;white-space:nowrap;border-bottom:1px solid #ffffff35}
+.life-data-table td{padding:9px;border-bottom:1px solid #ffffff1c;vertical-align:middle;line-height:1.35}
+.life-data-table tbody tr:nth-child(even){background:#ffffff08}
+.life-data-table tbody tr:last-child td{border-bottom:0}
+.life-data-table button{margin:0;padding:7px 10px;min-height:34px;white-space:nowrap;font-size:11px}
+.life-table-price{font-weight:800;color:#f5d58c;white-space:nowrap;font-variant-numeric:tabular-nums}
+.life-table-product{font-weight:700;color:#fff}
+#life-panel .life-table-wrap{max-height:38vh;overflow:auto}
+@media(max-width:520px){.life-data-table{font-size:11px}.life-data-table th,.life-data-table td{padding:8px 7px}.life-data-table button{padding:6px 8px;font-size:10px}}
