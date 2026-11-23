@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-angola-world-v125-remote-player-walk-animation-20261123';
+const CACHE_NAME = 'angola-life-3d-angola-world-v126-building-specific-exits-20261123';
 const APP_SHELL = [
   './',
   './index.html',
