@@ -1,4 +1,4 @@
-const CACHE_NAME = 'angola-life-3d-angola-world-v121-exit-all-buildings-20261123';
+const CACHE_NAME = 'angola-life-3d-angola-world-v122-transit-controller-resume-20261123';
 const APP_SHELL = [
   './',
   './index.html',
