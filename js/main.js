@@ -2067,7 +2067,7 @@ for(const agent of workAgents){
  if(dist<.12){agent.pause+=delta;if(agent.pause>1.8){agent.pause=0;agent.waypoint=(agent.waypoint+1)%agent.route.length;agent.state='working'}else{agent.state='working';npc.userData.actionState={type:'idle',time:(npc.userData.actionState?.time||0)+delta};continue}}
  else{const step=Math.min(dist,0.62*delta);npc.position.x+=dx/dist*step;npc.position.z+=dz/dist*step;npc.rotation.y=Math.atan2(dx,dz);agent.state='walking';updateFallbackHumanGait(npc,delta,.62,true);npc.userData.actionState={type:'idle',time:0}}
 }
-for(const character of target.userData.characters||[]){if(character===houseAvatar||character.userData.characterMixer===mixer)continue;const isPatrol=cityPoliceAgents.some(agent=>agent.group===character);if(!isPatrol&&character.userData.characterMixer)character.userData.characterMixer.update(delta);if(!isPatrol){updateCharacterActionPose(character,delta);if(character.userData.characterModel)updateFallbackHumanGait(character,delta,character.userData.lastMoveSpeed||0,!!character.userData.isMoving)}}
+for(const character of target.userData.characters||[]){if(character===houseAvatar||character.userData.characterMixer===mixer)continue;const isPatrol=cityPoliceAgents.some(agent=>agent.group===character);if(!isPatrol&&character.userData.characterMixer)character.userData.characterMixer.update(delta);if(!isPatrol){updateCharacterActionPose(character,delta);updateFallbackHumanGait(character,delta,character.userData.lastMoveSpeed||0,!!character.userData.isMoving)}}
 if(kind==='city'&&cityPoliceAgents.length){
  for(const agent of cityPoliceAgents){
   const officer=agent.group,player=houseAvatar;if(!officer)continue;
