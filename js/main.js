@@ -240,7 +240,30 @@ async function openEconomyPanel(message=''){
  const panel=$('life-panel');
  panel.querySelectorAll('[data-consumable]').forEach(btn=>btn.onclick=()=>{const product=foods.find(x=>x[0]===btn.dataset.consumable);if(!product)return;confirmGamePurchase({item:product[1],total:product[2],description:'O artigo será consumido e as tuas necessidades serão actualizadas.',execute:()=>sb.rpc('buy_player_consumable',{p_item:btn.dataset.consumable}),afterPurchase:refreshPlayerNeeds,onCancel:()=>openEconomyPanel(message),onContinue:data=>openEconomyPanel('Compraste '+data.item+'. Necessidades actualizadas.')})});
  const transfer=$('send-transfer');
- if(transfer)transfer.onclick=async()=>{const recipient=$('transfer-player').value.trim(),amount=Number($('transfer-amount').value),msg=$('economy-message');if(!recipient||!Number.isSafeInteger(amount)||amount<=0){msg.textContent='Indica o destinatário e um valor válido.';return}transfer.disabled=true;transfer.textContent='A enviar…';const {error}=await sb.rpc('transfer_player_money',{p_recipient:recipient,p_amount:amount});if(error){msg.textContent=error.message;transfer.disabled=false;transfer.textContent='Enviar dinheiro';return}await refreshPlayerWallet();await openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Transferência enviada com sucesso.'};
+ if(transfer)transfer.onclick=async()=>{
+  if(transfer.disabled)return;
+  const recipient=$('transfer-player').value.trim().replace(/^@/,'');
+  const amount=Number($('transfer-amount').value);
+  const msg=$('economy-message');
+  if(!recipient||!Number.isSafeInteger(amount)||amount<=0){
+   msg.textContent='Indica o nome de utilizador e um valor inteiro superior a zero.';
+   return;
+  }
+  transfer.disabled=true;transfer.textContent='A enviar…';
+  try{
+   const {error}=await sb.rpc('transfer_player_money',{p_recipient:recipient,p_amount:amount});
+   if(error)throw error;
+   await refreshPlayerWallet();
+   await openEconomyPanel();
+   const updatedMessage=$('economy-message');
+   if(updatedMessage)updatedMessage.textContent='Transferência enviada com sucesso. O saldo e o histórico foram actualizados.';
+  }catch(error){
+   const currentMessage=$('economy-message');
+   if(currentMessage)currentMessage.textContent=error?.message||'Não foi possível concluir a transferência. Verifica a ligação e tenta novamente.';
+   const currentButton=$('send-transfer');
+   if(currentButton){currentButton.disabled=false;currentButton.textContent='Enviar dinheiro'}
+  }
+ };
  const sleep=$('needs-sleep');
  if(sleep)sleep.onclick=async()=>{sleep.disabled=true;const {error}=await sb.rpc('sleep_player');if(error){$('economy-message').textContent=error.message;sleep.disabled=false;return}dailyMissions?.record('sleep');await refreshPlayerNeeds();await openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Descansaste. Energia recuperada para 100%.'};
  const shower=$('needs-shower');if(shower)shower.onclick=async()=>{shower.disabled=true;shower.textContent='A tomar banho…';const {error}=await sb.rpc('take_player_shower');if(error){$('economy-message').textContent=error.message;shower.disabled=false;shower.textContent='🚿 Tomar banho e recuperar a higiene';return}dailyMissions?.record('shower');await refreshPlayerNeeds();await openEconomyPanel();const m=$('economy-message');if(m)m.textContent='Banho concluído. A tua higiene está a 100%.'};
