@@ -253,13 +253,20 @@ async function openEconomyPanel(message=''){
   try{
    const {error}=await sb.rpc('transfer_player_money',{p_recipient:recipient,p_amount:amount});
    if(error)throw error;
+  }catch(error){
+   msg.textContent=error?.message||'Não foi possível concluir a transferência. Verifica a ligação e tenta novamente.';
+   transfer.disabled=false;transfer.textContent='Enviar dinheiro';
+   return;
+  }
+  msg.textContent='Transferência enviada. A actualizar o saldo…';
+  try{
    await refreshPlayerWallet();
    await openEconomyPanel();
    const updatedMessage=$('economy-message');
    if(updatedMessage)updatedMessage.textContent='Transferência enviada com sucesso. O saldo e o histórico foram actualizados.';
-  }catch(error){
+  }catch(refreshError){
    const currentMessage=$('economy-message');
-   if(currentMessage)currentMessage.textContent=error?.message||'Não foi possível concluir a transferência. Verifica a ligação e tenta novamente.';
+   if(currentMessage)currentMessage.textContent='A transferência foi enviada. Não foi possível actualizar o painel; fecha e abre a carteira para consultar o novo saldo.';
    const currentButton=$('send-transfer');
    if(currentButton){currentButton.disabled=false;currentButton.textContent='Enviar dinheiro'}
   }
