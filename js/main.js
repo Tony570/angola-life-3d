@@ -304,14 +304,25 @@ async function openPlayerGaragePanel(){
   button.disabled=true;
   if(action==='store'&&window.__angolaCurrentVehicleId===id&&typeof window.__angolaExitVehicle==='function')window.__angolaExitVehicle();
   let result;
-  if(action==='retrieve'){const alreadyOutside=playerVehicles.filter(v=>v.owner_id===user.id&&!v.is_stored).length;result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'retrieve',p_x:17+alreadyOutside*4,p_z:-14,p_rotation:0})}
-  else if(action==='store')result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'store',p_x:0,p_z:0,p_rotation:0});
-  else if(action==='board')result=await sb.rpc('board_player_vehicle',{p_vehicle_id:id});
-  else result=await sb.rpc('leave_player_vehicle',{p_vehicle_id:id});
-  if(result?.error){alert(result.error.message||'Não foi possível concluir a operação.');button.disabled=false;return}
-  await loadPlayerVehicles();
-  if(action==='retrieve')renderVianaCity({x:14,z:-14});
-  await openPlayerGaragePanel();
+  try{
+   if(action==='retrieve'){const alreadyOutside=playerVehicles.filter(v=>v.owner_id===user.id&&!v.is_stored).length;result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'retrieve',p_x:17+alreadyOutside*4,p_z:-14,p_rotation:0})}
+   else if(action==='store')result=await sb.rpc('set_player_vehicle_state',{p_vehicle_id:id,p_action:'store',p_x:0,p_z:0,p_rotation:0});
+   else if(action==='board')result=await sb.rpc('board_player_vehicle',{p_vehicle_id:id});
+   else result=await sb.rpc('leave_player_vehicle',{p_vehicle_id:id});
+   if(result?.error)throw result.error;
+  }catch(error){
+   alert(error?.message||'A ligação falhou. A operação não foi confirmada; verifica a garagem antes de tentar novamente.');
+   button.disabled=false;
+   return;
+  }
+  try{
+   await loadPlayerVehicles();
+   if(action==='retrieve')renderVianaCity({x:14,z:-14});
+   await openPlayerGaragePanel();
+  }catch(refreshError){
+   alert('A operação foi aceite, mas a garagem não conseguiu actualizar. Fecha e abre a garagem para confirmar o estado do veículo.');
+   button.disabled=false;
+  }
  });
 }
 
